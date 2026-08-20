@@ -2,7 +2,7 @@
 
 These steps require your own account, wallet, signature, secret, CAPTCHA, or external authorization. Do not send private keys, seed phrases, or API keys in chat.
 
-1. **Provide contact details** — Add the real contact email and Telegram handle to `docs/SUBMISSION.md` and the official form.
+1. **Provide contact email** — Add the real contact email to `docs/SUBMISSION.md` and the official form. The public Telegram handle `@hierarchleaf` is recorded.
 2. **Upload the demo video** — The MP4 is generated at `demo/xguard-ai-build-x-demo.mp4`; upload it to YouTube or another public host and add the public URL.
 3. **Submit the official form** — Enter the completed fields and click the final Submit button before the stated deadline.
 

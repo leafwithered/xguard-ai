@@ -17,7 +17,7 @@
 - Project X Account: `TODO_USER` (created by user; URL capture blocked)
 - X Post mentioning @XLayerOfficial: `TODO_USER` (published by user; URL capture blocked)
 - Contact Email: `TODO_USER`
-- Telegram: `TODO_USER`
+- Telegram: `@hierarchleaf`
 
 ## Final Checks
 
@@ -56,4 +56,4 @@
 - Project X Account: `TODO_USER` (created; URL capture blocked)
 - X Post URL: `TODO_USER` (published; URL capture blocked)
 - Contact Email: `TODO_USER`
-- Telegram: `TODO_USER`
+- Telegram: `@hierarchleaf`

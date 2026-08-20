@@ -27,7 +27,7 @@ Audit scope: `app`, `lib`, `contracts`, `test`, `scripts`, configuration, Vercel
 - [x] Add decoder, safety-fusion, transaction-state, and rate-limit tests.
 - [x] Add GitHub Actions CI without secrets, deployments, real AI calls, or funds.
 - [x] Document the append-only Contract V2 design without deployment.
-- [ ] Deploy and validate a Vercel Preview.
+- [x] Deploy and validate a Vercel Preview with the existing third-party provider (Safe and Suspicious presets returned Hybrid Analysis).
 - [ ] Validate the official OpenAI Responses API in Preview after user-owned secret configuration.
 
 ## Known limits

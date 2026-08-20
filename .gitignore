@@ -1,0 +1,18 @@
+.next/
+artifacts/
+cache/
+coverage/
+node_modules/
+.env*
+!.env.example
+typechain-types/
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# Local Codex workspace notes; not part of the product repository.
+/AGENTS.md
+/PLAN.md
+/STATE.md
+/agentpact_delivery_checklist.md

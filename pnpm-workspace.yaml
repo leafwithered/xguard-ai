@@ -1,0 +1,4 @@
+allowBuilds:
+  keccak: true
+overrides:
+  '@scure/base': 1.2.1

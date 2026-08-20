@@ -1,0 +1,66 @@
+:root {
+  color-scheme: dark;
+  --bg: #080b12;
+  --panel: #101621;
+  --panel-soft: #151d2b;
+  --line: #263247;
+  --text: #f3f6fb;
+  --muted: #94a3b8;
+  --accent: #77f2c2;
+  --warning: #f9c66b;
+  --danger: #ff7c8b;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(circle at 80% 0%, #123035 0, var(--bg) 38%);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+button, textarea, input { font: inherit; }
+button { cursor: pointer; }
+.shell { max-width: 1160px; margin: 0 auto; padding: 28px 20px 56px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 56px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .02em; }
+.brand-mark { width: 30px; height: 30px; border-radius: 10px; background: var(--accent); color: #07100e; display: grid; place-items: center; font-weight: 900; }
+.network-pill { border: 1px solid var(--line); border-radius: 999px; color: var(--muted); padding: 8px 12px; font-size: 13px; }
+.hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px; align-items: end; margin-bottom: 32px; }
+.eyebrow { color: var(--accent); font-size: 13px; text-transform: uppercase; letter-spacing: .16em; }
+h1 { font-size: clamp(42px, 7vw, 76px); line-height: .95; margin: 16px 0 18px; max-width: 700px; }
+.lead { color: var(--muted); font-size: 18px; line-height: 1.55; max-width: 660px; }
+.hero-card, .panel { background: rgba(16,22,33,.86); border: 1px solid var(--line); border-radius: 22px; }
+.hero-card { padding: 22px; }
+.hero-card h2 { margin-top: 0; font-size: 18px; }
+.signal { display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--line); color: var(--muted); }
+.signal strong { color: var(--text); }
+.workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.panel { padding: 24px; }
+.panel h2 { margin: 0 0 8px; font-size: 20px; }
+.panel p { color: var(--muted); line-height: 1.5; }
+label { display: block; color: var(--muted); font-size: 13px; margin: 18px 0 8px; }
+textarea, input { width: 100%; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 12px; color: var(--text); padding: 13px; outline: none; }
+textarea:focus, input:focus { border-color: var(--accent); }
+textarea { min-height: 150px; resize: vertical; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.primary, .secondary { border-radius: 12px; padding: 12px 16px; border: 1px solid transparent; font-weight: 700; }
+.primary { background: var(--accent); color: #07100e; }
+.secondary { background: transparent; color: var(--text); border-color: var(--line); }
+.primary:disabled { opacity: .5; cursor: wait; }
+.result { min-height: 370px; display: flex; flex-direction: column; justify-content: center; }
+.empty { color: var(--muted); text-align: center; padding: 35px 15px; }
+.score-wrap { display: flex; align-items: center; gap: 18px; margin: 20px 0; }
+.score { width: 108px; height: 108px; border-radius: 50%; display: grid; place-items: center; border: 8px solid var(--accent); font-size: 34px; font-weight: 800; }
+.score-medium { border-color: var(--warning); }
+.score-high { border-color: var(--danger); }
+.score-copy strong { display: block; font-size: 18px; margin-bottom: 5px; }
+.risk-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.risk-list li { background: var(--panel-soft); border-radius: 10px; padding: 10px 12px; color: #dbe5f3; }
+.risk-list li::before { content: "•"; color: var(--warning); margin-right: 8px; }
+.analysis-mode { display: inline-block; margin-top: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; color: var(--accent); font-size: 12px; }
+.recommendation { background: var(--panel-soft); border-radius: 10px; padding: 12px; }
+.status-message { margin-top: 16px; color: var(--warning); font-size: 13px; line-height: 1.4; }
+.receipt { margin-top: 16px; color: var(--muted); font-size: 13px; word-break: break-all; }
+.footer-note { margin-top: 22px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+@media (max-width: 820px) { .hero, .workspace { grid-template-columns: 1fr; } .topbar { margin-bottom: 32px; } }

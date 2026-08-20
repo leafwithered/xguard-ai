@@ -1,8 +1,10 @@
-# User Actions Required — V2
+# User Actions Required — Final Judge Upgrade
 
-The V2 release is merged and live. The Hackathon public links, contract, verified transaction, and third-party Production AI provider remain unchanged.
+The stable Production release uses official OpenAI and remains unchanged while `final-judge-upgrade` is validated in an isolated Preview.
 
-1. **Optional official OpenAI Preview test** — Add a user-owned official OpenAI API key only to the Vercel Preview environment if you want to evaluate migration. Never send it in chat, and do not change Production variables.
-2. **Optional YouTube mirror** — The public GitHub MP4 remains the canonical demo; a YouTube Unlisted mirror is optional and requires the user's own account upload if desired.
+1. **Preview wallet QA** — On the final Preview URL, connect OKX Wallet, approve only the network switch to X Layer Testnet if requested, confirm Chain ID `1952`, and disconnect. Do not sign or send a transaction.
+2. **Preview visual QA** — Verify Safe Transfer, Unlimited Approval, Suspicious Airdrop, Clear Analysis, Contract Intelligence, Preflight, Judge Mode, and Verified X Layer evidence. Report PASS/FAIL.
+3. **Production merge approval** — Only after the final report, explicitly say `批准合并 Production` if the Preview is acceptable. No merge or Production deployment happens without that approval.
+4. **Optional YouTube mirror** — The public GitHub MP4 remains the canonical demo; a YouTube Unlisted mirror is optional and requires the user's own account upload if desired.
 
-No wallet signature, contract deployment, mainnet action, or new on-chain transaction is required for V2 code QA.
+No wallet signature, contract deployment, mainnet action, or new on-chain transaction is required for this upgrade QA.

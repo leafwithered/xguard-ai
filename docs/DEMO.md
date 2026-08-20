@@ -4,15 +4,23 @@
 
 **Generated video asset:** `demo/xguard-ai-build-x-demo.mp4` — 1920×1080 H.264, approximately 2:56, no audio track. It uses real Production AI Analysis, Safe/Unlimited/Suspicious preset screenshots, and public Explorer evidence; no wallet signature is performed.
 
+## 60-second judge path
+
+1. Click `⚡ Try Judge Demo`; explain that Judge Mode never auto-analyzes, connects, signs, or broadcasts.
+2. Load `Safe Transfer`, click `Analyze risk`, and show `8 LOW`, the Risk Fusion card, and real EOA intelligence.
+3. Load `Unlimited Approval`, click `Analyze risk`, and show `72 HIGH`, decoded `approve(address,uint256)`, spender, `Amount: Unlimited`, and source-labeled signals.
+4. Load `Suspicious Airdrop`, click `Analyze risk`, and show `100 HIGH` with `Deterministic floor preserved`.
+5. Click `Load Verified X Layer Receipt` in the Transaction Analyzer and show the confirmed post-hoc receipt and official Explorer link.
+
 ## Timed 3-minute script
 
 - **0:00–0:20 — Introduction:** Open the production URL. Explain that XGuard AI reviews transaction intent before a user signs and produces a score, reasons, and recommendation.
 - **0:20–0:50 — Wallet and network:** Click `Connect wallet`, confirm the wallet shows X Layer Testnet (`Chain ID 1952`), and point out that signing is always user-confirmed. Do not auto-approve any wallet prompt.
-- **0:50–1:20 — Safe transaction:** Use the Safe Transfer preset and click `Analyze risk`. Show `AI Analysis`, the `8 LOW` score, reasons, and recommendation.
-- **1:20–1:50 — Unlimited Approval:** Use the preset with the `approve(address,uint256)` calldata below. Show the decoded action, spender, `Amount: Unlimited`, critical signals, and the `72 HIGH` result.
+- **0:50–1:20 — Safe transaction:** Use the Safe Transfer preset and click `Analyze risk`. Show Hybrid Analysis, the `8 LOW` score, Risk Fusion, On-chain Intelligence, reasons, and recommendation.
+- **1:20–1:50 — Unlimited Approval:** Use the preset with the `approve(address,uint256)` calldata below. Show the decoded action, spender, `Amount: Unlimited`, source-labeled critical signals, and the `72 HIGH` result.
 - **1:50–2:20 — Suspicious Airdrop:** Show the zero address, value `12`, and urgent airdrop context. The result is `100 HIGH`; explain that the deterministic safety floor prevents AI from lowering the known risk.
 - **2:20–2:40 — User confirmation:** Click `I reviewed this result`, then `Record on X Layer`. The user—not the application—reviews any wallet prompt and decides whether to sign.
-- **2:40–2:56 — Evidence and differentiation:** Open the verified X Layer Testnet Explorer evidence and summarize the provider-neutral adapter, deterministic fallback, explicit confirmation, and compact on-chain receipt.
+- **2:40–2:56 — Evidence and differentiation:** Use the post-hoc Transaction Analyzer to load the verified receipt, then open the Explorer. Summarize real RPC intelligence, provider-neutral AI, deterministic fallback, explicit confirmation, and compact on-chain evidence.
 
 ## Judge path
 
@@ -43,6 +51,8 @@
 - If a configured provider times out, returns an error, does not support `/v1/responses`, or returns malformed JSON, the API keeps the deterministic Local Analysis result available.
 - A `null` body, invalid address, odd-length calldata, negative value, or non-finite value returns HTTP `400` without invoking the provider.
 - `npm run risk:test` covers deterministic signals and malformed input; `npm run ai:test` uses a local fake provider and never contacts a real AI service.
+- `npm run intelligence:test` covers EOA/contract classification, EIP-1967, preflight, gas fallback, RPC failure, and timeout isolation.
+- `npm run transaction-analyzer:test` covers transaction hash validation, receipt states, not-found responses, and RPC failure.
 
 ## Wallet and X Layer
 

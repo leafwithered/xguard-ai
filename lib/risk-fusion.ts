@@ -30,6 +30,7 @@ export function mergeRiskResults(localResult: RiskResult, aiResult: AdvisoryRisk
     ...localResult.advisorySignals,
     ...aiResult.reasons.map((reason, index) => ({
       id: `ai-${index}`,
+      source: "AI" as const,
       severity: "advisory" as const,
       title: reason,
       detail: "AI-provided advisory signal"

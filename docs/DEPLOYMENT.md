@@ -5,7 +5,7 @@
 - Node.js and npm
 - A user-controlled EVM wallet
 - X Layer Testnet OKB
-- Optional OpenAI-compatible third-party AI provider credentials
+- Optional official or third-party OpenAI-compatible AI provider credentials
 
 ## Contract
 
@@ -24,9 +24,9 @@
 - Deployment provider: `Vercel`
 - Source repository: `https://github.com/leafwithered/xguard-ai`
 - Production V2 deployment: live at the canonical URL
-- Production AI Analysis smoke test: passed with the existing third-party provider
+- Production AI Analysis smoke test: passed with the official OpenAI provider through the provider-neutral adapter
 - V2 smoke matrix: Safe `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
-- Official OpenAI migration: not switched; optional Preview-only follow-up
+- Official OpenAI: active and verified in Production; Local Analysis remains the failure-isolated fallback
 
 ## Verified deployment
 
@@ -55,6 +55,8 @@ The final command must stop with `DEPLOYER_PRIVATE_KEY is required...` when no l
 2. Add `NEXT_PUBLIC_RISK_REGISTRY_ADDRESS`.
 3. Deploy the Next.js application.
 4. Verify the production app loads, Real AI Analysis works when provider variables are configured, Local Analysis remains available as fallback, the wallet can switch to Chain ID `1952`, and the registry transaction opens in the explorer.
+
+`XLAYER_RPC_URL` is also used server-side for Contract Intelligence, Transaction Preflight, and post-hoc transaction inspection. RPC timeouts or failures must not disable deterministic risk analysis.
 
 ## Evidence
 

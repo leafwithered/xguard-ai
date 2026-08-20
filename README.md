@@ -2,6 +2,8 @@
 
 XGuard AI is AI-powered transaction risk intelligence for X Layer. It reviews an EVM transaction before signing, explains detected risks, and lets the user record a compact assessment receipt on X Layer Testnet.
 
+**Live Demo:** https://xguard-ai-six.vercel.app  ·  **GitHub:** https://github.com/leafwithered/xguard-ai
+
 ## Project Overview
 
 The MVP supports wallet connection, X Layer Testnet detection and switching, transaction input validation, configurable third-party AI analysis, deterministic local fallback analysis, user confirmation, and an optional on-chain risk record.
@@ -13,6 +15,7 @@ The MVP supports wallet connection, X Layer Testnet detection and switching, tra
 - Every report includes a `0–100` Risk Score, plain-language reasons, and a recommendation.
 - Recording is optional and only starts after explicit user review and wallet confirmation.
 - `RiskRegistry` is deployed on X Layer Testnet, and a real user-signed interaction is publicly verified below.
+- The production deployment has been verified with a real AI Analysis response.
 
 ## Problem
 
@@ -106,6 +109,8 @@ npm run dev
 ```
 
 Open `http://localhost:3000`. The app works without AI credentials using Local Analysis.
+
+The public production deployment is available at https://xguard-ai-six.vercel.app.
 
 ## Environment Variables
 

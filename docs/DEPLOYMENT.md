@@ -18,6 +18,13 @@
 7. The deployment transaction is `0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c2358533c75b`.
 8. Set `NEXT_PUBLIC_RISK_REGISTRY_ADDRESS` to the deployed address.
 
+## Public deployment
+
+- Website URL: `https://xguard-ai-six.vercel.app`
+- Deployment provider: `Vercel`
+- Source repository: `https://github.com/leafwithered/xguard-ai`
+- Production AI Analysis smoke test: passed
+
 ## Verified deployment
 
 - Network: X Layer Testnet
@@ -44,15 +51,15 @@ The final command must stop with `DEPLOYER_PRIVATE_KEY is required...` when no l
 1. Add `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL` to the deployment provider if AI Analysis is desired.
 2. Add `NEXT_PUBLIC_RISK_REGISTRY_ADDRESS`.
 3. Deploy the Next.js application.
-4. Verify the production app loads, Local Analysis works, the wallet can switch to Chain ID `1952`, and the registry transaction opens in the explorer.
+4. Verify the production app loads, Real AI Analysis works when provider variables are configured, Local Analysis remains available as fallback, the wallet can switch to Chain ID `1952`, and the registry transaction opens in the explorer.
 
 ## Evidence
 
 - Contract address: `0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`
 - Deployment transaction hash: `0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c2358533c75b`
 - Explorer link: `https://www.okx.com/web3/explorer/xlayer-test/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`
-- Website URL: `TODO_USER`
-- Deployment provider: `TODO_USER`
+- Website URL: `https://xguard-ai-six.vercel.app`
+- Deployment provider: `Vercel`
 
 ## Verified real interaction
 

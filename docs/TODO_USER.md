@@ -2,9 +2,11 @@
 
 These steps require your own account, wallet, signature, secret, CAPTCHA, or external authorization. Do not send private keys, seed phrases, or API keys in chat.
 
-1. **Configure optional third-party AI** — In `.env.local` set `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL` locally if AI Analysis is desired. Never share them in chat.
-2. **Wallet record flow** — Connect the wallet, switch to X Layer Testnet, review the result, and personally approve the `Record on X Layer` transaction. Never delegate the signature.
-3. **Publish externally** — Connect GitHub/Vercel, create the independent project X account, publish the app/repository and an X post mentioning `@XLayerOfficial`, then enter only real URLs in `docs/SUBMISSION.md` and the official form.
+1. **Create the independent project X account** — On X, create or select the project account and record its public URL in `docs/SUBMISSION.md`.
+2. **Publish the required X post** — From the project account, publish a post mentioning `@XLayerOfficial`; record the public post URL in `docs/SUBMISSION.md`.
+3. **Provide contact details** — Add the real contact email and Telegram handle to `docs/SUBMISSION.md` and the official form.
+4. **Record a demo video** — Capture the 2–3 minute flow in `docs/DEMO.md`, upload it, and add the public URL.
+5. **Submit the official form** — Enter the completed fields and click the final Submit button before the stated deadline.
 
 ## Autonomous work completed
 
@@ -13,4 +15,4 @@ These steps require your own account, wallet, signature, secret, CAPTCHA, or ext
 - AI adapter tests cover missing configuration, provider errors, unsupported Responses, Chat Completions success, and malformed output using only a local fake server.
 - Contract compile/tests and deployment verification are complete; the verified testnet artifact is recorded in the public docs.
 
-Current external evidence remains `TODO_USER`; nothing has been fabricated.
+GitHub, Vercel, AI production configuration, deployment evidence, and the verified user transaction are complete; only the five external submission actions above remain.

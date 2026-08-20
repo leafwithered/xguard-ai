@@ -1,5 +1,17 @@
 # XGuard AI Demo (2–3 minutes)
 
+**Production URL:** https://xguard-ai-six.vercel.app
+
+## Timed 3-minute script
+
+- **0:00–0:20 — Introduction:** Open the production URL. Explain that XGuard AI reviews transaction intent before a user signs and produces a score, reasons, and recommendation.
+- **0:20–0:50 — Wallet and network:** Click `Connect wallet`, confirm the wallet shows X Layer Testnet (`Chain ID 1952`), and point out that signing is always user-confirmed. Do not auto-approve any wallet prompt.
+- **0:50–1:20 — Safe transaction:** Use a normal zero-value transaction to a valid destination and click `Analyze risk`. With production variables configured, show `AI Analysis`, the LOW score, reasons, and recommendation.
+- **1:20–1:50 — High-risk transaction:** Enter the zero address, value `12`, the unlimited `approve` calldata below, and context `Urgent airdrop claim on an unknown contract`. Show the HIGH score and explanations for the approval, unlimited amount, value, unknown contract, and social-engineering signal.
+- **1:50–2:20 — User confirmation:** Click `I reviewed this result`, then `Record on X Layer`. Show the RiskRegistry contract address and let the user review the wallet prompt; the user must perform the signature.
+- **2:20–2:40 — Explorer proof:** Open the verified transaction in the X Layer Testnet Explorer and show the successful receipt and `RiskAssessmentRecorded` event.
+- **2:40–3:00 — Differentiation:** Summarize the provider-neutral AI adapter, deterministic fallback, explicit user confirmation, and compact on-chain evidence.
+
 ## Judge path
 
 1. Open XGuard AI and point out `X Layer Testnet · Chain 1952`.

@@ -2,17 +2,17 @@
 
 **Production URL:** https://xguard-ai-six.vercel.app
 
-**Generated video asset:** `demo/xguard-ai-build-x-demo.mp4` — 1920×1080 H.264, approximately 2:29, no audio track. It uses real Production AI Analysis, High Risk, and public Explorer screenshots; no wallet signature is performed.
+**Generated video asset:** `demo/xguard-ai-build-x-demo.mp4` — 1920×1080 H.264, approximately 2:56, no audio track. It uses real Production AI Analysis, Safe/Unlimited/Suspicious preset screenshots, and public Explorer evidence; no wallet signature is performed.
 
 ## Timed 3-minute script
 
 - **0:00–0:20 — Introduction:** Open the production URL. Explain that XGuard AI reviews transaction intent before a user signs and produces a score, reasons, and recommendation.
 - **0:20–0:50 — Wallet and network:** Click `Connect wallet`, confirm the wallet shows X Layer Testnet (`Chain ID 1952`), and point out that signing is always user-confirmed. Do not auto-approve any wallet prompt.
-- **0:50–1:20 — Safe transaction:** Use a normal zero-value transaction to a valid destination and click `Analyze risk`. With production variables configured, show `AI Analysis`, the LOW score, reasons, and recommendation.
-- **1:20–1:50 — High-risk transaction:** Enter the zero address, value `12`, the unlimited `approve` calldata below, and context `Urgent airdrop claim on an unknown contract`. Show the HIGH score and explanations for the approval, unlimited amount, value, unknown contract, and social-engineering signal.
-- **1:50–2:20 — User confirmation:** Click `I reviewed this result`, then `Record on X Layer`. Show the RiskRegistry contract address and let the user review the wallet prompt; the user must perform the signature.
-- **2:20–2:40 — Explorer proof:** Open the verified transaction in the X Layer Testnet Explorer and show the successful receipt and `RiskAssessmentRecorded` event.
-- **2:40–3:00 — Differentiation:** Summarize the provider-neutral AI adapter, deterministic fallback, explicit user confirmation, and compact on-chain evidence.
+- **0:50–1:20 — Safe transaction:** Use the Safe Transfer preset and click `Analyze risk`. Show `AI Analysis`, the `8 LOW` score, reasons, and recommendation.
+- **1:20–1:50 — Unlimited Approval:** Use the preset with the `approve(address,uint256)` calldata below. Show the decoded action, spender, `Amount: Unlimited`, critical signals, and the `72 HIGH` result.
+- **1:50–2:20 — Suspicious Airdrop:** Show the zero address, value `12`, and urgent airdrop context. The result is `100 HIGH`; explain that the deterministic safety floor prevents AI from lowering the known risk.
+- **2:20–2:40 — User confirmation:** Click `I reviewed this result`, then `Record on X Layer`. The user—not the application—reviews any wallet prompt and decides whether to sign.
+- **2:40–2:56 — Evidence and differentiation:** Open the verified X Layer Testnet Explorer evidence and summarize the provider-neutral adapter, deterministic fallback, explicit confirmation, and compact on-chain receipt.
 
 ## Judge path
 

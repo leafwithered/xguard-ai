@@ -23,7 +23,10 @@
 - Website URL: `https://xguard-ai-six.vercel.app`
 - Deployment provider: `Vercel`
 - Source repository: `https://github.com/leafwithered/xguard-ai`
-- Production AI Analysis smoke test: passed
+- Production V2 deployment: live at the canonical URL
+- Production AI Analysis smoke test: passed with the existing third-party provider
+- V2 smoke matrix: Safe `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
+- Official OpenAI migration: not switched; optional Preview-only follow-up
 
 ## Verified deployment
 

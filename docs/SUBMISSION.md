@@ -13,7 +13,7 @@
 - User Interaction Event: `RiskAssessmentRecorded`, risk score `12`
 - User Interaction Explorer: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - Demo Instructions: `docs/DEMO.md`
-- Demo Video: `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`
+- Demo Video: `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4` (V2, 1920×1080 H.264, approximately 2:56)
 - Project X Account: `https://x.com/AevrynHQ`
 - X Post mentioning @XLayerOfficial: `https://x.com/AevrynHQ/status/2090382549205873099`
 - Contact Email: `Provided in official submission`
@@ -28,14 +28,15 @@
 - [x] A real user-signed `recordAssessment` transaction is confirmed with a successful receipt and emitted event.
 - [x] Project has an independent X account and its public profile URL is verified.
 - [x] Project X post is publicly accessible and its thread includes `@XLayerOfficial`.
+- [x] V2 is merged to `main`, deployed to the canonical Production URL, and smoke-tested with Safe, Unlimited Approval, and Suspicious Airdrop presets.
 - [ ] Submission form is completed before `2026-08-21 23:59 UTC`.
 
 ## Current readiness
 
-- Local MVP, configurable AI adapter, Local Risk Engine fallback, wallet/network UI, contract tests, and browser QA are complete.
+- Local MVP, V2 presets, configurable AI adapter, deterministic Local Risk Engine floor, wallet/network UI, contract tests, and browser QA are complete.
 - `RiskRegistry` is verified on X Layer Testnet; the real address, transaction hash, and explorer link are recorded above.
 - A real user-signed `recordAssessment` interaction is confirmed on Chain ID `1952`; its receipt and `RiskAssessmentRecorded` event are publicly verifiable above.
-- Website, GitHub, production AI Analysis, Demo Video, X account/post, contact details, and public chain evidence are ready. Only the user's final review and official form submission remain.
+- Website, GitHub, Production V2 AI Analysis, updated Demo Video, X account/post, contact details, and public chain evidence are ready. Only the user's final review and official form submission remain.
 
 ## Final submission fields
 

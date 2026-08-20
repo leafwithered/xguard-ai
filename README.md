@@ -8,15 +8,25 @@ XGuard AI is transaction risk intelligence for X Layer. Deterministic safety rul
 
 **Project X:** https://x.com/AevrynHQ  ·  **Build X Post:** https://x.com/AevrynHQ/status/2090382549205873099
 
-**Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1080p H.264, approximately 2:29)
+**Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1080p H.264, approximately 2:56)
 
 ![XGuard AI V2 interface](docs/assets/xguard-v2-hero.png)
+
+## V2 Release
+
+V2 is live on the canonical Vercel Production URL. The release keeps the existing third-party OpenAI-compatible provider and the V1 RiskRegistry evidence unchanged; the official OpenAI migration remains an optional Preview-only follow-up.
+
+- Safe Transfer: `8 LOW`, Hybrid Analysis
+- Unlimited Approval: `72 HIGH`, decoded ERC20 `approve`, spender and `Amount: Unlimited` visible
+- Suspicious Airdrop: `100 HIGH`, deterministic safety floor preserved through AI enrichment
+- Clear Analysis, wallet connection, X Layer Testnet switching, and explicit user confirmation are included
+- Contract V2 is documented as a proposal only; no new contract or chain transaction was introduced
 
 ## Project Overview
 
 The MVP supports wallet connection, X Layer Testnet detection and switching, transaction input validation, configurable third-party AI analysis, deterministic local fallback analysis, user confirmation, and an optional on-chain risk record.
 
-### Verified MVP
+### Verified V2 Product
 
 - Hybrid Analysis returns structured risk analysis through an OpenAI-compatible Responses API without allowing AI to weaken deterministic signals.
 - Local Analysis keeps the product usable when the configured AI provider is unavailable or returns invalid output.

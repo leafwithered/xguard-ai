@@ -45,14 +45,16 @@ def title_slide(title, subtitle):
 
 
 segments = [
-    ("title", 10, "XGuard AI", "AI-powered transaction risk intelligence for X Layer"),
-    ("production-home.png", 14, "Production · xguard-ai-six.vercel.app", "Review transaction intent before you sign."),
-    ("ai-analysis.png", 18, "Safe Transaction · Real AI Analysis", "LOW risk · score, reasons, and recommendation returned by the configured provider."),
-    ("high-risk.png", 26, "High Risk · Real AI Analysis", "Zero address · unlimited approval · suspicious context · unknown contract."),
-    ("high-risk.png", 15, "User Confirmation", "XGuard AI never signs automatically. The user reviews before Record on X Layer."),
-    ("explorer-tx.png", 22, "Verified X Layer Testnet Interaction", "Receipt success · recordAssessment · RiskAssessmentRecorded · risk score 12."),
+    ("title", 8, "XGuard AI", "AI-powered transaction risk intelligence for X Layer"),
+    ("production-home.png", 12, "Production · xguard-ai-six.vercel.app", "Review transaction intent before you sign."),
+    ("ai-analysis.png", 18, "Safe Transfer · Hybrid AI Analysis", "LOW risk · score, reasons, and recommendation from the configured provider."),
+    ("high-risk.png", 18, "Unlimited Approval · Decoded ERC20 Action", "approve(address,uint256) · spender decoded · Amount: Unlimited."),
+    ("high-risk.png", 18, "Deterministic Safety Floor", "Critical signals stay visible; AI explanation cannot lower the local risk floor."),
+    ("high-risk.png", 18, "Suspicious Airdrop · HIGH 100", "Zero address · unlimited approval · unknown contract · social-engineering context."),
+    ("high-risk.png", 18, "User Confirmation", "XGuard AI never signs automatically. The user reviews before Record on X Layer."),
+    ("explorer-tx.png", 20, "Verified X Layer Testnet Interaction", "Receipt success · recordAssessment · RiskAssessmentRecorded · risk score 12."),
     ("title", 18, "Architecture", "Deterministic Local Risk Engine + configurable AI explanation + on-chain evidence."),
-    ("title", 8, "XGuard AI", "Live Demo: xguard-ai-six.vercel.app · GitHub: github.com/leafwithered/xguard-ai"),
+    ("title", 10, "XGuard AI", "Live Demo: xguard-ai-six.vercel.app · GitHub: github.com/leafwithered/xguard-ai"),
 ]
 
 

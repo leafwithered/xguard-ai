@@ -2,15 +2,14 @@
 
 These steps require your own account, wallet, signature, secret, CAPTCHA, or external authorization. Do not send private keys, seed phrases, or API keys in chat.
 
-1. **Provide contact email** — Add the real contact email to `docs/SUBMISSION.md` and the official form. The public Telegram handle `@hierarchleaf` is recorded.
-2. **Optional YouTube upload** — The demo MP4 is already publicly available in GitHub at `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`; YouTube upload remains optional.
-3. **Submit the official form** — Enter the completed fields and click the final Submit button before the stated deadline.
+1. **Review and submit the official form** — Check the prefilled values, then personally click the final Submit button before the stated deadline.
+2. **Optional YouTube upload** — The demo MP4 is already publicly available in GitHub at `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`; YouTube upload remains optional and is not a submission blocker.
 
-## Completed by user, URL capture blocked
+## Completed by user
 
-- The independent project X account has been created.
-- The required X post/thread has been published and includes `@XLayerOfficial`.
-- Public profile and post URLs could not be captured because the currently logged-in X account is frozen/read-only (`BLOCKED_BY_USER: X_URL_CAPTURE`). No duplicate post was created.
+- The independent project X account is publicly accessible at `https://x.com/AevrynHQ`.
+- The required X post/thread is publicly accessible at `https://x.com/AevrynHQ/status/2090382549205873099` and includes `@XLayerOfficial`.
+- Contact email has been provided for the official form and is intentionally not published in GitHub.
 
 ## Upload note
 
@@ -23,4 +22,4 @@ These steps require your own account, wallet, signature, secret, CAPTCHA, or ext
 - AI adapter tests cover missing configuration, provider errors, unsupported Responses, Chat Completions success, and malformed output using only a local fake server.
 - Contract compile/tests and deployment verification are complete; the verified testnet artifact is recorded in the public docs.
 
-GitHub, Vercel, AI production configuration, deployment evidence, the verified user transaction, X account/post creation, and the public GitHub-hosted demo asset are complete; contact email, X URL capture, and final form submission remain.
+GitHub, Vercel, AI production configuration, deployment evidence, the verified user transaction, X account/post verification, contact details, and the public GitHub-hosted demo asset are complete. Only final form review/submission and the optional YouTube mirror remain.

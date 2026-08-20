@@ -14,9 +14,9 @@
 - User Interaction Explorer: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - Demo Instructions: `docs/DEMO.md`
 - Demo Video: `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`
-- Project X Account: `TODO_USER` (created by user; URL capture blocked)
-- X Post mentioning @XLayerOfficial: `TODO_USER` (published by user; URL capture blocked)
-- Contact Email: `TODO_USER`
+- Project X Account: `https://x.com/AevrynHQ`
+- X Post mentioning @XLayerOfficial: `https://x.com/AevrynHQ/status/2090382549205873099`
+- Contact Email: `Provided in official submission`
 - Telegram: `@hierarchleaf`
 
 ## Final Checks
@@ -26,8 +26,8 @@
 - [x] `RiskRegistry` is deployed to X Layer Testnet.
 - [x] Contract address and deployment transaction are verified in the explorer.
 - [x] A real user-signed `recordAssessment` transaction is confirmed with a successful receipt and emitted event.
-- [x] Project has an independent X account (created by user; public URL capture pending).
-- [x] Project X post mentions `@XLayerOfficial` (published by user; public URL capture pending).
+- [x] Project has an independent X account and its public profile URL is verified.
+- [x] Project X post is publicly accessible and its thread includes `@XLayerOfficial`.
 - [ ] Submission form is completed before `2026-08-21 23:59 UTC`.
 
 ## Current readiness
@@ -35,7 +35,7 @@
 - Local MVP, configurable AI adapter, Local Risk Engine fallback, wallet/network UI, contract tests, and browser QA are complete.
 - `RiskRegistry` is verified on X Layer Testnet; the real address, transaction hash, and explorer link are recorded above.
 - A real user-signed `recordAssessment` interaction is confirmed on Chain ID `1952`; its receipt and `RiskAssessmentRecorded` event are publicly verifiable above.
-- Website and GitHub are published; production AI Analysis is verified. Demo Video, X account/post, contact details, and final form submission still require the user.
+- Website, GitHub, production AI Analysis, Demo Video, X account/post, contact details, and public chain evidence are ready. Only the user's final review and official form submission remain.
 
 ## Final submission fields
 
@@ -53,7 +53,7 @@
 - User Transaction Explorer URL: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - Demo Instructions: `docs/DEMO.md`
 - Demo Video URL: `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`
-- Project X Account: `TODO_USER` (created; URL capture blocked)
-- X Post URL: `TODO_USER` (published; URL capture blocked)
-- Contact Email: `TODO_USER`
+- Project X Account: `https://x.com/AevrynHQ`
+- X Post URL: `https://x.com/AevrynHQ/status/2090382549205873099`
+- Contact Email: `Provided in official submission`
 - Telegram: `@hierarchleaf`

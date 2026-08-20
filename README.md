@@ -2,7 +2,9 @@
 
 XGuard AI is AI-powered transaction risk intelligence for X Layer. It reviews an EVM transaction before signing, explains detected risks, and lets the user record a compact assessment receipt on X Layer Testnet.
 
-**Live Demo:** https://xguard-ai-six.vercel.app  ·  **GitHub:** https://github.com/leafwithered/xguard-ai
+**Live Demo:** https://xguard-ai-six.vercel.app  ·  **GitHub:** https://github.com/leafwithered/xguard-ai  ·  **Demo Video:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4
+
+**Project X:** https://x.com/AevrynHQ  ·  **Build X Post:** https://x.com/AevrynHQ/status/2090382549205873099
 
 **Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1080p H.264, approximately 2:29)
 
@@ -174,4 +176,4 @@ XGuard AI is an advisory prototype, not an audit, wallet firewall, or guarantee 
 
 ## Submission
 
-See [docs/SUBMISSION.md](docs/SUBMISSION.md) for the hackathon evidence checklist. Unknown external values remain marked `TODO_USER`; no deployment evidence is fabricated.
+See [docs/SUBMISSION.md](docs/SUBMISSION.md) for the complete public evidence checklist and final submission fields. Contact email is intentionally omitted from the public repository and provided only in the official form.

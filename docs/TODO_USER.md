@@ -1,25 +1,9 @@
-# User Actions Required
+# User Actions Required — V2
 
-These steps require your own account, wallet, signature, secret, CAPTCHA, or external authorization. Do not send private keys, seed phrases, or API keys in chat.
+The Hackathon V1 submission, public links, contract, verified transaction, and third-party Production AI provider remain unchanged.
 
-1. **Review and submit the official form** — Check the prefilled values, then personally click the final Submit button before the stated deadline.
-2. **Optional YouTube upload** — The demo MP4 is already publicly available in GitHub at `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`; YouTube upload remains optional and is not a submission blocker.
+1. **Official OpenAI Preview secret** — After the V2 Preview exists, add a user-owned official OpenAI API key only to the Vercel Preview environment. Never send it in chat. Set `AI_API_KEY`, `AI_BASE_URL=https://api.openai.com`, and the documented Responses-compatible `AI_MODEL` selected during migration verification.
+2. **Production promotion approval** — Promote or merge V2 only after Preview QA and official API smoke tests pass. Production must continue using the current verified third-party provider until then.
+3. **Optional YouTube mirror** — The public GitHub MP4 remains the canonical fallback; a YouTube Unlisted mirror is optional.
 
-## Completed by user
-
-- The independent project X account is publicly accessible at `https://x.com/AevrynHQ`.
-- The required X post/thread is publicly accessible at `https://x.com/AevrynHQ/status/2090382549205873099` and includes `@XLayerOfficial`.
-- Contact email has been provided for the official form and is intentionally not published in GitHub.
-
-## Upload note
-
-- YouTube upload was not completed because browser file upload is blocked, but the final MP4 is publicly hosted in the GitHub repository and can be used as the Demo Video URL.
-
-## Autonomous work completed
-
-- Final localhost API and UI QA completed without wallet connection or external credentials.
-- Risk Engine tests cover ordinary transfers, approvals, unlimited approvals, social-engineering context, malformed bodies, odd calldata, negative values, and non-finite values.
-- AI adapter tests cover missing configuration, provider errors, unsupported Responses, Chat Completions success, and malformed output using only a local fake server.
-- Contract compile/tests and deployment verification are complete; the verified testnet artifact is recorded in the public docs.
-
-GitHub, Vercel, AI production configuration, deployment evidence, the verified user transaction, X account/post verification, contact details, and the public GitHub-hosted demo asset are complete. Only final form review/submission and the optional YouTube mirror remain.
+No wallet signature, contract deployment, mainnet action, or new on-chain transaction is required for V2 code QA.

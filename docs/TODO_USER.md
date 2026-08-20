@@ -3,7 +3,7 @@
 These steps require your own account, wallet, signature, secret, CAPTCHA, or external authorization. Do not send private keys, seed phrases, or API keys in chat.
 
 1. **Provide contact email** — Add the real contact email to `docs/SUBMISSION.md` and the official form. The public Telegram handle `@hierarchleaf` is recorded.
-2. **Upload the demo video** — The MP4 is generated at `demo/xguard-ai-build-x-demo.mp4`; upload it to YouTube or another public host and add the public URL.
+2. **Optional YouTube upload** — The demo MP4 is already publicly available in GitHub at `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`; YouTube upload remains optional.
 3. **Submit the official form** — Enter the completed fields and click the final Submit button before the stated deadline.
 
 ## Completed by user, URL capture blocked
@@ -12,9 +12,9 @@ These steps require your own account, wallet, signature, secret, CAPTCHA, or ext
 - The required X post/thread has been published and includes `@XLayerOfficial`.
 - Public profile and post URLs could not be captured because the currently logged-in X account is frozen/read-only (`BLOCKED_BY_USER: X_URL_CAPTURE`). No duplicate post was created.
 
-## Upload blocker
+## Upload note
 
-- `BLOCKED_BY_USER: DEMO_UPLOAD_AUTH` — YouTube Creator Studio is available, but browser file upload is blocked in this environment. The final MP4 remains in `demo/`.
+- YouTube upload was not completed because browser file upload is blocked, but the final MP4 is publicly hosted in the GitHub repository and can be used as the Demo Video URL.
 
 ## Autonomous work completed
 
@@ -23,4 +23,4 @@ These steps require your own account, wallet, signature, secret, CAPTCHA, or ext
 - AI adapter tests cover missing configuration, provider errors, unsupported Responses, Chat Completions success, and malformed output using only a local fake server.
 - Contract compile/tests and deployment verification are complete; the verified testnet artifact is recorded in the public docs.
 
-GitHub, Vercel, AI production configuration, deployment evidence, the verified user transaction, X account/post creation, and the local demo asset are complete; contact details, public media URL, URL capture, and final form submission remain.
+GitHub, Vercel, AI production configuration, deployment evidence, the verified user transaction, X account/post creation, and the public GitHub-hosted demo asset are complete; contact email, X URL capture, and final form submission remain.

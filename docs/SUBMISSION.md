@@ -13,7 +13,7 @@
 - User Interaction Event: `RiskAssessmentRecorded`, risk score `12`
 - User Interaction Explorer: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - Demo Instructions: `docs/DEMO.md`
-- Demo Video: `TODO_USER` (asset generated at `demo/xguard-ai-build-x-demo.mp4`; public upload pending)
+- Demo Video: `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`
 - Project X Account: `TODO_USER` (created by user; URL capture blocked)
 - X Post mentioning @XLayerOfficial: `TODO_USER` (published by user; URL capture blocked)
 - Contact Email: `TODO_USER`
@@ -52,7 +52,7 @@
 - Verified User Transaction: `0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - User Transaction Explorer URL: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - Demo Instructions: `docs/DEMO.md`
-- Demo Video URL: `TODO_USER` (generated local asset: `demo/xguard-ai-build-x-demo.mp4`)
+- Demo Video URL: `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`
 - Project X Account: `TODO_USER` (created; URL capture blocked)
 - X Post URL: `TODO_USER` (published; URL capture blocked)
 - Contact Email: `TODO_USER`

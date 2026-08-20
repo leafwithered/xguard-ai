@@ -13,9 +13,9 @@
 - User Interaction Event: `RiskAssessmentRecorded`, risk score `12`
 - User Interaction Explorer: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - Demo Instructions: `docs/DEMO.md`
-- Demo Video: `TODO_USER`
-- Project X Account: `TODO_USER`
-- X Post mentioning @XLayerOfficial: `TODO_USER`
+- Demo Video: `TODO_USER` (asset generated at `demo/xguard-ai-build-x-demo.mp4`; public upload pending)
+- Project X Account: `TODO_USER` (created by user; URL capture blocked)
+- X Post mentioning @XLayerOfficial: `TODO_USER` (published by user; URL capture blocked)
 - Contact Email: `TODO_USER`
 - Telegram: `TODO_USER`
 
@@ -26,8 +26,8 @@
 - [x] `RiskRegistry` is deployed to X Layer Testnet.
 - [x] Contract address and deployment transaction are verified in the explorer.
 - [x] A real user-signed `recordAssessment` transaction is confirmed with a successful receipt and emitted event.
-- [ ] Project has an independent X account.
-- [ ] Project X post mentions `@XLayerOfficial`.
+- [x] Project has an independent X account (created by user; public URL capture pending).
+- [x] Project X post mentions `@XLayerOfficial` (published by user; public URL capture pending).
 - [ ] Submission form is completed before `2026-08-21 23:59 UTC`.
 
 ## Current readiness
@@ -52,8 +52,8 @@
 - Verified User Transaction: `0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - User Transaction Explorer URL: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
 - Demo Instructions: `docs/DEMO.md`
-- Demo Video URL: `TODO_USER`
-- Project X Account: `TODO_USER`
-- X Post URL: `TODO_USER`
+- Demo Video URL: `TODO_USER` (generated local asset: `demo/xguard-ai-build-x-demo.mp4`)
+- Project X Account: `TODO_USER` (created; URL capture blocked)
+- X Post URL: `TODO_USER` (published; URL capture blocked)
 - Contact Email: `TODO_USER`
 - Telegram: `TODO_USER`

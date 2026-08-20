@@ -2,6 +2,8 @@
 
 **Production URL:** https://xguard-ai-six.vercel.app
 
+**Generated video asset:** `demo/xguard-ai-build-x-demo.mp4` — 1920×1080 H.264, approximately 2:29, no audio track. It uses real Production AI Analysis, High Risk, and public Explorer screenshots; no wallet signature is performed.
+
 ## Timed 3-minute script
 
 - **0:00–0:20 — Introduction:** Open the production URL. Explain that XGuard AI reviews transaction intent before a user signs and produces a score, reasons, and recommendation.

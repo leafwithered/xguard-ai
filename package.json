@@ -10,6 +10,8 @@
     "contract:test": "hardhat test",
     "risk:test": "hardhat test test/risk.ts",
     "ai:test": "hardhat test test/ai-provider.ts",
+    "decoder:test": "hardhat test test/calldata.ts",
+    "fusion:test": "hardhat test test/risk-fusion.ts test/transaction-state.ts test/api-rate-limit.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

@@ -12,8 +12,9 @@ const baseInput: RiskInput = {
 describe("Risk Engine", function () {
   it("rejects malformed request bodies and non-finite values", function () {
     expect(validateRiskInput(null as unknown as RiskInput)).to.deep.equal(["Request body must be an object"]);
-    expect(validateRiskInput({ ...baseInput, value: "Infinity" })).to.deep.equal(["Value must be a finite non-negative number"]);
-    expect(validateRiskInput({ ...baseInput, data: "0x0" })).to.deep.equal(["Transaction data must be valid even-length hex beginning with 0x"]);
+    expect(validateRiskInput({ ...baseInput, value: "Infinity" })).to.deep.equal(["Value must be a finite non-negative decimal with up to 18 decimals"]);
+    expect(validateRiskInput({ ...baseInput, value: "1e2" })).to.deep.equal(["Value must be a finite non-negative decimal with up to 18 decimals"]);
+    expect(validateRiskInput({ ...baseInput, data: "0x0" })).to.deep.equal(["Transaction data must be valid even-length hex beginning with 0x and under 10,000 characters"]);
   });
 
   it("detects zero-address and unlimited approval signals", function () {
@@ -34,5 +35,15 @@ describe("Risk Engine", function () {
     expect(result.level).to.equal("LOW");
     expect(result.score).to.equal(8);
     expect(result.mode).to.equal("LOCAL");
+    expect(result.finalScore).to.equal(8);
+    expect(result.decodedAction.status).to.equal("empty");
+  });
+
+  it("uses exact decimal parsing and enforces input limits", function () {
+    expect(validateRiskInput({ ...baseInput, value: "0.000000000000000001" })).to.deep.equal([]);
+    expect(validateRiskInput({ ...baseInput, value: "0.0000000000000000001" })[0]).to.include("up to 18 decimals");
+    expect(validateRiskInput({ ...baseInput, value: "1000001" })[0]).to.include("supported maximum");
+    expect(validateRiskInput({ ...baseInput, context: "x".repeat(2001) })[0]).to.include("under 2,000 characters");
+    expect(validateRiskInput({ ...baseInput, data: `0x${"00".repeat(5000)}` })[0]).to.include("under 10,000 characters");
   });
 });

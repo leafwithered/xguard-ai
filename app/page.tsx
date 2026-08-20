@@ -20,6 +20,18 @@ type WalletOption = { info: { uuid: string; name: string; icon: string }; provid
 type AnalysisResult = RiskResult & { contractIntelligence?: ContractIntelligence };
 
 const shortAddress = (value: string) => value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "";
+const signalSources = new Set(["RULE", "DECODER", "ON-CHAIN", "AI"]);
+
+function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<AnalysisResult>;
+  const validSignals = (signals: unknown) => Array.isArray(signals) && signals.every((item) => item && typeof item === "object" && signalSources.has(String((item as { source?: unknown }).source)));
+  return typeof candidate.finalScore === "number"
+    && typeof candidate.deterministicScore === "number"
+    && validSignals(candidate.criticalSignals)
+    && validSignals(candidate.advisorySignals)
+    && Boolean(candidate.contractIntelligence);
+}
 
 export default function Home() {
   const [walletProvider, setWalletProvider] = useState<WalletProvider | null>(null);
@@ -53,6 +65,7 @@ export default function Home() {
     if (!saved) return;
     try {
       const parsed = JSON.parse(saved) as { input: RiskInput; result: AnalysisResult };
+      if (!isCurrentAnalysisResult(parsed.result)) throw new Error("Stored result uses an older schema");
       setLastInput(parsed.input);
       setResult(parsed.result);
     } catch {
@@ -234,11 +247,11 @@ export default function Home() {
       <div className={`network-pill ${isCorrectNetwork ? "live" : ""}`}>{isCorrectNetwork && <span className="live-dot" />}{networkName} · Chain 1952</div>
     </header>
     <section className="hero">
-      <div><div className="eyebrow">Explainable pre-sign intelligence</div><h1>The pre-sign security layer for X Layer.</h1><p className="lead">Decode transactions, inspect on-chain context, apply deterministic safety rules, and use AI without allowing AI to override known security signals.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
+      <div><div className="eyebrow">Explainable pre-sign intelligence</div><h1>The pre-sign security layer for X Layer.</h1><p className="lead">Decode transactions, inspect on-chain context, apply deterministic safety rules, and use AI without allowing AI to override known security signals.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeModeOpen} aria-controls="judge-demo" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
       <div className="hero-card"><h2>Built for X Layer</h2><div className="signal"><span>Network</span><strong>{networkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
     <section className="capability-strip"><span>Transaction Decoder</span><span>On-chain Intelligence</span><span>Deterministic Safety Floor</span><span>AI Risk Analysis</span></section>
-    {judgeModeOpen && <section className="judge-mode">
+    {judgeModeOpen && <section className="judge-mode" id="judge-demo">
       <div className="panel-heading"><div><span className="eyebrow">60-Second Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => setJudgeModeOpen(false)}>Close</button></div>
       <div className="judge-steps">
         <article><b>01</b><span>Safe Transfer</span><strong>Expected: LOW</strong><p>Baseline deterministic analysis plus optional AI enrichment.</p><button className="secondary" onClick={() => loadJudgePreset(0)}>Load</button></article>
@@ -260,7 +273,7 @@ export default function Home() {
         <div className="actions"><button className="primary" onClick={analyze} disabled={analyzing || recordPending}>{analyzing ? "Analyzing…" : "Analyze risk"}</button><button className="secondary" onClick={connectWallet}>{address ? shortAddress(address) : "Connect wallet"}</button>{!isCorrectNetwork && <button className="secondary" onClick={switchToXLayer}>Switch to X Layer</button>}</div>
         <div className="footer-note">AI is advisory. XGuard AI never signs or broadcasts automatically.</div>
       </div>
-      <div className="panel result-panel">
+      <div className="panel result-panel" aria-busy={analyzing}>
         <h2>2. Review risk</h2>
         {result ? <>
           <div className="score-wrap"><div className={`score score-${result.level.toLowerCase()}`}>{result.finalScore}</div><div className="score-copy"><span>Final Risk Score</span><strong>{result.level} RISK</strong><small>Local floor {result.deterministicScore}{typeof result.aiScore === "number" ? ` · AI ${result.aiScore}` : ""}</small></div></div>
@@ -292,13 +305,13 @@ export default function Home() {
           <p className="recommendation"><strong>Recommendation:</strong> {result.recommendation}</p>
           <section className={`record-card phase-${recordState.phase}`}><div><span>On-chain assessment receipt</span><strong>{recordLabel}</strong></div><div className="actions"><button className="secondary" onClick={() => setReviewed((current) => !current)} disabled={recordPending}>{reviewed ? "Reviewed ✓" : "I reviewed this result"}</button><button className="primary" onClick={recordOnchain} disabled={!registryAddress || !analysisHash || !address || !isCorrectNetwork || !reviewed || recordPending || recordState.phase === "confirmed"}>{recordState.phase === "awaiting-signature" ? "Check wallet…" : recordState.phase === "confirming" ? "Confirming…" : recordState.phase === "confirmed" ? "Confirmed" : "Record on X Layer"}</button></div>{recordState.hash && <div className="receipt">Transaction: <a href={`${explorerBase}/tx/${recordState.hash}`} target="_blank" rel="noreferrer">{recordState.hash}</a></div>}{recordState.error && <div className="status-message">{recordState.error}</div>}</section>
         </> : <div className="empty">Choose a preset or enter a transaction.<br />Nothing is analyzed, signed, or broadcast automatically.</div>}
-        {message && <div className="status-message">{message}</div>}
+        {message && <div className="status-message" role="status">{message}</div>}
       </div>
     </section>
     <section className="tx-analyzer panel">
       <div className="panel-heading"><div><span className="eyebrow">X Layer Transaction Analyzer</span><h2>Post-hoc Transaction Analysis</h2><p>Load a confirmed or reverted X Layer transaction from real RPC data. This is not pre-sign simulation.</p></div><button className="secondary" onClick={() => loadXLayerTransaction(verifiedTxHash)} disabled={transactionLoading}>Load Verified X Layer Receipt</button></div>
       <div className="tx-search"><input aria-label="X Layer transaction hash" placeholder="0x… transaction hash" value={transactionHash} onChange={(event) => setTransactionHash(event.target.value)} /><button className="primary" onClick={() => loadXLayerTransaction()} disabled={transactionLoading}>{transactionLoading ? "Loading…" : "Inspect Transaction"}</button></div>
-      {transactionError && <div className="status-message">{transactionError}</div>}
+      {transactionError && <div className="status-message" role="status">{transactionError}</div>}
       {transactionResult && <div className="tx-result">
         <div className="decoded-grid"><span>Status</span><strong>{transactionResult.status}</strong><span>Block</span><strong>{transactionResult.blockNumber ?? "Pending"}</strong><span>From</span><strong>{transactionResult.from}</strong><span>To</span><strong>{transactionResult.to ?? "Contract creation"}</strong><span>Value</span><strong>{transactionResult.value} OKB</strong><span>Gas</span><strong>{BigInt(transactionResult.gasLimit).toLocaleString()}{transactionResult.gasUsed ? ` limit · ${BigInt(transactionResult.gasUsed).toLocaleString()} used` : " limit"}</strong><span>Method</span><strong>{transactionResult.decodedAction.method}</strong><span>Calldata</span><strong>{transactionResult.input}</strong></div>
         <div className="actions"><a className="secondary link-button" href={`${explorerBase}/tx/${transactionResult.hash}`} target="_blank" rel="noreferrer">Open Official Explorer</a><button className="primary" onClick={loadTransactionIntoAnalyzer} disabled={!transactionResult.analysisInput}>Load into Analyzer</button></div>

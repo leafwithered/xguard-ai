@@ -153,6 +153,8 @@ textarea { min-height: 110px; resize: vertical; }
   h1 { font-size: 48px; }
   .lead { font-size: 16px; }
   .panel, .hero-card, .why-xlayer { border-radius: 16px; padding: 18px; }
+  .panel-heading { flex-direction: column; }
+  .panel-heading > button { width: 100%; }
   .presets, .row, .why-xlayer, .tx-search, .judge-steps { grid-template-columns: 1fr; }
   .capability-strip { grid-template-columns: repeat(2, 1fr); }
   .fusion-grid { grid-template-columns: 1fr; }

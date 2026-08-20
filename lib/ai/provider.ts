@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { RiskInput, RiskResult } from "../risk";
+import type { AdvisoryRiskResult, RiskInput, RiskResult } from "../risk";
 
 const riskSchema = {
   type: "object",
@@ -23,7 +23,7 @@ function getProviderConfig() {
   return { apiKey, baseURL, model };
 }
 
-function parseRiskResult(value: unknown, providerProtocol: "responses" | "chat"): RiskResult | null {
+function parseRiskResult(value: unknown, providerProtocol: "responses" | "chat"): AdvisoryRiskResult | null {
   if (!value || typeof value !== "object") return null;
   const result = value as Partial<RiskResult>;
   const score = Number(result.score);
@@ -68,7 +68,7 @@ export async function analyzeTransaction(input: RiskInput, deterministicSignals:
         ],
         text: { format: { type: "json_schema", name: "risk_assessment", strict: true, schema: riskSchema } }
       }),
-      signal: AbortSignal.timeout(90000)
+      signal: AbortSignal.timeout(25000)
     });
     if (!response.ok) throw new Error(`Responses provider returned HTTP ${response.status}`);
     const responseBody = await response.json() as { output_text?: unknown; output?: unknown };

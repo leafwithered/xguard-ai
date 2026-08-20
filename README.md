@@ -1,6 +1,8 @@
 # XGuard AI
 
-XGuard AI is AI-powered transaction risk intelligence for X Layer. It reviews an EVM transaction before signing, explains detected risks, and lets the user record a compact assessment receipt on X Layer Testnet.
+> **Know the risk before you sign.**
+
+XGuard AI is transaction risk intelligence for X Layer. Deterministic safety rules establish a risk floor, AI adds context and explanation, and users can record a compact assessment receipt only after explicit review.
 
 **Live Demo:** https://xguard-ai-six.vercel.app  ·  **GitHub:** https://github.com/leafwithered/xguard-ai  ·  **Demo Video:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4
 
@@ -8,16 +10,21 @@ XGuard AI is AI-powered transaction risk intelligence for X Layer. It reviews an
 
 **Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1080p H.264, approximately 2:29)
 
+![XGuard AI V2 interface](docs/assets/xguard-v2-hero.png)
+
 ## Project Overview
 
 The MVP supports wallet connection, X Layer Testnet detection and switching, transaction input validation, configurable third-party AI analysis, deterministic local fallback analysis, user confirmation, and an optional on-chain risk record.
 
 ### Verified MVP
 
-- Real AI Mode returns structured risk analysis through an OpenAI-compatible Responses API.
+- Hybrid Analysis returns structured risk analysis through an OpenAI-compatible Responses API without allowing AI to weaken deterministic signals.
 - Local Analysis keeps the product usable when the configured AI provider is unavailable or returns invalid output.
 - Every report includes a `0–100` Risk Score, plain-language reasons, and a recommendation.
+- Calldata decoding exposes approval spenders, transfer recipients, token amounts, unlimited approvals, and NFT operator permissions.
+- Demo presets make Safe Transfer, Unlimited Approval, and Suspicious Airdrop paths reproducible without auto-analyzing or signing.
 - Recording is optional and only starts after explicit user review and wallet confirmation.
+- The UI waits for a successful X Layer receipt before displaying `Confirmed`.
 - `RiskRegistry` is deployed on X Layer Testnet, and a real user-signed interaction is publicly verified below.
 - The production deployment has been verified with a real AI Analysis response.
 
@@ -37,7 +44,7 @@ The hybrid design combines a deterministic Risk Engine with an optional third-pa
 2. Detect or switch to X Layer Testnet (`1952`).
 3. Enter `from`, `to`, value, calldata, and context.
 4. Validate the input and run the Local Risk Engine.
-5. Add provider-backed AI explanation when configured, or keep Local Analysis.
+5. Merge provider-backed AI explanation with the deterministic safety floor; AI can raise but never lower final risk.
 6. Review the score, reasons, and recommendation before signing.
 7. Confirm explicitly and record the assessment hash and score through `RiskRegistry`.
 
@@ -47,10 +54,12 @@ The hybrid design combines a deterministic Risk Engine with an optional third-pa
 flowchart LR
     U[User] --> UI[Next.js Client]
     UI --> API[POST /api/analyze]
-    API --> L[Local Risk Engine]
+    API --> L[Deterministic Safety Floor]
     API --> P[Configurable AI Provider]
-    P -. timeout or invalid output .-> L
-    API --> UI
+    L --> F[Safety Fusion]
+    P --> F
+    P -. timeout or invalid output .-> F
+    F --> UI
     UI --> W[EVM Wallet]
     W --> R[RiskRegistry]
     R --> X[X Layer Testnet]
@@ -60,11 +69,11 @@ flowchart LR
 
 `lib/ai/provider.ts` isolates provider-specific behavior. Configure any OpenAI-compatible third-party provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use.
 
-The deterministic Local Risk Engine checks zero addresses, native value thresholds, ERC20/NFT approval selectors, unlimited ERC20 approvals, transfer methods, unknown selectors, empty calldata, unknown-contract context, and common social-engineering signals.
+The deterministic Local Risk Engine checks zero addresses, exact bigint native value thresholds, decoded ERC20/NFT approvals, unlimited permissions, transfer methods, malformed and unknown calldata, unknown-contract context, and common social-engineering signals.
 
 The browser never receives `AI_API_KEY`. Missing configuration, timeouts, unsupported endpoints, and malformed output automatically use Local Analysis.
 
-The adapter is intentionally provider-neutral: `AI_BASE_URL` may point at a third-party OpenAI-compatible base URL, with or without `/v1`. It tries `/v1/responses` first and uses `/v1/chat/completions` when Responses is unsupported.
+The adapter is intentionally provider-neutral: `AI_BASE_URL` may point at a third-party OpenAI-compatible base URL, with or without `/v1`. It tries `/v1/responses` first and uses `/v1/chat/completions` when Responses is unsupported. `mergeRiskResults` guarantees `finalScore >= deterministicScore` and preserves deterministic critical signals.
 
 ## X Layer Integration
 
@@ -145,6 +154,8 @@ npm run contract:compile
 npm run contract:test
 npm run risk:test
 npm run ai:test
+npm run decoder:test
+npm run fusion:test
 ```
 
 The browser smoke path is documented in [docs/DEMO.md](docs/DEMO.md). The API returns `400` for invalid transaction input and keeps Local Analysis available when the configured provider fails.
@@ -173,6 +184,8 @@ XGuard AI is an advisory prototype, not an audit, wallet firewall, or guarantee 
 - Decode calldata and human-readable approval amounts.
 - Add address reputation and phishing intelligence.
 - Deploy and verify `RiskRegistry` on X Layer mainnet after the required testnet phase.
+
+The append-only registry design is documented in [docs/CONTRACT_V2.md](docs/CONTRACT_V2.md). It is a proposal only; the deployed V1 contract and verified evidence remain unchanged.
 
 ## Submission
 

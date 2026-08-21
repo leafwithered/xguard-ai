@@ -22,6 +22,7 @@
     "token-standard:test": "hardhat test test/token-standard.ts",
     "security-benchmark:test": "hardhat test test/security-benchmark.ts test/analyze-pipeline.ts test/semantic-hardening.ts",
     "simulation:test": "hardhat test test/network.ts test/okx-simulation.ts test/simulation-pipeline.ts",
+    "presentation:test": "hardhat test test/presentation.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

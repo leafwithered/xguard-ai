@@ -11,9 +11,10 @@ import type { AnalysisConfidence, AnalysisVerdict, ExecutionStatus } from "../li
 import { getAnalysisNetworkConfig, type AnalysisNetwork } from "../lib/network";
 import type { SimulationEvidence } from "../lib/okx/simulation";
 import type { XLayerTransaction } from "../lib/chain/transaction-analyzer";
-import { judgePresets as presets } from "../lib/presets";
+import { judgePresets as presets, publicMainnetSimulationFixture } from "../lib/presets";
 import { currentAnalysisResult, invalidateStaleAnalysis } from "../lib/analysis-state";
 import { initialRecordState, isRecordPending, reduceRecordState } from "../lib/transaction-state";
+import { buildRiskScorePresentation, isLiveOkxProviderEvidence } from "../lib/presentation";
 import type { WalletProvider } from "../types/ethereum";
 
 const registryAddress = process.env.NEXT_PUBLIC_RISK_REGISTRY_ADDRESS as Address | undefined;
@@ -313,6 +314,8 @@ export default function Home() {
   const decoded = activeResult?.decodedAction;
   const intelligence = activeResult?.contractIntelligence;
   const simulation = activeResult?.simulationEvidence;
+  const scorePresentation = activeResult ? buildRiskScorePresentation(activeResult) : null;
+  const liveOkxEvidence = isLiveOkxProviderEvidence(simulation);
 
   return <main className="shell">
     <header className="topbar">
@@ -321,17 +324,18 @@ export default function Home() {
       <div className="network-pill live"><span className="live-dot" />Analysis: {networkName} · Chain {analysisNetworkConfig.chainId}</div>
     </header>
     <section className="hero">
-      <div><div className="eyebrow">Explainable pre-sign intelligence</div><h1>The pre-sign security layer for X Layer.</h1><p className="lead">Decode transactions, inspect on-chain context, apply deterministic safety rules, and use AI without allowing AI to override known security signals.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeModeOpen} aria-controls="judge-demo" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
+      <div><div className="eyebrow">Evidence-grounded pre-sign intelligence</div><h1>Know what a transaction does before you sign.</h1><p className="lead">XGuard combines deterministic decoding, X Layer RPC facts, optional OKX Mainnet simulation, Intent vs Reality, and evidence-grounded AI—without treating any provider as a safety oracle.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeModeOpen} aria-controls="judge-demo" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
       <div className="hero-card"><h2>What happens if I sign this?</h2><div className="signal"><span>Analysis Network</span><strong>{networkName}</strong></div><div className="signal"><span>Wallet</span><strong>{walletNetworkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
-    <section className="capability-strip"><span>Transaction Decoder</span><span>Chain-aware RPC</span><span>OKX Simulation Evidence</span><span>Deterministic + AI Fusion</span></section>
+    <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Evidence-grounded AI</span></section>
     {judgeModeOpen && <section className="judge-mode" id="judge-demo">
       <div className="panel-heading"><div><span className="eyebrow">60-Second Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => setJudgeModeOpen(false)}>Close</button></div>
       <div className="judge-steps">
         <article><b>01</b><span>Safe Transfer</span><strong>Expected: LOW</strong><p>Baseline deterministic analysis plus optional AI enrichment.</p><button className="secondary" onClick={() => loadJudgePreset(0)}>Load</button></article>
         <article><b>02</b><span>Ambiguous Approval</span><strong>Expected: UNDETERMINED</strong><p>The shared approve() selector stays ambiguous unless token-standard evidence resolves it.</p><button className="secondary" onClick={() => loadJudgePreset(1)}>Load</button></article>
         <article><b>03</b><span>Suspicious Airdrop</span><strong>Expected: HIGH + MISMATCH</strong><p>Claim intent contradicts contract-wide operator permission; deterministic evidence is not weakened by AI.</p><button className="secondary" onClick={() => loadJudgePreset(2)}>Load</button></article>
-        <article><b>04</b><span>Verified X Layer Evidence</span><strong>Receipt: Confirmed</strong><p>Real user-signed RiskRegistry receipt on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View Receipt</button></article>
+        <article><b>04</b><span>Live OKX Mainnet Simulation</span><strong>Expected: PROVIDER EVIDENCE</strong><p>Loads a public historical approval fixture. Analysis remains explicit and read-only.</p><button className="secondary" onClick={() => { applyPreset(publicMainnetSimulationFixture.input); document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Load</button></article>
+        <article><b>05</b><span>Verified X Layer Evidence</span><strong>Receipt: Confirmed</strong><p>Real user-signed RiskRegistry receipt on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View Receipt</button></article>
       </div>
       <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ User-controlled signing</span><span>✓ Verified on-chain receipt</span></div>
     </section>}
@@ -352,7 +356,11 @@ export default function Home() {
       <div className="panel result-panel" aria-busy={analyzing}>
         <h2>2. Review risk</h2>
         {activeResult ? <>
-          <div className="score-wrap"><div className={`score score-${activeResult.level.toLowerCase()} ${activeResult.analysisVerdict === "UNDETERMINED" ? "score-undetermined" : ""}`}>{activeResult.finalScore}</div><div className="score-copy"><span>Known Risk Score</span><strong>{activeResult.level} KNOWN RISK</strong><small>Deterministic heuristic severity · Local floor {activeResult.deterministicScore}{typeof activeResult.aiScore === "number" ? ` · AI ${activeResult.aiScore}` : ""}</small></div></div>
+          <div className="score-wrap"><div className={`score score-${activeResult.level.toLowerCase()} ${activeResult.analysisVerdict === "UNDETERMINED" ? "score-undetermined" : ""}`}>{scorePresentation?.final.score}</div><div className="score-copy"><span>{scorePresentation?.final.label}</span><strong>{scorePresentation?.final.level} RISK</strong><small>Final = max(deterministic known risk, AI advisory)</small></div></div>
+          <section className="score-breakdown" aria-label="Risk score components">
+            <div><span>{scorePresentation?.deterministic.label}</span><strong>{scorePresentation?.deterministic.score} · {scorePresentation?.deterministic.level}</strong></div>
+            <div><span>{scorePresentation?.ai.label}</span><strong>{scorePresentation?.ai.score === null ? "Unavailable" : `${scorePresentation?.ai.score} · ${scorePresentation?.ai.level}`}</strong></div>
+          </section>
           <div className="analysis-mode">{modeLabel}</div>
           <section className={`assessment-dimensions verdict-${activeResult.analysisVerdict.toLowerCase()}`}>
             <div><span>Analysis Confidence</span><strong>{activeResult.analysisConfidence}</strong></div>
@@ -392,11 +400,13 @@ export default function Home() {
             <p>Preflight uses <code>eth_call</code> and <code>eth_estimateGas</code>. It is not a full state-diff simulation.</p>
           </section>
           {simulation && <section className="simulation-card">
-            <div className="card-title"><div><span className="eyebrow">OKX ONCHAINOS</span><h3>Transaction Simulation Evidence</h3></div><span className={`simulation-status simulation-${simulation.status.toLowerCase()}`}>{simulation.status}</span></div>
+            <div className="card-title"><div><span className="eyebrow">OKX ONCHAINOS</span><h3>Transaction Simulation Evidence</h3></div><div className="simulation-badges">{liveOkxEvidence && <span className="live-provider-badge"><span className="live-dot" />LIVE PROVIDER EVIDENCE</span>}<span className={`simulation-status simulation-${simulation.status.toLowerCase()}`}>{simulation.status}</span></div></div>
             <div className="decoded-grid">
               <span>Provider</span><strong>OKX OnchainOS</strong>
               <span>Network</span><strong>{getAnalysisNetworkConfig(simulation.network).name} · Chain {simulation.chainId}</strong>
               <span>Chain Index</span><strong>{simulation.chainIndex ?? "Not applicable"}</strong>
+              <span>Observed At</span><strong>{simulation.observedAt}</strong>
+              <span>Provider Latency</span><strong>{simulation.durationMs} ms</strong>
               <span>Intention</span><strong>{simulation.intention ?? "Not returned"}</strong>
               <span>Gas Used</span><strong>{simulation.gasUsed ?? "Not returned"}</strong>
               <span>Fail Reason</span><strong>{simulation.failReason ?? "Not returned"}</strong>
@@ -414,7 +424,7 @@ export default function Home() {
               </div>
             </>}
             {activeResult.evidenceConsistency.status === "INCONSISTENT" && <div className="evidence-inconsistency"><strong>Evidence inconsistency — manual review required</strong><ul>{activeResult.evidenceConsistency.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul></div>}
-            <p>Simulation is additional read-only evidence. It does not certify the transaction as safe and cannot lower XGuard&apos;s deterministic risk floor.</p>
+            <p><strong>Provider evidence is not a safety verdict.</strong> Simulation is additional read-only evidence. It does not certify the transaction as safe and cannot lower XGuard&apos;s deterministic risk floor.</p>
           </section>}
           <section className="timing-card">
             <div className="card-title"><div><span className="eyebrow">Observed request latency</span><h3>Analysis Timings</h3></div></div>
@@ -422,7 +432,7 @@ export default function Home() {
           </section>
           {activeResult.criticalSignals.length > 0 && <section className="signal-section"><h3>Critical Signals</h3><ul className="risk-list critical">{activeResult.criticalSignals.map((item) => <li key={item.id}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
           {activeResult.advisorySignals.length > 0 && <section className="signal-section"><h3>Advisory Signals</h3><ul className="risk-list">{activeResult.advisorySignals.map((item) => <li key={`${item.id}-${item.title}`}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
-          <section className="safety-guarantee"><span className="eyebrow">Safety Guarantee</span><strong>AI can explain or raise risk, but it cannot reduce deterministic security signals.</strong></section>
+          <section className="safety-guarantee"><span className="eyebrow">Deterministic Safety Invariant</span><strong>AI can explain or raise final risk, but it cannot reduce deterministic known-risk signals.</strong></section>
           <section className="explanation"><h3>AI Explanation</h3><p>{activeResult.aiExplanation ?? "AI provider unavailable; deterministic Local Safety Engine result shown."}</p></section>
           <p className="recommendation"><strong>Recommendation:</strong> {activeResult.recommendation}</p>
           <section className={`record-card phase-${recordState.phase}`}><div><span>On-chain assessment receipt · X Layer Testnet only</span><strong>{analysisNetwork === "XLAYER_TESTNET" ? recordLabel : "Unavailable for Mainnet analysis"}</strong></div><div className="actions"><button className="secondary" onClick={() => setReviewed((current) => !current)} disabled={recordPending}>{reviewed ? "Reviewed ✓" : "I reviewed this result"}</button><button className="primary" onClick={recordOnchain} disabled={analysisNetwork !== "XLAYER_TESTNET" || !registryAddress || !analysisHash || !address || !isCorrectNetwork || !reviewed || recordPending || recordState.phase === "confirmed"}>{recordState.phase === "awaiting-signature" ? "Check wallet…" : recordState.phase === "confirming" ? "Confirming…" : recordState.phase === "confirmed" ? "Confirmed" : "Record on X Layer"}</button></div>{recordState.hash && <div className="receipt">Transaction: <a href={`${explorerBase}/tx/${recordState.hash}`} target="_blank" rel="noreferrer">{recordState.hash}</a></div>}{recordState.error && <div className="status-message">{recordState.error}</div>}</section>

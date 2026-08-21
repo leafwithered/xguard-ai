@@ -36,3 +36,4 @@ jobs:
       - run: pnpm run token-standard:test
       - run: pnpm run security-benchmark:test
       - run: pnpm run simulation:test
+      - run: pnpm run presentation:test

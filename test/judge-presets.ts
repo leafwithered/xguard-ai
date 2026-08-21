@@ -5,7 +5,7 @@ import type { ContractIntelligence } from "../lib/chain/intelligence.ts";
 import { buildTransactionConsequences } from "../lib/consequence.ts";
 import { deriveAnalysisDimensions } from "../lib/evidence.ts";
 import { applyIntentRisk, compareIntentToReality } from "../lib/intent.ts";
-import { judgePresets } from "../lib/presets.ts";
+import { judgePresets, publicMainnetSimulationFixture } from "../lib/presets.ts";
 import { localRiskAnalysis } from "../lib/risk.ts";
 
 function intelligence(address: string, overrides: Partial<ContractIntelligence> = {}): ContractIntelligence {
@@ -27,6 +27,13 @@ function intelligence(address: string, overrides: Partial<ContractIntelligence> 
 }
 
 describe("Judge demo preset regression", function () {
+  it("keeps the public OKX fixture explicit, Mainnet-only and non-executing data", function () {
+    expect(publicMainnetSimulationFixture.sourceTransaction).to.match(/^0x[0-9a-f]{64}$/);
+    expect(publicMainnetSimulationFixture.input.analysisNetwork).to.equal("XLAYER_MAINNET");
+    expect(publicMainnetSimulationFixture.input.value).to.equal("0");
+    expect(publicMainnetSimulationFixture.input.data.startsWith("0x095ea7b3")).to.equal(true);
+  });
+
   it("keeps Safe Transfer LOW", function () {
     const result = localRiskAnalysis(judgePresets[0].input);
     expect(result.level).to.equal("LOW");

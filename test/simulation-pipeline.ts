@@ -5,6 +5,7 @@ import type { ContractIntelligence } from "../lib/chain/intelligence.ts";
 import { deriveEvidenceConsistency } from "../lib/evidence.ts";
 import type { SimulationEvidence } from "../lib/okx/simulation.ts";
 import type { RiskInput } from "../lib/risk.ts";
+import { judgePresets } from "../lib/presets.ts";
 
 const from = "0x1111111111111111111111111111111111111111" as Address;
 const target = "0x2222222222222222222222222222222222222222" as Address;
@@ -21,6 +22,31 @@ function simulation(overrides: Partial<SimulationEvidence> = {}): SimulationEvid
 }
 
 describe("Simulation evidence pipeline", function () {
+  it("keeps ambiguous known risk separate when AI raises the final score", async function () {
+    const ambiguousInput: RiskInput = { ...judgePresets[1].input, from, analysisNetwork: "XLAYER_MAINNET" };
+    const result = await runAnalysisPipeline(ambiguousInput, {
+      inspectContract: async () => intelligence({ tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" }),
+      simulate: async () => simulation({ intention: "Token Approval" }),
+      analyzeAi: async () => ({
+        score: 75,
+        level: "HIGH",
+        summary: "Advisory uncertainty warrants caution.",
+        reasons: ["The approval semantics remain unresolved."],
+        recommendation: "Resolve the token standard before signing.",
+        mode: "AI",
+        providerProtocol: "responses",
+        normalizedIntent: null
+      })
+    });
+
+    expect(result.deterministicScore).to.equal(20);
+    expect(result.aiScore).to.equal(75);
+    expect(result.finalScore).to.equal(75);
+    expect(result.level).to.equal("HIGH");
+    expect(result.analysisConfidence).to.equal("LOW");
+    expect(result.analysisVerdict).to.equal("UNDETERMINED");
+  });
+
   it("detects RPC/simulation disagreement and deterministically lowers confidence", async function () {
     const result = await runAnalysisPipeline(mainnetInput, {
       inspectContract: async () => intelligence(),

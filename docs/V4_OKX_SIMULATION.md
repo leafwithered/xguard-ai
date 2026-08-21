@@ -75,7 +75,7 @@ No real OKX API call, wallet interaction, signature, broadcast, contract deploym
 
 ## Live Preview verification
 
-One real read-only request was completed through the protected Vercel Preview after the project owner configured Preview-scoped credentials. No wallet was connected, no transaction was signed or broadcast, and no chain state was changed.
+Three real read-only requests were completed through the protected Vercel Preview after the project owner configured Preview-scoped credentials. No wallet was connected, no transaction was signed or broadcast, and no chain state was changed.
 
 | Evidence | Observed value |
 | --- | --- |
@@ -98,7 +98,15 @@ One real read-only request was completed through the protected Vercel Preview af
 | End-to-end CLI wall time | `12,524 ms` including CLI startup and protected Preview access |
 | Runtime response | `/api/analyze` returned `200`; no error or `5xx` log entry |
 
-Live latency sample count is `1`. Simulation median and slowest observed are therefore both `394 ms`; no p95 is claimed from a single sample.
+### Sanitized live matrix
+
+| Sample | Public fixture | Provider result | Intention | Failure | Simulation latency |
+| --- | --- | --- | --- | --- | ---: |
+| Baseline simple send | bounded demo input | `200` / code `0` / `AVAILABLE` | `Send Token` | none | `394 ms` |
+| Historical ERC20 transfer | [source transaction](https://www.okx.com/web3/explorer/xlayer/tx/0x8044ef5e7fba3a765f179232b1134853deb05569edc42e20f0c75db38af8656e) | `200` / code `0` / `AVAILABLE` | `Send` | current-state balance revert surfaced | `492 ms` |
+| Historical token approval | [source transaction](https://www.okx.com/web3/explorer/xlayer/tx/0xe7314b7a3b53ee7520198a3fa65126b8a840a822c71b40c60eae0f1e54ed5448) | `200` / code `0` / `AVAILABLE` | `Token Approval` | none | `329 ms` |
+
+Live sample count is `3`. Median simulation latency is `394 ms`; the slowest observed sample is `492 ms`. No p95 is claimed from three samples. The approval fixture is exposed in Judge Mode because it is public, reproducible, meaningful, and returned successful read-only provider evidence. The transfer fixture remains documentation-only because its current-state revert is useful failure evidence but not the clearest primary demo.
 
 Only sanitized status and timing fields are recorded. No credential value, authentication header, signature, raw secret, or private response metadata was written to Git, logs, or documentation.
 

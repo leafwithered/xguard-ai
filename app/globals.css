@@ -41,12 +41,12 @@ h1 { font-size: clamp(44px, 7vw, 78px); line-height: .94; margin: 16px 0 18px; m
 .signal strong { color: var(--text); text-align: right; }
 .workspace { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: 22px; align-items: start; }
 .workspace > .panel { min-width: 0; }
-.capability-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 0 0 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--line); }
+.capability-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin: 0 0 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--line); }
 .capability-strip span { padding: 13px; text-align: center; background: rgba(16,22,33,.96); color: var(--muted); font-size: 12px; }
 .judge-mode { margin-bottom: 22px; padding: 24px; border: 1px solid rgba(119,242,194,.3); border-radius: 22px; background: linear-gradient(145deg, rgba(16,22,33,.96), rgba(16,40,40,.82)); }
 .judge-mode h2 { margin: 8px 0; }
 .judge-mode .panel-heading p { margin: 0; }
-.judge-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
+.judge-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px; }
 .judge-steps article { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: rgba(8,11,18,.52); }
 .judge-steps article > b { color: var(--accent); font-size: 11px; }
 .judge-steps article > span { margin-top: 12px; font-weight: 800; }
@@ -89,6 +89,10 @@ textarea { min-height: 110px; resize: vertical; }
 .score-copy strong { font-size: 20px; margin: 5px 0; }
 .score-copy small { color: var(--muted); }
 .analysis-mode { display: inline-block; border: 1px solid rgba(119,242,194,.3); border-radius: 999px; padding: 6px 10px; color: var(--accent); font-size: 12px; }
+.score-breakdown { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
+.score-breakdown > div { display: grid; gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(8,11,18,.45); }
+.score-breakdown span { color: var(--muted); font-size: 10px; }
+.score-breakdown strong { font-size: 13px; }
 .assessment-dimensions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
 .assessment-dimensions > div { display: grid; gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(8,11,18,.45); }
 .assessment-dimensions span { color: var(--muted); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
@@ -106,6 +110,8 @@ textarea { min-height: 110px; resize: vertical; }
 .simulation-card { border-color: rgba(181,166,255,.3); }
 .simulation-card > p { color: var(--muted); font-size: 12px; line-height: 1.5; }
 .simulation-status { border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; color: var(--muted); font-size: 10px; }
+.simulation-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.live-provider-badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(119,242,194,.45); border-radius: 999px; padding: 5px 8px; color: var(--accent); font-size: 9px; font-weight: 800; letter-spacing: .04em; }
 .simulation-available { border-color: rgba(181,166,255,.45); color: #b5a6ff; }
 .simulation-error { border-color: rgba(255,124,139,.45); color: var(--danger); }
 .simulation-detail { padding: 10px; border-radius: 9px; background: rgba(8,11,18,.45); }
@@ -194,6 +200,7 @@ textarea { min-height: 110px; resize: vertical; }
   .topbar { margin-bottom: 34px; }
   .result-panel { min-height: 0; }
   .judge-steps { grid-template-columns: repeat(2, 1fr); }
+  .capability-strip { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 620px) {
@@ -207,7 +214,7 @@ textarea { min-height: 110px; resize: vertical; }
   .panel-heading > button { width: 100%; }
   .presets, .row, .why-xlayer, .tx-search, .judge-steps { grid-template-columns: 1fr; }
   .capability-strip { grid-template-columns: repeat(2, 1fr); }
-  .fusion-grid, .assessment-dimensions, .timing-grid { grid-template-columns: 1fr; }
+  .fusion-grid, .assessment-dimensions, .timing-grid, .score-breakdown { grid-template-columns: 1fr; }
   .presets button { min-height: 0; }
   .score { width: 88px; height: 88px; flex-basis: 88px; }
   .record-card > div:first-child { display: grid; }

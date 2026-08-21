@@ -8,16 +8,16 @@ The project owner configured these three server-side variables in **Vercel → X
 - `OKX_SECRET_KEY`
 - `OKX_API_PASSPHRASE`
 
-The `V4 PREVIEW CREDENTIALS CONFIGURED` gate was confirmed. A real read-only X Layer Mainnet simulation returned provider HTTP `200`, business code `0`, and normalized status `AVAILABLE`; sanitized evidence is recorded in `docs/V4_OKX_SIMULATION.md`. No values were copied into chat, Git, documentation, screenshots, or logs. Production remains unchanged and requires a separate explicit release approval.
+The `V4 PREVIEW CREDENTIALS CONFIGURED` gate was confirmed. Three bounded real read-only X Layer Mainnet samples returned provider HTTP `200`, business code `0`, and normalized status `AVAILABLE`; sanitized evidence is recorded in `docs/V4_OKX_SIMULATION.md`. No values were copied into chat, Git, documentation, screenshots, or logs. Production remains unchanged and requires a separate explicit release approval.
 
 ## Stable Production
 
-- Final Judge Upgrade: merged to `main`
-- Core application baseline: `409aa73c211a6b350af757d130c3f41ac8cfe962`
+- V3 Stable: merged to `main` and frozen
+- Stable checkpoint: `04575cc764163c7cb99b948c050e974e4cd20a2e` / tag `v3.1.1-stable`
 - Production: https://xguard-ai-six.vercel.app
 - Historical pre-polish Production deployment: `dpl_KkyED1sN18hK4QXjzLZnuNYoeamC` (`Ready` at verification time)
 - Main CI: passed — https://github.com/leafwithered/xguard-ai/actions/runs/32436406395
-- Production smoke: Safe Transfer `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
+- Stable Judge semantics: Safe Transfer `8 LOW`, Ambiguous Approval deterministic `20 LOW / LOW confidence / UNDETERMINED`, Suspicious Airdrop deterministic `78 HIGH / MISMATCH`
 - Provider: Production Hybrid Analysis is verified through the server-configured, provider-neutral OpenAI-compatible adapter; public artifacts do not assert the upstream provider identity
 - Contract: existing V1 `RiskRegistry` remains unchanged at `0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`
 - New contract deployment for Final Judge Upgrade: none
@@ -28,11 +28,11 @@ The `V4 PREVIEW CREDENTIALS CONFIGURED` gate was confirmed. A real read-only X L
 - Already submitted by the project owner.
 - No release action remains solely because a Git commit SHA, Preview URL, or transient Vercel deployment ID changes.
 
-## V3.1.1 manual Preview gate
+## V4.1 manual Preview gate
 
-- Open the authenticated `v3-competition` Preview after the final V3.1.1 deployment.
-- Verify Safe Transfer, Ambiguous Approval, and Suspicious Airdrop in that order.
-- Confirm analysis runs, transaction edits invalidate stale results, layout/assets are intact, and no wallet request appears.
+- Open the authenticated `codex/v4-okx-simulation` Preview after the V4.1 deployment.
+- Verify Safe Transfer, Ambiguous Approval, Suspicious Airdrop, Live OKX Mainnet Simulation, and the existing receipt in that order.
+- Confirm Final Risk and Deterministic Known Risk remain separate, the Live Provider badge appears only on a successful real Mainnet provider response, transaction edits invalidate stale results, layout/assets are intact, and no wallet request appears.
 - Do not approve a merge until this manual gate passes.
 
 ## Possible follow-up

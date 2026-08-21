@@ -40,13 +40,17 @@
 - Website, GitHub, Production Hybrid Analysis, X account/post, contact details, public chain evidence, current hero screenshot, and Final Judge Upgrade demo video are ready. The project owner has already completed the official submission.
 - Resubmission is not required solely because Git commit SHAs, Preview URLs, or transient Vercel deployment IDs change while the canonical public URLs remain stable. Edit or resubmit only if a canonical submitted link is incorrect or the organizer explicitly requests an update.
 
-## V3 Preview candidate (not Production)
+## V4 Preview candidate (not Production)
 
-The `v3-competition` branch adds an evidence-first pipeline and independently reports known-risk severity, deterministic Analysis Confidence, Analysis Verdict, and current-state Execution Status. AI receives sanitized RPC/preflight facts before its one advisory call and cannot change factual evidence, confidence, verdict, execution status, or lower the deterministic safety floor. Unsupported or malformed calldata remains `LOW` confidence and `UNDETERMINED`; a LOW heuristic score is never presented as confirmation of safety. This candidate does not change the submitted Production URL, deployed RiskRegistry, or verified user transaction unless separately approved and merged.
+The `codex/v4-okx-simulation` branch adds X Layer Mainnet (`196`) OKX OnchainOS Transaction Simulation as read-only evidence while keeping Testnet (`1952`) on the existing RPC/preflight path. Three sanitized real Preview samples returned `HTTP 200`, business code `0`, and `AVAILABLE`; median simulation latency was `394 ms` and the slowest sample was `492 ms`. A public historical token approval fixture is available in Judge Mode, but nothing analyzes, connects, signs, or broadcasts automatically. V4 remains unmerged and does not change the submitted Production URL, contract, receipt, or public media path.
+
+## V3 stable semantics inherited by V4
+
+V3 Stable adds an evidence-first pipeline and independently reports deterministic known-risk severity, Analysis Confidence, Analysis Verdict, and current-state Execution Status. V4 keeps these invariants and now labels the fused result `Final Risk Score`, so an AI-raised result is never misrepresented as deterministic known risk.
 
 V3.1 removes ERC20/ERC721 selector overclaims: `approve` and `transferFrom` remain standard-ambiguous unless positive ERC165 evidence establishes ERC721, and negative ERC165 evidence never establishes ERC20. Hostile transaction context is explicitly treated as untrusted data. These are Preview candidate facts, not claims about the unchanged submitted Production deployment.
 
-V3.1.1 finalizes the candidate Judge story as Safe Transfer → Ambiguous Approval → Suspicious Airdrop → existing verified X Layer receipt. The suspicious case now uses `setApprovalForAll(true)`, a non-zero ERC721 contract target, and `0 OKB`, so its deterministic HIGH result comes from the CLAIM-versus-broad-permission mismatch rather than a zero address, native value, or ambiguous approve selector. Manual authenticated Preview QA remains required before any merge.
+The current V4 Judge story is Safe Transfer → Ambiguous Approval → Suspicious Airdrop → Live OKX Mainnet Simulation → existing verified X Layer receipt. The stable semantic expectations are `8 LOW`, deterministic `20 LOW / LOW confidence / UNDETERMINED`, and deterministic `78 HIGH / MISMATCH` respectively.
 
 ## Final submission fields
 

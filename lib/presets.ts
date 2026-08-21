@@ -7,8 +7,8 @@ const unlimitedApproval = `0x095ea7b3${"0".repeat(24)}${spender}${maxUint}`;
 export const judgePresets: Array<{ name: string; description: string; input: RiskInput }> = [
   {
     name: "Safe Transfer",
-    description: "Simple zero-value transfer intent",
-    input: { from: "", to: "0x1111111111111111111111111111111111111111", value: "0", data: "0x", context: "Routine transfer to a known address" }
+    description: "Simple 0.1 OKB native transfer",
+    input: { from: "", to: "0x1111111111111111111111111111111111111111", value: "0.1", data: "0x", context: "Send 0.1 OKB to a known address" }
   },
   {
     name: "Unlimited Approval",

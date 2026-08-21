@@ -1,4 +1,6 @@
 import { expect } from "chai";
+import { buildTransactionConsequences } from "../lib/consequence.ts";
+import { compareIntentToReality } from "../lib/intent.ts";
 import { judgePresets } from "../lib/presets.ts";
 import { localRiskAnalysis } from "../lib/risk.ts";
 
@@ -7,6 +9,8 @@ describe("Judge demo preset regression", function () {
     const result = localRiskAnalysis(judgePresets[0].input);
     expect(result.level).to.equal("LOW");
     expect(result.deterministicScore).to.equal(8);
+    const consequences = buildTransactionConsequences(judgePresets[0].input, { decodedAction: result.decodedAction });
+    expect(compareIntentToReality(judgePresets[0].input, result.decodedAction, consequences).status).to.equal("MATCH");
   });
 
   it("keeps Unlimited Approval HIGH and human-readable", function () {

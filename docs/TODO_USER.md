@@ -18,6 +18,13 @@
 - Already submitted by the project owner.
 - No release action remains solely because a Git commit SHA, Preview URL, or transient Vercel deployment ID changes.
 
+## V3.1.1 manual Preview gate
+
+- Open the authenticated `v3-competition` Preview after the final V3.1.1 deployment.
+- Verify Safe Transfer, Ambiguous Approval, and Suspicious Airdrop in that order.
+- Confirm analysis runs, transaction edits invalidate stale results, layout/assets are intact, and no wallet request appears.
+- Do not approve a merge until this manual gate passes.
+
 ## Possible follow-up
 
 - Edit or resubmit only if a canonical link in the original submission is incorrect or the organizer explicitly requests an update. Contact email remains private and is provided only in the official form.

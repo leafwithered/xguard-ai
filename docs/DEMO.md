@@ -1,8 +1,10 @@
 # XGuard AI Judge Demo
 
-> Historical Production evidence: this script and the unchanged public video describe the stable Production capture made before V3.1 selector-ambiguity hardening. The `v3-competition` Preview no longer treats `approve(address,uint256)` or `transferFrom(address,address,uint256)` as definitively ERC20 without supporting standard evidence. No media was regenerated during V3.1.
+> Historical Production evidence: the unchanged public video records the stable Production behavior from before V3.1 selector-ambiguity hardening. The current script below describes the `v3-competition` candidate, which no longer treats `approve(address,uint256)` or `transferFrom(address,address,uint256)` as definitively ERC20 without supporting standard evidence. No media is regenerated in this pass.
 
-**Production:** https://xguard-ai-six.vercel.app
+**V3.1 Preview:** https://xguard-ai-git-v3-competition-leafwithereds-projects.vercel.app
+
+**Stable Production evidence:** https://xguard-ai-six.vercel.app
 
 The main judge path takes 75–90 seconds, requires no wallet connection, and creates no transaction. XGuard AI is an explainable pre-sign security layer for X Layer: real RPC context and deterministic rules establish the safety floor, provider-neutral AI adds explanation, and AI cannot lower known risk.
 
@@ -10,7 +12,7 @@ The main judge path takes 75–90 seconds, requires no wallet connection, and cr
 
 ### 0:00–0:10 — Positioning
 
-Open Production and say:
+Open the V3.1 Preview and say:
 
 > XGuard AI is the explainable pre-sign security layer for X Layer. It decodes intent, checks real RPC evidence, and fuses deterministic security rules with provider-neutral AI before the user signs.
 
@@ -20,26 +22,41 @@ Point to `X Layer Testnet · Chain 1952`. Open **⚡ Try Judge Demo** and explai
 
 Load **Safe Transfer**, select **Analyze risk**, and show:
 
-- `8 LOW`
-- `Hybrid Analysis`
-- deterministic baseline
-- `X Layer RPC` evidence
+- LOW known-risk deterministic baseline
+- HIGH confidence and `ASSESSED` when complete RPC evidence is available
+- `SUCCEEDED` when current-state preflight succeeds
+- Intent `MATCH`
 
 Say: “The low-risk baseline is still explainable and grounded in current X Layer RPC data.”
 
-### 0:22–0:42 — Unlimited Approval
+### 0:22–0:40 — Ambiguous Approval
 
-Load **Unlimited Approval**, select **Analyze risk**, and show:
+Load **Ambiguous Approval**, select **Analyze risk**, and show:
 
-- `72 HIGH`
 - decoded `approve(address,uint256)`
-- spender `0x1234567890123456789012345678901234567890`
-- `Amount: Unlimited`
-- source labels on the current result: `DECODER / AI`
+- `Standard: UNDETERMINED`
+- LOW deterministic known-risk heuristic
+- LOW Analysis Confidence
+- `Verdict: UNDETERMINED`
+- the uint256 may be an ERC20 allowance or an ERC721 token ID
+- no `Amount: Unlimited` or definitive ERC20 claim
 
-Say: “Raw calldata becomes a human-readable permission request before signing.”
+Say: “XGuard knows when the selector is readable but the evidence is not sufficient to claim exact token semantics. A low heuristic score is not confirmation of safety.”
 
-### 0:42–0:55 — Explainable Risk Fusion
+### 0:40–0:58 — Suspicious Airdrop
+
+Load **Suspicious Airdrop**, select **Analyze risk**, and show:
+
+- decoded `setApprovalForAll(address,bool)` with `Approved: Yes`
+- observed contract-wide NFT / multi-token operator permission
+- stated CLAIM intent versus permission behavior
+- deterministic `MISMATCH`
+- HIGH known risk from the mismatch floor
+- value `0 OKB` and a non-zero target
+
+Say: “The user thinks they are claiming an airdrop, but the encoded transaction grants broad operator permission. That single contradiction is enough to stop and review.”
+
+### 0:58–1:10 — Explainable Risk Fusion
 
 Point to:
 
@@ -50,7 +67,7 @@ Point to:
 
 Say: “AI may add context or raise risk, but it cannot weaken deterministic security signals.”
 
-### 0:55–1:08 — Contract Intelligence
+### 1:10–1:22 — Contract Intelligence
 
 Show:
 
@@ -61,26 +78,15 @@ Show:
 
 Say: “These are bounded preflight checks, not full state-diff simulation and not proof that a contract is safe.”
 
-### 1:08–1:20 — Suspicious Airdrop
-
-Load **Suspicious Airdrop**, select **Analyze risk**, and show:
-
-- `100 HIGH`
-- zero-address and unlimited-approval critical signals
-- social-engineering context
-- `Deterministic floor preserved`
-
-Say: “Even when AI participates, the deterministic safety floor remains 100.”
-
-### 1:20–1:30 — Existing X Layer evidence
+### 1:22–1:30 — Existing X Layer evidence
 
 Select **Load Verified X Layer Receipt** and show the confirmed post-hoc receipt and official Explorer link.
 
 Say: “Recording is optional and user-controlled. Judges do not need to connect a wallet or create a new transaction; this existing receipt is the public evidence.”
 
-## Unlimited Approval calldata
+## Current candidate calldata
 
-Use the checked-in Judge Mode preset. Its calldata is:
+Ambiguous Approval uses the shared selector deliberately:
 
 ```text
 0x095ea7b30000000000000000000000001234567890123456789012345678901234567890ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -88,10 +94,23 @@ Use the checked-in Judge Mode preset. Its calldata is:
 
 Expected decoded fields:
 
-- Action: `ERC20 Approval`
+- Action: `Approval-like permission call`
 - Method: `approve(address,uint256)`
-- Spender: `0x1234567890123456789012345678901234567890`
-- Amount: `Unlimited`
+- Standard: `UNDETERMINED`
+- Operator / Spender: `0x1234567890123456789012345678901234567890`
+- uint256 Value: preserved as raw evidence
+
+Suspicious Airdrop uses `setApprovalForAll(address,bool)` with `approved = true`:
+
+```text
+0xa22cb46500000000000000000000000012345678901234567890123456789012345678900000000000000000000000000000000000000000000000000000000000000001
+```
+
+- Target: `0x08a25a794639a6cA03b0A7C655B2c36d82fF144a`
+- Value: `0 OKB`
+- Context: `I only want to claim an airdrop.`
+- Observed behavior: contract-wide operator permission
+- Intent comparison: deterministic `MISMATCH`
 
 ## Verified public evidence
 
@@ -107,17 +126,17 @@ Expected decoded fields:
 
 Wallet connection, Chain ID `1952` switching, review, and signing are optional product capabilities—not part of the main judge path. Never sign or create a transaction for the final recording. If wallet UI is shown, stop before any signature request.
 
-## Current video status
+## Historical captured video
 
-The public file `demo/xguard-ai-build-x-demo.mp4` is the updated Final Judge Upgrade demo: a 1920×1080 H.264 MP4 of approximately 1:34. It uses only screenshots captured from the canonical Production deployment and shows Judge Mode, Safe Transfer, Unlimited Approval, Explainable Risk Fusion, real X Layer RPC intelligence, Suspicious Airdrop, and the existing confirmed receipt.
+The public file `demo/xguard-ai-build-x-demo.mp4` is the pre-V3.1 Final Judge Upgrade capture: a 1920×1080 H.264 MP4 of approximately 1:34. It uses only screenshots captured from the canonical Production deployment and therefore retains the historical Safe Transfer / Unlimited Approval / Suspicious Airdrop story. It is public evidence of the stable Production baseline, not the V3.1 candidate semantics.
 
 The media was generated without a wallet connection, signature, deployment, or new chain transaction. Its risk scores, decoded approval, RPC results, and receipt fields are the unmodified values returned by Production during capture.
 
 ## Regression checklist
 
-- Safe Transfer: `8 LOW`, Hybrid Analysis
-- Unlimited Approval: `72 HIGH`, decoded spender and unlimited amount
-- Suspicious Airdrop: `100 HIGH`, deterministic floor preserved
+- Safe Transfer: LOW baseline, HIGH confidence when RPC evidence is complete, Intent MATCH
+- Ambiguous Approval: shared approve selector, standard UNKNOWN, LOW confidence, UNDETERMINED, no unlimited ERC20 critical signal
+- Suspicious Airdrop: `setApprovalForAll(true)`, CLAIM mismatch, deterministic HIGH floor, non-zero target, `0 OKB`
 - On-chain Intelligence: real RPC status is visible or explicitly `Unavailable`
 - EIP-1967 wording does not imply that all proxy types were checked
 - Transaction Preflight is described as bounded `eth_call + eth_estimateGas`, not full simulation

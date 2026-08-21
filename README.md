@@ -12,12 +12,12 @@ XGuard AI decodes transaction behavior, explains the deterministic consequences 
 
 **Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1920×1080 H.264, approximately 1:34). It was composed from verified screenshots of the canonical Production deployment and demonstrates Judge Mode, Hybrid Analysis, Risk Fusion, real X Layer RPC intelligence, and the existing confirmed receipt without connecting a wallet or creating a transaction.
 
-## 60–90 Second Judge Path (current stable Production)
+## 60–90 Second Judge Path (V3.1 candidate)
 
-1. Open the Live Demo and select **⚡ Try Judge Demo**.
+1. Open the V3.1 Preview and select **⚡ Try Judge Demo**.
 2. Load **Safe Transfer**, then explicitly click **Analyze risk** to see the LOW baseline.
-3. Load **Unlimited Approval** to inspect `approve(address,uint256)`, the spender, and `Amount: Unlimited`.
-4. Load **Suspicious Airdrop** to see a claim intent conflict with an unlimited approval, producing `MISMATCH` while the deterministic safety floor remains `100 HIGH`.
+3. Load **Ambiguous Approval** to see `approve(address,uint256)` remain LOW-confidence and `UNDETERMINED`: the uint256 may be an ERC20 allowance or an ERC721 token ID, so a low heuristic score is not confirmation of safety.
+4. Load **Suspicious Airdrop** to see a CLAIM intent conflict with `setApprovalForAll(true)`, producing a deterministic HIGH `MISMATCH` because the transaction grants contract-wide operator permission.
 5. Select **Load Verified X Layer Receipt** to inspect the existing confirmed RiskRegistry transaction from real X Layer RPC data.
 
 Judge Mode only loads examples, navigates, and explains. It never auto-analyzes, connects a wallet, signs, records an assessment, or broadcasts a transaction.
@@ -58,13 +58,13 @@ Empty calldata with native value is also target-aware: an EOA is described as an
 
 The application supports wallet connection, X Layer Testnet detection and switching, transaction decoding, real RPC intelligence, bounded preflight checks, provider-neutral AI analysis, deterministic fallback analysis, post-hoc transaction inspection, Judge Mode, user confirmation, and an optional on-chain risk receipt.
 
-### Verified Production Product
+### V3.1 Candidate Product
 
 - Hybrid Analysis returns structured risk analysis through an OpenAI-compatible Responses API without allowing AI to weaken deterministic signals.
 - Local Analysis keeps the product usable when the configured AI provider is unavailable or returns invalid output.
 - Every V3 report separates known-risk severity, analysis confidence, verdict, and current execution status, with plain-language reasons and a recommendation.
-- Calldata decoding exposes approval spenders, transfer recipients, token amounts, unlimited approvals, and NFT operator permissions.
-- Demo presets make Safe Transfer, Unlimited Approval, and Suspicious Airdrop paths reproducible without auto-analyzing or signing.
+- Calldata decoding exposes signature-level approval/transfer facts, confirmed token-standard evidence, transfer recipients, raw uint256 values, and contract-wide operator permissions without forcing ERC20 semantics onto shared selectors.
+- Demo presets make Safe Transfer, Ambiguous Approval, and Suspicious Airdrop paths reproducible without auto-analyzing or signing.
 - Recording is optional and only starts after explicit user review and wallet confirmation.
 - The UI waits for a successful X Layer receipt before displaying `Confirmed`.
 - `RiskRegistry` is deployed on X Layer Testnet, and a real user-signed interaction is publicly verified below.
@@ -101,8 +101,8 @@ The hybrid design combines a deterministic Risk Engine with a configurable OpenA
 flowchart TD
     U[User Transaction] --> D[Transaction Decoder]
     D --> L[Deterministic Risk Engine]
-    L --> O[On-chain Contract Intelligence]
-    O --> P[Transaction Preflight]
+    L --> CI[On-chain Contract Intelligence]
+    CI --> P[Transaction Preflight]
     P --> C[Deterministic Consequences]
     C --> E[Normalized Evidence]
     E --> V[Confidence / Verdict / Execution]
@@ -117,7 +117,7 @@ flowchart TD
     V --> R[Final Evidence Report]
     F --> R
     R --> Q[User Decision]
-    Q --> O[Optional X Layer Receipt]
+    Q --> XR[Optional X Layer Receipt]
 ```
 
 ## AI Risk Engine
@@ -247,7 +247,7 @@ The browser smoke path is documented in [docs/DEMO.md](docs/DEMO.md). The API re
 
 ## Demo Flow
 
-Use the 60–90 second path in [docs/DEMO.md](docs/DEMO.md) to demonstrate Safe Transfer, Unlimited Approval, Risk Fusion, Contract Intelligence, and Suspicious Airdrop without connecting a wallet or creating a new transaction. Finish with the existing verified X Layer receipt as optional public evidence.
+Use the 60–90 second path in [docs/DEMO.md](docs/DEMO.md) to demonstrate Safe Transfer, Ambiguous Approval, Suspicious Airdrop, Risk Fusion, and Contract Intelligence without connecting a wallet or creating a new transaction. Finish with the existing verified X Layer receipt as optional public evidence.
 
 ## Security Disclaimer
 

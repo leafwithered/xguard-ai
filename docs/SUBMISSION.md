@@ -46,6 +46,8 @@ The `v3-competition` branch adds an evidence-first pipeline and independently re
 
 V3.1 removes ERC20/ERC721 selector overclaims: `approve` and `transferFrom` remain standard-ambiguous unless positive ERC165 evidence establishes ERC721, and negative ERC165 evidence never establishes ERC20. Hostile transaction context is explicitly treated as untrusted data. These are Preview candidate facts, not claims about the unchanged submitted Production deployment.
 
+V3.1.1 finalizes the candidate Judge story as Safe Transfer → Ambiguous Approval → Suspicious Airdrop → existing verified X Layer receipt. The suspicious case now uses `setApprovalForAll(true)`, a non-zero ERC721 contract target, and `0 OKB`, so its deterministic HIGH result comes from the CLAIM-versus-broad-permission mismatch rather than a zero address, native value, or ambiguous approve selector. Manual authenticated Preview QA remains required before any merge.
+
 ## Final submission fields
 
 - Project Name: `XGuard AI`

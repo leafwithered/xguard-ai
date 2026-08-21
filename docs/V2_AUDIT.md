@@ -1,13 +1,13 @@
-# XGuard AI V2 Audit
+# XGuard AI Final Release Audit
 
 Audit scope: `app`, `lib`, `contracts`, `test`, `scripts`, configuration, Vercel behavior, and public documentation.
 
 ## Production release
 
-- Status: V2 is merged to `main` and live at https://xguard-ai-six.vercel.app.
+- Status: Final Judge Upgrade core application baseline `409aa73c211a6b350af757d130c3f41ac8cfe962` is live at the canonical Production URL, https://xguard-ai-six.vercel.app. Later documentation/media commits do not change that baseline designation.
 - Provider: Production Hybrid Analysis is verified through the provider-neutral adapter. The exact upstream identity is controlled by server-side environment variables and is not asserted by the public repository or client response.
 - Public URLs, the deployed V1 `RiskRegistry`, and the verified user transaction are unchanged.
-- Demo video: `demo/xguard-ai-build-x-demo.mp4` is a 1920×1080 H.264 MP4 of approximately 2:56.
+- Demo video: `demo/xguard-ai-build-x-demo.mp4` is the updated Final Judge Upgrade walkthrough, generated from verified Production screenshots as a 1920×1080 H.264 MP4 of approximately 1:34. It contains no wallet interaction or new chain transaction.
 
 ## Production smoke matrix
 
@@ -39,6 +39,9 @@ Audit scope: `app`, `lib`, `contracts`, `test`, `scripts`, configuration, Vercel
 - [x] Handle wallet account, chain, and disconnect events.
 - [x] Discover EIP-6963 wallets while retaining injected-wallet fallback.
 - [x] Add stable public evidence links and a clear X Layer receipt explanation.
+- [x] Add real X Layer Contract Intelligence from `eth_getCode`, EIP-1967 implementation-slot inspection, bounded `eth_call`, and `eth_estimateGas`.
+- [x] Add Judge Mode and a post-hoc X Layer Transaction Analyzer without automatic signing or broadcasting.
+- [x] Invalidate stale analysis, review, receipt state, and session cache whenever transaction input changes.
 
 ## P2 — engineering
 
@@ -52,4 +55,4 @@ Audit scope: `app`, `lib`, `contracts`, `test`, `scripts`, configuration, Vercel
 
 - In-memory rate limiting is best-effort per warm serverless instance. Reliable distributed rate limiting remains optional production hardening and requires shared infrastructure such as Vercel KV or Upstash.
 - The decoder intentionally covers a small, explicit ABI set. Unknown methods remain visible and receive a deterministic review signal.
-- XGuard AI does not simulate state changes or guarantee contract safety.
+- Transaction Preflight is limited to bounded `eth_call` and `eth_estimateGas`; it is not full state-diff simulation and does not guarantee contract safety.

@@ -23,9 +23,11 @@
 - Website URL: `https://xguard-ai-six.vercel.app`
 - Deployment provider: `Vercel`
 - Source repository: `https://github.com/leafwithered/xguard-ai`
-- Production V2 deployment: live at the canonical URL
+- Final Judge Upgrade core application baseline: commit `409aa73c211a6b350af757d130c3f41ac8cfe962`
+- Canonical Production URL is the durable deployment reference; Vercel deployment IDs are transient
+- Historical pre-polish Production deployment: `dpl_KkyED1sN18hK4QXjzLZnuNYoeamC` (`Ready` at verification time)
 - Production Hybrid Analysis smoke test: passed through the server-configured OpenAI-compatible provider adapter
-- V2 smoke matrix: Safe `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
+- Final smoke matrix: Safe `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
 - Provider identity: intentionally not asserted by public artifacts; `AI_BASE_URL` and `AI_MODEL` remain server-side deployment configuration
 - Local Analysis remains the failure-isolated fallback
 
@@ -52,12 +54,12 @@ The final command must stop with `DEPLOYER_PRIVATE_KEY is required...` when no l
 
 ## Web App
 
-1. Add `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL` to the deployment provider if AI Analysis is desired.
+1. Add `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL` to the deployment provider if provider-backed Hybrid Analysis is desired.
 2. Add `NEXT_PUBLIC_RISK_REGISTRY_ADDRESS`.
 3. Deploy the Next.js application.
-4. Verify the production app loads, Real AI Analysis works when provider variables are configured, Local Analysis remains available as fallback, the wallet can switch to Chain ID `1952`, and the registry transaction opens in the explorer.
+4. Verify the production app loads, provider-backed Hybrid Analysis works when provider variables are configured, Local Analysis remains available as fallback, the wallet can switch to Chain ID `1952`, and the existing registry transaction opens in the explorer.
 
-`XLAYER_RPC_URL` is also used server-side for Contract Intelligence, Transaction Preflight, and post-hoc transaction inspection. RPC timeouts or failures must not disable deterministic risk analysis.
+`XLAYER_RPC_URL` is also used server-side for Contract Intelligence, Transaction Preflight, and post-hoc transaction inspection. Transaction Preflight consists of bounded `eth_call` and `eth_estimateGas` checks; it is not full state-diff simulation. RPC timeouts or failures must not disable deterministic risk analysis.
 
 ## Evidence
 

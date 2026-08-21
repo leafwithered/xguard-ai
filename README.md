@@ -4,15 +4,15 @@
 
 XGuard AI decodes transaction intent, inspects real X Layer on-chain context, runs a transaction preflight, and fuses deterministic security rules with AI explanation. AI may raise risk, but it cannot reduce known deterministic security signals. Users remain in control of every wallet action.
 
-**Live Demo:** https://xguard-ai-six.vercel.app  ·  **GitHub:** https://github.com/leafwithered/xguard-ai  ·  **Demo Video:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4
+**Live Demo:** https://xguard-ai-six.vercel.app  ·  **GitHub:** https://github.com/leafwithered/xguard-ai  ·  **Final Judge Demo Video:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4
 
 **Project X:** https://x.com/AevrynHQ  ·  **Build X Post:** https://x.com/AevrynHQ/status/2090382549205873099
 
-**Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1080p H.264, approximately 2:56)
+![XGuard AI Final Judge interface](docs/assets/xguard-v2-hero.png)
 
-![XGuard AI V2 interface](docs/assets/xguard-v2-hero.png)
+**Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1920×1080 H.264, approximately 1:34). It was composed from verified screenshots of the canonical Production deployment and demonstrates Judge Mode, Hybrid Analysis, Risk Fusion, real X Layer RPC intelligence, and the existing confirmed receipt without connecting a wallet or creating a transaction.
 
-## 60-Second Judge Path
+## 60–90 Second Judge Path
 
 1. Open the Live Demo and select **⚡ Try Judge Demo**.
 2. Load **Safe Transfer**, then explicitly click **Analyze risk** to see the LOW baseline.
@@ -24,15 +24,15 @@ Judge Mode only loads examples, navigates, and explains. It never auto-analyzes,
 
 ## Why XGuard Is Different
 
-- **Deterministic first:** known security rules and decoded permissions establish an auditable floor.
+- **Deterministic first:** known security rules and decoded permissions establish an inspectable floor.
 - **Transparent AI fusion:** `Final Risk = max(Deterministic Floor, AI Assessment)` is shown in the product.
 - **Real X Layer intelligence:** `eth_getCode`, EIP-1967 inspection, `eth_call`, and `eth_estimateGas` provide live context with isolated timeouts.
-- **Explainable evidence:** risk signals are labeled `RULE`, `DECODER`, or `AI`; unavailable data is never fabricated.
+- **Explainable evidence:** risk signals are labeled `RULE`, `DECODER`, `ON-CHAIN`, or `AI`; unavailable data is never fabricated.
 - **User-controlled signing:** analysis and receipt recording are advisory and require explicit user actions.
 
 ## Stable Production Baseline
 
-V2 is live on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
+The Final Judge Upgrade core application baseline is commit `409aa73c211a6b350af757d130c3f41ac8cfe962` and is live on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
 
 - Safe Transfer: `8 LOW`, Hybrid Analysis
 - Unlimited Approval: `72 HIGH`, decoded ERC20 `approve`, spender and `Amount: Unlimited` visible
@@ -44,7 +44,7 @@ V2 is live on the canonical Vercel Production URL. Production Hybrid Analysis is
 
 The application supports wallet connection, X Layer Testnet detection and switching, transaction decoding, real RPC intelligence, bounded preflight checks, provider-neutral AI analysis, deterministic fallback analysis, post-hoc transaction inspection, Judge Mode, user confirmation, and an optional on-chain risk receipt.
 
-### Verified V2 Product
+### Verified Production Product
 
 - Hybrid Analysis returns structured risk analysis through an OpenAI-compatible Responses API without allowing AI to weaken deterministic signals.
 - Local Analysis keeps the product usable when the configured AI provider is unavailable or returns invalid output.
@@ -54,7 +54,7 @@ The application supports wallet connection, X Layer Testnet detection and switch
 - Recording is optional and only starts after explicit user review and wallet confirmation.
 - The UI waits for a successful X Layer receipt before displaying `Confirmed`.
 - `RiskRegistry` is deployed on X Layer Testnet, and a real user-signed interaction is publicly verified below.
-- The production deployment has been verified with a real AI Analysis response.
+- The production deployment has been verified with a provider-backed Hybrid Analysis response.
 
 ## Problem
 
@@ -97,7 +97,7 @@ flowchart TD
 
 ## AI Risk Engine
 
-`lib/ai/provider.ts` isolates provider-specific behavior. Configure an official or third-party OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use.
+`lib/ai/provider.ts` isolates provider-specific behavior. Configure an OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use. Production Hybrid Analysis is verified through this server-configured adapter; public artifacts do not assert the upstream provider identity.
 
 The deterministic Local Risk Engine checks zero addresses, exact bigint native value thresholds, decoded ERC20/NFT approvals, unlimited permissions, transfer methods, malformed and unknown calldata, unknown-contract context, and common social-engineering signals.
 
@@ -157,9 +157,9 @@ Deployment transaction: `0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c
 ## Local Development
 
 ```bash
-npm install
+pnpm install --frozen-lockfile
 copy .env.example .env.local
-npm run dev
+pnpm run dev
 ```
 
 Open `http://localhost:3000`. The app works without AI credentials using Local Analysis.
@@ -180,9 +180,9 @@ The public production deployment is available at https://xguard-ai-six.vercel.ap
 ## Contract Deployment
 
 ```bash
-npm run contract:compile
-npm run contract:test
-npm run contract:deploy
+pnpm run contract:compile
+pnpm run contract:test
+pnpm run contract:deploy
 ```
 
 Deployment requires a user-controlled private key and testnet OKB. Never commit `.env.local` or expose a private key to the browser.
@@ -190,16 +190,17 @@ Deployment requires a user-controlled private key and testnet OKB. Never commit 
 ## Testing
 
 ```bash
-npm run build
-npm run contract:compile
-npm run contract:test
-npm run risk:test
-npm run ai:test
-npm run decoder:test
-npm run fusion:test
-npm run intelligence:test
-npm run transaction-analyzer:test
-npm run judge:test
+pnpm run build
+pnpm run contract:compile
+pnpm run contract:test
+pnpm run risk:test
+pnpm run ai:test
+pnpm run decoder:test
+pnpm run fusion:test
+pnpm run intelligence:test
+pnpm run transaction-analyzer:test
+pnpm run judge:test
+pnpm run analysis-state:test
 ```
 
 The browser smoke path is documented in [docs/DEMO.md](docs/DEMO.md). The API returns `400` for invalid transaction input and keeps Local Analysis available when the configured provider fails.
@@ -208,7 +209,7 @@ The browser smoke path is documented in [docs/DEMO.md](docs/DEMO.md). The API re
 
 ## Demo Flow
 
-Use the example in [docs/DEMO.md](docs/DEMO.md) to demonstrate deterministic detection of a zero-address, unlimited approval, large value, unknown contract, and suspicious claim context. After deployment, connect a wallet and record the assessment on X Layer Testnet.
+Use the 60–90 second path in [docs/DEMO.md](docs/DEMO.md) to demonstrate Safe Transfer, Unlimited Approval, Risk Fusion, Contract Intelligence, and Suspicious Airdrop without connecting a wallet or creating a new transaction. Finish with the existing verified X Layer receipt as optional public evidence.
 
 ## Security Disclaimer
 
@@ -231,6 +232,10 @@ XGuard AI is an advisory prototype, not an audit, wallet firewall, or guarantee 
 - X Layer mainnet deployment only after the required testnet phase and a separate security review.
 
 The append-only registry design is documented in [docs/CONTRACT_V2.md](docs/CONTRACT_V2.md). It is a proposal only; the deployed V1 contract and verified evidence remain unchanged.
+
+## License
+
+Released under the [MIT License](LICENSE).
 
 ## Submission
 

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, enhancement-v2, final-judge-upgrade]
+    branches: [main, enhancement-v2, final-judge-upgrade, final-polish]
   pull_request:
     branches: [main]
 

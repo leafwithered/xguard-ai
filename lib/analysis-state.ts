@@ -1,4 +1,5 @@
 import type { RiskInput } from "./risk.ts";
+import { normalizeAnalysisNetwork } from "./network.ts";
 
 export type AnalysisSnapshot<T> = {
   result: T | null;
@@ -13,7 +14,8 @@ export function riskInputsEqual(left: RiskInput, right: RiskInput) {
     && left.to === right.to
     && left.value === right.value
     && left.data === right.data
-    && left.context === right.context;
+    && left.context === right.context
+    && normalizeAnalysisNetwork(left.analysisNetwork) === normalizeAnalysisNetwork(right.analysisNetwork);
 }
 
 export function currentAnalysisResult<T>(snapshot: AnalysisSnapshot<T>, currentInput: RiskInput) {

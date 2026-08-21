@@ -31,13 +31,24 @@
 - Provider identity: intentionally not asserted by public artifacts; `AI_BASE_URL` and `AI_MODEL` remain server-side deployment configuration
 - Local Analysis remains the failure-isolated fallback
 
-### V3 Preview evidence architecture
+### V4 live-verified Preview boundary
 
-The `v3-competition` candidate is Preview-only. It orders analysis as deterministic decode/risk → RPC intelligence/preflight → consequences → normalized evidence → deterministic confidence/verdict/execution → one optional AI advisory call → intent comparison and safety fusion. Unknown or malformed calldata is always `LOW` confidence and `UNDETERMINED`, even when its heuristic risk score is LOW. Production remains on the stable baseline until a separate merge approval.
+The `codex/v4-okx-simulation` branch is based on frozen V3 commit `04575cc764163c7cb99b948c050e974e4cd20a2e`. It is not Production. The canonical Production URL, V1 `RiskRegistry`, and verified receipt remain unchanged.
+
+- Testnet `1952`: existing `XLAYER_RPC_URL` intelligence/preflight; OKX simulation is deterministically `UNSUPPORTED` and is never requested.
+- Mainnet `196`: `XLAYER_MAINNET_RPC_URL` intelligence/preflight plus optional OKX OnchainOS Transaction Simulation using chain index `196`.
+- Preview can deploy without OKX credentials; Mainnet simulation is then visibly `UNAVAILABLE` while the remaining analysis continues.
+- The owner configured Preview-only `OKX_API_KEY`, `OKX_SECRET_KEY`, and `OKX_API_PASSPHRASE` after the explicit credential gate.
+- Four real read-only Mainnet samples returned provider HTTP `200`, business code `0`, and normalized status `AVAILABLE`; the matrix median was `376 ms`, the slowest sample was `492 ms`, and sanitized evidence is recorded in `docs/V4_OKX_SIMULATION.md`.
+- Credentials remain Preview-scoped. Do not configure or merge V4 into Production without a separate explicit release approval.
+
+### V3 Stable evidence architecture inherited by V4
+
+The frozen V3 baseline orders analysis as deterministic decode/risk → RPC intelligence/preflight → consequences → normalized evidence → deterministic confidence/verdict/execution → one optional AI advisory call → intent comparison and safety fusion. Unknown or malformed calldata is always `LOW` confidence and `UNDETERMINED`, even when its heuristic risk score is LOW. V4 inherits this architecture on its isolated Preview branch.
 
 The public client can verify Hybrid versus Local mode, but it cannot prove the identity of the server-configured upstream AI provider. Deployment documentation therefore remains provider-neutral unless deployment-side evidence is explicitly audited; no API secret is exposed for that verification.
 
-V3.1 additionally performs bounded ERC165 checks for ERC721 and ERC1155 on smart-contract targets. Only a positive interface result establishes that standard; negative or unavailable results remain `UNKNOWN` and never imply ERC20. The Preview response includes deterministic confidence reasons and phase timings for latency audit. These changes remain Preview-only until separately approved.
+V3.1 additionally performs bounded ERC165 checks for ERC721 and ERC1155 on smart-contract targets. Only a positive interface result establishes that standard; negative or unavailable results remain `UNKNOWN` and never imply ERC20. Responses include deterministic confidence reasons and phase timings for latency audit.
 
 The V3.1.1 Preview release gate uses this final Judge matrix:
 
@@ -45,7 +56,7 @@ The V3.1.1 Preview release gate uses this final Judge matrix:
 - Ambiguous Approval: shared `approve(address,uint256)` selector, standard UNKNOWN, LOW confidence, `UNDETERMINED`, and no unlimited ERC20 claim.
 - Suspicious Airdrop: non-zero ERC721 contract target, `0 OKB`, decoded `setApprovalForAll(true)`, CLAIM-versus-operator-permission `MISMATCH`, and deterministic HIGH floor.
 
-Before a future Production release, remove Preview-only labels from the candidate sections, make this matrix the primary Judge path, and keep the old video/matrix only as explicitly historical evidence. The canonical URL, contract, verified receipt, and demo file path must remain unchanged.
+V4 remains Preview-only until a separate release approval. The canonical URL, contract, verified receipt, and demo file path remain unchanged.
 
 ## Verified deployment
 

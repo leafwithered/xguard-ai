@@ -16,7 +16,7 @@ const transferFromAbi = [{ type: "function", name: "transferFrom", stateMutabili
 const operatorAbi = [{ type: "function", name: "setApprovalForAll", stateMutability: "nonpayable", inputs: [{ name: "operator", type: "address" }, { name: "approved", type: "bool" }], outputs: [] }] as const;
 
 function intelligence(overrides: Partial<ContractIntelligence> = {}): ContractIntelligence {
-  return { address: target, addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 120, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "50000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "ERC165", ...overrides };
+  return { network: "XLAYER_TESTNET", chainId: 1952, address: target, addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 120, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "50000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "ERC165", ...overrides };
 }
 
 function adversarialAi(): AiAdvisoryRiskResult {

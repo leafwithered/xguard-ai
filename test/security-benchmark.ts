@@ -167,6 +167,8 @@ describe("XGuard V3 security benchmark", function () {
       process.env.AI_MODEL = "fixture-model";
       const local = localRiskAnalysis(base);
       const evidence = buildAnalysisEvidence(base, local, buildTransactionConsequences(base), {
+        network: "XLAYER_TESTNET",
+        chainId: 1952,
         address: target,
         addressType: "UNAVAILABLE",
         codePresent: null,
@@ -237,7 +239,7 @@ describe("XGuard V3 security benchmark", function () {
   it("32 keeps final consequences independent from an adversarial AI narrative", async function () {
     const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] });
     const input = { ...base, data };
-    const intelligence = { address: target, addressType: "SMART_CONTRACT" as const, codePresent: true, codeSizeBytes: 100, proxyDetected: false, preflightStatus: "SUCCEEDED" as const, estimatedGas: "50000", rpcStatus: "AVAILABLE" as const, tokenStandard: "UNKNOWN" as const, tokenStandardSource: "ERC165" as const };
+    const intelligence = { network: "XLAYER_TESTNET" as const, chainId: 1952 as const, address: target, addressType: "SMART_CONTRACT" as const, codePresent: true, codeSizeBytes: 100, proxyDetected: false, preflightStatus: "SUCCEEDED" as const, estimatedGas: "50000", rpcStatus: "AVAILABLE" as const, tokenStandard: "UNKNOWN" as const, tokenStandardSource: "ERC165" as const };
     const withoutAi = await runAnalysisPipeline(input, { inspectContract: async () => intelligence, analyzeAi: async () => null });
     const withAdversarialAi = await runAnalysisPipeline(input, { inspectContract: async () => intelligence, analyzeAi: async () => ({ ...advisory(0), normalizedIntent: null }) });
     expect(withAdversarialAi.consequences).to.deep.equal(withoutAi.consequences);
@@ -252,7 +254,7 @@ describe("XGuard V3 security benchmark", function () {
   });
 
   it("34 does not fabricate on-chain observations when RPC evidence is unavailable", function () {
-    const result = buildTransactionConsequences(base, { intelligence: { address: target, addressType: "UNAVAILABLE", codePresent: null, codeSizeBytes: null, proxyDetected: null, preflightStatus: "UNAVAILABLE", rpcStatus: "UNAVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } });
+    const result = buildTransactionConsequences(base, { intelligence: { network: "XLAYER_TESTNET", chainId: 1952, address: target, addressType: "UNAVAILABLE", codePresent: null, codeSizeBytes: null, proxyDetected: null, preflightStatus: "UNAVAILABLE", rpcStatus: "UNAVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } });
     expect(result.some((item) => item.evidenceSource === "ON_CHAIN")).to.equal(false);
   });
 });

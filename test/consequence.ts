@@ -78,14 +78,14 @@ describe("Transaction Consequence Engine", function () {
   });
 
   it("adds factual on-chain observations without claiming full simulation", function () {
-    const results = buildTransactionConsequences(base, { intelligence: { address: target, addressType: "EOA", codePresent: false, codeSizeBytes: 0, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "21000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } });
+    const results = buildTransactionConsequences(base, { intelligence: { network: "XLAYER_TESTNET", chainId: 1952, address: target, addressType: "EOA", codePresent: false, codeSizeBytes: 0, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "21000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } });
     expect(results.some((item) => item.id === "target-eoa" && item.evidenceSource === "ON_CHAIN")).to.equal(true);
     expect(results.find((item) => item.id === "preflight-succeeded")?.description).to.include("not a full state-diff simulation");
   });
 
   it("distinguishes native value sent to an EOA from value sent to a smart contract", function () {
-    const eoa = buildTransactionConsequences({ ...base, value: "0.25" }, { intelligence: { address: target, addressType: "EOA", codePresent: false, codeSizeBytes: 0, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "21000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } })[0];
-    const contract = buildTransactionConsequences({ ...base, value: "0.25" }, { intelligence: { address: target, addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 10, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "30000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "ERC165" } })[0];
+    const eoa = buildTransactionConsequences({ ...base, value: "0.25" }, { intelligence: { network: "XLAYER_TESTNET", chainId: 1952, address: target, addressType: "EOA", codePresent: false, codeSizeBytes: 0, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "21000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } })[0];
+    const contract = buildTransactionConsequences({ ...base, value: "0.25" }, { intelligence: { network: "XLAYER_TESTNET", chainId: 1952, address: target, addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 10, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "30000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "ERC165" } })[0];
     expect(eoa.description).to.include("externally owned account");
     expect(contract.description).to.include("receive/fallback logic");
     expect(contract.description).to.include("does not claim this is equivalent to a simple EOA transfer");

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, enhancement-v2, final-judge-upgrade, final-polish, v3-competition]
+    branches: [main, enhancement-v2, final-judge-upgrade, final-polish, v3-competition, codex/v4-okx-simulation]
   pull_request:
     branches: [main]
 
@@ -35,3 +35,5 @@ jobs:
       - run: pnpm run pipeline:test
       - run: pnpm run token-standard:test
       - run: pnpm run security-benchmark:test
+      - run: pnpm run simulation:test
+      - run: pnpm run presentation:test

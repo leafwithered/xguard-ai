@@ -16,6 +16,8 @@ const input: RiskInput = {
 function evidenceFor(value: RiskInput = input) {
   const risk = localRiskAnalysis(value);
   return buildAnalysisEvidence(value, risk, [], {
+    network: value.analysisNetwork ?? "XLAYER_TESTNET",
+    chainId: value.analysisNetwork === "XLAYER_MAINNET" ? 196 : 1952,
     address: value.to as Address,
     addressType: "UNAVAILABLE",
     codePresent: null,

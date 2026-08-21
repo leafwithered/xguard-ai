@@ -1,5 +1,6 @@
 import { parseUnits } from "viem";
 import { decodeCalldata, resolveDecodedAction, type DecodedAction } from "./calldata.ts";
+import type { AnalysisNetwork } from "./network.ts";
 
 export type RiskInput = {
   from: string;
@@ -7,11 +8,12 @@ export type RiskInput = {
   value: string;
   data: string;
   context: string;
+  analysisNetwork?: AnalysisNetwork;
 };
 
 export type RiskSignal = {
   id: string;
-  source: "RULE" | "DECODER" | "ON-CHAIN" | "AI";
+  source: "RULE" | "DECODER" | "ON-CHAIN" | "OKX" | "AI";
   severity: "critical" | "advisory";
   title: string;
   detail: string;
@@ -81,6 +83,7 @@ export function validateRiskInput(input: RiskInput): string[] {
   }
   if (typeof input.data !== "string" || input.data.length > maxCalldataLength || !/^0x([a-fA-F0-9]{2})*$/.test(input.data)) errors.push("Transaction data must be valid even-length hex beginning with 0x and under 10,000 characters");
   if (typeof input.context !== "string" || input.context.length > maxContextLength) errors.push("Context must be text under 2,000 characters");
+  if (input.analysisNetwork !== undefined && input.analysisNetwork !== "XLAYER_TESTNET" && input.analysisNetwork !== "XLAYER_MAINNET") errors.push("Analysis network is invalid");
   return errors;
 }
 

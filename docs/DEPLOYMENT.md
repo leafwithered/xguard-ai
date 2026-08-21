@@ -31,6 +31,16 @@
 - Provider identity: intentionally not asserted by public artifacts; `AI_BASE_URL` and `AI_MODEL` remain server-side deployment configuration
 - Local Analysis remains the failure-isolated fallback
 
+### V4 pre-credential Preview boundary
+
+The `codex/v4-okx-simulation` branch is based on frozen V3 commit `04575cc764163c7cb99b948c050e974e4cd20a2e`. It is not Production. The canonical Production URL, V1 `RiskRegistry`, and verified receipt remain unchanged.
+
+- Testnet `1952`: existing `XLAYER_RPC_URL` intelligence/preflight; OKX simulation is deterministically `UNSUPPORTED` and is never requested.
+- Mainnet `196`: `XLAYER_MAINNET_RPC_URL` intelligence/preflight plus optional OKX OnchainOS Transaction Simulation using chain index `196`.
+- Preview may deploy without OKX credentials; Mainnet simulation is then visibly `UNAVAILABLE` while the remaining analysis continues.
+- Real API verification requires Preview-only `OKX_API_KEY`, `OKX_SECRET_KEY`, and `OKX_API_PASSPHRASE` after the explicit credential gate.
+- Do not configure OKX credentials in Production during Phase A.
+
 ### V3 Preview evidence architecture
 
 The `v3-competition` candidate is Preview-only. It orders analysis as deterministic decode/risk → RPC intelligence/preflight → consequences → normalized evidence → deterministic confidence/verdict/execution → one optional AI advisory call → intent comparison and safety fusion. Unknown or malformed calldata is always `LOW` confidence and `UNDETERMINED`, even when its heuristic risk score is LOW. Production remains on the stable baseline until a separate merge approval.

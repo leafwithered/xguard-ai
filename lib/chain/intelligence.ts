@@ -1,7 +1,10 @@
 import { getAddress, parseUnits, toHex, type Address, type Hex } from "viem";
+import { getAnalysisNetworkConfig, normalizeAnalysisNetwork, type AnalysisNetwork } from "../network.ts";
 import type { RiskSignal } from "../risk.ts";
 
 export type ContractIntelligence = {
+  network: AnalysisNetwork;
+  chainId: 1952 | 196;
   address: Address;
   addressType: "EOA" | "SMART_CONTRACT" | "UNAVAILABLE";
   codePresent: boolean | null;
@@ -21,6 +24,7 @@ export type IntelligenceInput = {
   to: string;
   value: string;
   data: string;
+  analysisNetwork?: AnalysisNetwork;
 };
 
 type JsonRpcResponse = {
@@ -36,7 +40,6 @@ export type IntelligenceOptions = {
   fetchImpl?: FetchLike;
 };
 
-const defaultRpcUrl = "https://testrpc.xlayer.tech/terigon";
 const implementationSlot = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 const supportsInterfaceSelector = "0x01ffc9a7";
 const erc721Interface = "0x80ac58cd";
@@ -163,12 +166,17 @@ async function detectTokenStandard(address: string, rpcUrl: string, signal: Abor
 }
 
 export async function inspectContract(input: IntelligenceInput, options: IntelligenceOptions = {}): Promise<ContractIntelligence> {
-  const rpcUrl = options.rpcUrl ?? process.env.XLAYER_RPC_URL ?? defaultRpcUrl;
+  const network = normalizeAnalysisNetwork(input.analysisNetwork);
+  const networkConfig = getAnalysisNetworkConfig(network);
+  const configuredRpc = network === "XLAYER_MAINNET" ? process.env.XLAYER_MAINNET_RPC_URL : process.env.XLAYER_RPC_URL;
+  const rpcUrl = options.rpcUrl ?? configuredRpc ?? networkConfig.rpcUrl;
   const timeoutMs = options.timeoutMs ?? 4_500;
   const fetchImpl = options.fetchImpl ?? fetch;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const base: ContractIntelligence = {
+    network,
+    chainId: networkConfig.chainId,
     address: getAddress(input.to),
     addressType: "UNAVAILABLE",
     codePresent: null,

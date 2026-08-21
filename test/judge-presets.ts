@@ -10,6 +10,8 @@ import { localRiskAnalysis } from "../lib/risk.ts";
 
 function intelligence(address: string, overrides: Partial<ContractIntelligence> = {}): ContractIntelligence {
   return {
+    network: "XLAYER_TESTNET",
+    chainId: 1952,
     address: address as Address,
     addressType: "EOA",
     codePresent: false,

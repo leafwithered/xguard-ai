@@ -13,6 +13,8 @@ const approveAbi = [{ type: "function", name: "approve", stateMutability: "nonpa
 
 function intelligence(overrides: Partial<ContractIntelligence> = {}): ContractIntelligence {
   return {
+    network: "XLAYER_TESTNET",
+    chainId: 1952,
     address: target,
     addressType: "EOA",
     codePresent: false,

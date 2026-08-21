@@ -12,7 +12,22 @@ XGuard AI decodes transaction behavior, explains the deterministic consequences 
 
 **Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1920×1080 H.264, approximately 1:34). It was composed from verified screenshots of the canonical Production deployment and demonstrates Judge Mode, Hybrid Analysis, Risk Fusion, real X Layer RPC intelligence, and the existing confirmed receipt without connecting a wallet or creating a transaction.
 
-## 60–90 Second Judge Path (V3.1 candidate)
+## V4 Preview Candidate — OKX Simulation Evidence
+
+The `codex/v4-okx-simulation` branch extends the frozen V3 evidence architecture without changing the stable Production deployment:
+
+- **X Layer Testnet (`1952`)** keeps the existing bounded RPC intelligence and preflight path. It never calls the Mainnet simulator.
+- **X Layer Mainnet (`196`, OKX `chainIndex: "196"`)** adds the official OKX OnchainOS Transaction Simulation API as a server-side, read-only evidence provider.
+- RPC preflight and OKX simulation remain separate evidence sources. Any disagreement is surfaced explicitly and caps analysis confidence.
+- Simulation facts enter normalized evidence before the optional AI call. AI may explain those facts but cannot rewrite them or lower the deterministic safety floor.
+- An empty OKX risk list means only **“No OKX simulation risk entries were returned.”** It is not proof of safety.
+- Missing credentials, authentication errors, rate limits, timeouts, malformed responses, and provider errors remain visible but non-fatal; deterministic/RPC/AI-or-Local analysis continues.
+
+This V4 code is a **Preview candidate only** until a real read-only API verification and separate release approval are complete. It does not alter the existing RiskRegistry, verified receipt, canonical Production URL, or Production environment.
+
+See [docs/V4_OKX_SIMULATION.md](docs/V4_OKX_SIMULATION.md) for the evidence schema, trust boundaries, failure matrix, and credential handoff gate.
+
+## 60–90 Second Judge Path (V3 stable)
 
 1. Open the V3.1 Preview and select **⚡ Try Judge Demo**.
 2. Load **Safe Transfer**, then explicitly click **Analyze risk** to see the LOW baseline.
@@ -34,7 +49,7 @@ Judge Mode only loads examples, navigates, and explains. It never auto-analyzes,
 
 ## Stable Production Baseline
 
-The verified Production baseline is commit `8f37ee568ee02cb7affa51069eac618c3adb9363` and remains live on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
+The frozen V3 stable checkpoint is commit `04575cc764163c7cb99b948c050e974e4cd20a2e` with tag `v3.1.1-stable`, and the canonical Vercel Production URL remains unchanged. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
 
 - Safe Transfer: `8 LOW`, Hybrid Analysis
 - Unlimited Approval: `72 HIGH`, decoded ERC20 `approve`, spender and `Amount: Unlimited` visible
@@ -42,9 +57,9 @@ The verified Production baseline is commit `8f37ee568ee02cb7affa51069eac618c3adb
 - Clear Analysis, wallet connection, X Layer Testnet switching, and explicit user confirmation are included
 - Contract V2 is documented as a proposal only; no new contract or chain transaction was introduced
 
-### V3 Preview Candidate
+### V3 Stable Evidence Architecture
 
-The `v3-competition` branch adds an evidence-first analysis pipeline, deterministic Transaction Consequence Engine, optional Intent vs Reality comparison, selector-ambiguity hardening, and a reproducible 57-case security benchmark (34 corpus cases, 11 pipeline invariants, and 12 semantic/adversarial cases). It is developed and deployed as a Preview candidate only until explicit approval; it does not alter the existing Production deployment, RiskRegistry contract, or verified receipt.
+V3 adds an evidence-first analysis pipeline, deterministic Transaction Consequence Engine, optional Intent vs Reality comparison, selector-ambiguity hardening, and a reproducible 57-case security benchmark (34 corpus cases, 11 pipeline invariants, and 12 semantic/adversarial cases). The stable checkpoint does not alter the existing RiskRegistry contract or verified receipt.
 
 ### V3.1 semantic correctness
 
@@ -88,12 +103,13 @@ The hybrid design combines a deterministic Risk Engine with a configurable OpenA
 2. Detect or switch to X Layer Testnet (`1952`).
 3. Enter `from`, `to`, value, calldata, and an optional plain-language expectation.
 4. Decode supported calldata and run the deterministic Local Risk Engine.
-5. Inspect the target through real X Layer RPC calls and run bounded `eth_call` / `eth_estimateGas` preflight checks—not a full state-diff simulation.
-6. Build sanitized, normalized evidence containing decoded behavior, deterministic signals, consequences, contract facts, and execution facts.
-7. Derive confidence, verdict, and execution state deterministically, then call the optional AI adapter once with that evidence.
-8. Compare optional stated intent with decoded reality, enforce deterministic mismatch floors, and fuse AI advisory risk without allowing it to lower the floor.
-9. Review consequences, Intent vs Reality, known-risk severity, confidence, execution, source-labeled signals, intelligence, reasons, and recommendation before signing.
-10. Optionally confirm explicitly and record the assessment hash and score through `RiskRegistry`.
+5. Inspect the target through the RPC selected for the explicit analysis network and run bounded `eth_call` / `eth_estimateGas` preflight checks.
+6. On X Layer Mainnet only, request additional read-only transaction evidence from OKX OnchainOS Transaction Simulation; X Layer Testnet never uses this API.
+7. Build sanitized, normalized evidence containing decoded behavior, deterministic signals, consequences, contract facts, RPC execution facts, and the immutable simulation block.
+8. Derive confidence, verdict, execution state, and evidence consistency deterministically, then call the optional AI adapter once with that evidence.
+9. Compare optional stated intent with decoded reality, enforce deterministic mismatch floors, and fuse AI advisory risk without allowing it to lower the floor.
+10. Review consequences, Intent vs Reality, known-risk severity, confidence, separate RPC/simulation evidence, reasons, and recommendation before signing.
+11. Optionally confirm explicitly and record the assessment hash and score through the existing Testnet `RiskRegistry`.
 
 ## Architecture
 
@@ -103,8 +119,11 @@ flowchart TD
     D --> L[Deterministic Risk Engine]
     L --> CI[On-chain Contract Intelligence]
     CI --> P[Transaction Preflight]
-    P --> C[Deterministic Consequences]
-    C --> E[Normalized Evidence]
+    P --> O{Mainnet 196?}
+    O -->|yes| X[OKX OnchainOS Simulation]
+    O -->|no: Testnet 1952| C[Deterministic Consequences]
+    X --> C
+    C --> E[Normalized Immutable Evidence]
     E --> V[Confidence / Verdict / Execution]
     E --> A[One AI Advisory Call]
     I[Optional User Intent] --> M[Intent vs Reality]
@@ -122,7 +141,7 @@ flowchart TD
 
 ## AI Risk Engine
 
-`lib/analyze-pipeline.ts` owns the evidence-first orchestration and accepts small injectable RPC and AI dependencies for integration testing. `lib/evidence.ts` creates a bounded, sanitized object with the transaction, decoded action, deterministic signals, consequences, address type, code presence/size, scoped EIP-1967 observation, preflight status/reason, gas estimate, and RPC status. Only after that evidence exists does `lib/ai/provider.ts` make one advisory request. Configure an OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use. Production Hybrid Analysis is verified through this server-configured adapter; public artifacts do not assert the upstream provider identity.
+`lib/analyze-pipeline.ts` owns the evidence-first orchestration and accepts small injectable RPC, simulation, and AI dependencies for integration testing. `lib/evidence.ts` creates a bounded, sanitized object with the transaction, decoded action, deterministic signals, consequences, address type, code presence/size, scoped EIP-1967 observation, RPC preflight facts, and normalized OKX simulation evidence. Only after that evidence exists does `lib/ai/provider.ts` make one advisory request. Configure an OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use. Production Hybrid Analysis is verified through this server-configured adapter; public artifacts do not assert the upstream provider identity.
 
 Confidence and verdict are deterministic: unsupported, malformed, or materially token-standard-ambiguous calldata is `LOW` confidence and `UNDETERMINED`; a known decode with unavailable or partial RPC evidence is generally `MEDIUM`; a known decode with complete RPC evidence may be `HIGH`; an observed EIP-1967 implementation caps confidence at `MEDIUM` because arbitrary implementation behavior is not fully inspected. Every response includes deterministic `confidenceReasons`. High risk does not mean low confidence, and preflight revert does not add arbitrary malicious-risk points. AI cannot change evidence, execution status, verdict, or final analysis confidence.
 
@@ -138,11 +157,12 @@ The adapter is intentionally provider-neutral: `AI_BASE_URL` may point at a thir
 
 ## X Layer Integration
 
-- Network: X Layer Testnet
-- Chain ID: `1952`
-- Native token: `OKB`
-- Official RPC: `https://testrpc.xlayer.tech/terigon`
-- Explorer: `https://www.okx.com/web3/explorer/xlayer-test`
+| Analysis network | Chain ID | RPC evidence | OKX Transaction Simulation |
+| --- | ---: | --- | --- |
+| X Layer Testnet | `1952` | `https://testrpc.xlayer.tech/terigon` | Unsupported; never called |
+| X Layer Mainnet | `196` | `https://rpc.xlayer.tech` | Supported in V4 with `chainIndex: "196"` |
+
+Both networks use OKB as the native token. The existing `RiskRegistry` and verified receipt remain Testnet-only.
 
 ### On-chain Intelligence and Preflight
 
@@ -154,6 +174,12 @@ For each valid destination, the server performs isolated, timeout-bounded X Laye
 - `eth_estimateGas` reports an estimate when the RPC can produce one.
 
 RPC failure never blocks deterministic analysis. Unavailable results are labeled `Unavailable`; XGuard does not invent contract reputation or simulation output. The Transaction Analyzer can also load a real X Layer transaction and receipt for clearly labeled **post-hoc** analysis.
+
+### OKX OnchainOS Transaction Simulation (V4 Preview)
+
+For an explicitly selected X Layer Mainnet analysis, the server signs one bounded `POST /api/v6/dex/pre-transaction/simulate` request using the exact raw JSON body sent on the wire. `txAmount` is converted from human OKB to 18-decimal base units, and calldata is sent unchanged. The UI preserves provider-returned intention, asset changes and raw signed values, gas used, failure reason, and risk entries. A simulation failure means the transaction may fail under the simulated state; it is not automatically labeled malicious.
+
+Credentials are server-side only. The browser bundle, API response, logs, fixtures, and repository never receive keys, passphrases, or authentication signatures. Phase A intentionally performs no real OKX request; real verification is gated on Preview-only credential configuration.
 
 ## Smart Contract
 
@@ -205,6 +231,10 @@ The public production deployment is available at https://xguard-ai-six.vercel.ap
 | `AI_BASE_URL` | OpenAI-compatible provider base URL, with or without `/v1` |
 | `AI_MODEL` | Provider-specific model identifier |
 | `XLAYER_RPC_URL` | X Layer Testnet deployment RPC |
+| `XLAYER_MAINNET_RPC_URL` | X Layer Mainnet RPC used for Mainnet intelligence/preflight |
+| `OKX_API_KEY` | OKX OnchainOS API key; server-side only |
+| `OKX_SECRET_KEY` | OKX signing secret; server-side only |
+| `OKX_API_PASSPHRASE` | OKX API passphrase; server-side only |
 | `NEXT_PUBLIC_RISK_REGISTRY_ADDRESS` | Deployed registry address used by the browser |
 | `DEPLOYER_PRIVATE_KEY` | Deployment wallet key; never commit |
 
@@ -237,6 +267,7 @@ pnpm run intent:test
 pnpm run pipeline:test
 pnpm run token-standard:test
 pnpm run security-benchmark:test
+pnpm run simulation:test
 ```
 
 The full 57-case V3.1 benchmark and its invariants are documented in [docs/SECURITY_BENCHMARK.md](docs/SECURITY_BENCHMARK.md).
@@ -255,7 +286,7 @@ XGuard AI is an advisory prototype, not an audit, wallet firewall, or guarantee 
 
 ## Limitations
 
-- Transaction Preflight uses `eth_call` and `eth_estimateGas`; it is not a full state-diff simulation and does not prove contract safety.
+- RPC preflight uses `eth_call` and `eth_estimateGas`. V4 adds bounded OKX simulation evidence on Mainnet, but does not claim full state-diff coverage or proof of safety.
 - Contract reputation and verified source metadata are not yet integrated.
 - The on-chain registry stores the submitting address, score, hash, and timestamp only; it does not execute or protect transactions.
 - AI provider behavior depends on the configured service and its OpenAI-compatible endpoint behavior.
@@ -265,7 +296,7 @@ XGuard AI is an advisory prototype, not an audit, wallet firewall, or guarantee 
 - Wallet SDK/API integration for other X Layer applications.
 - Browser extension and wallet-native pre-sign delivery after the web prototype.
 - Verified source metadata and bytecode provenance from authoritative sources.
-- Full state-diff simulation with explicit trace provenance.
+- Additional trace/state-diff provenance only if an authoritative provider exposes those fields explicitly.
 - Evidence-backed phishing intelligence without fabricated reputation scores.
 - X Layer mainnet deployment only after the required testnet phase and a separate security review.
 

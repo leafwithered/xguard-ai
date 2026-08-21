@@ -1,12 +1,21 @@
 import type { ContractIntelligence } from "./chain/intelligence.ts";
 import type { TransactionConsequence } from "./consequence.ts";
+import { getAnalysisNetworkConfig, normalizeAnalysisNetwork, type AnalysisNetwork } from "./network.ts";
+import type { SimulationEvidence } from "./okx/simulation.ts";
 import type { RiskInput, RiskLevel, RiskResult, RiskSignal } from "./risk.ts";
 
 export type AnalysisConfidence = "HIGH" | "MEDIUM" | "LOW";
 export type ExecutionStatus = "SUCCEEDED" | "REVERTED" | "UNAVAILABLE";
 export type AnalysisVerdict = "ASSESSED" | "UNDETERMINED";
+export type EvidenceConsistencyStatus = "CONSISTENT" | "INCONSISTENT" | "NOT_COMPARABLE";
+
+export type EvidenceConsistency = {
+  status: EvidenceConsistencyStatus;
+  reasons: string[];
+};
 
 export type AnalysisEvidence = {
+  network: { network: AnalysisNetwork; chainId: 1952 | 196 };
   transaction: RiskInput;
   decodedAction: RiskResult["decodedAction"];
   deterministicSignals: {
@@ -31,6 +40,8 @@ export type AnalysisEvidence = {
     estimatedGas: string | null;
     rpcStatus: ContractIntelligence["rpcStatus"];
   };
+  simulation: SimulationEvidence;
+  evidenceConsistency: EvidenceConsistency;
 };
 
 export type AnalysisDimensions = {
@@ -44,7 +55,19 @@ function copySignal(signal: RiskSignal): RiskSignal {
   return { id: signal.id, source: signal.source, severity: signal.severity, title: signal.title, detail: signal.detail };
 }
 
-export function deriveAnalysisDimensions(result: RiskResult, intelligence: ContractIntelligence): AnalysisDimensions {
+export function deriveEvidenceConsistency(intelligence: ContractIntelligence, simulation: SimulationEvidence): EvidenceConsistency {
+  if (simulation.status !== "AVAILABLE" || intelligence.preflightStatus === "UNAVAILABLE") return { status: "NOT_COMPARABLE", reasons: [] };
+  const simulationFailed = Boolean(simulation.failReason);
+  if (intelligence.preflightStatus === "SUCCEEDED" && simulationFailed) {
+    return { status: "INCONSISTENT", reasons: ["RPC preflight succeeded while OKX simulation returned a failure reason"] };
+  }
+  if (intelligence.preflightStatus === "REVERTED" && !simulationFailed) {
+    return { status: "INCONSISTENT", reasons: ["RPC preflight reverted while OKX simulation returned no failure reason"] };
+  }
+  return { status: "CONSISTENT", reasons: [] };
+}
+
+export function deriveAnalysisDimensions(result: RiskResult, intelligence: ContractIntelligence, simulation?: SimulationEvidence): AnalysisDimensions {
   const undecodable = result.decodedAction.status === "unknown" || result.decodedAction.status === "malformed";
   const standardAmbiguity = result.decodedAction.assetStandard === "UNKNOWN"
     && (result.decodedAction.method === "approve(address,uint256)" || result.decodedAction.method === "transferFrom(address,address,uint256)");
@@ -73,6 +96,17 @@ export function deriveAnalysisDimensions(result: RiskResult, intelligence: Contr
   if (intelligence.preflightStatus === "SUCCEEDED") confidenceReasons.push("Current-state preflight call succeeded");
   else if (intelligence.preflightStatus === "REVERTED") confidenceReasons.push("Current-state preflight call reverted");
   else confidenceReasons.push("Current-state execution could not be evaluated");
+  if (simulation) {
+    const consistency = deriveEvidenceConsistency(intelligence, simulation);
+    if (simulation.status === "AVAILABLE" && simulation.failReason) {
+      if (analysisConfidence === "HIGH") analysisConfidence = "MEDIUM";
+      confidenceReasons.push("OKX simulation returned a failure reason; this does not by itself imply maliciousness");
+    }
+    if (consistency.status === "INCONSISTENT") {
+      if (analysisConfidence === "HIGH") analysisConfidence = "MEDIUM";
+      confidenceReasons.push(...consistency.reasons, "RPC preflight and OKX simulation require manual reconciliation");
+    }
+  }
   return { analysisConfidence, analysisVerdict, executionStatus: intelligence.preflightStatus, confidenceReasons: Array.from(new Set(confidenceReasons)) };
 }
 
@@ -80,10 +114,31 @@ export function buildAnalysisEvidence(
   input: RiskInput,
   deterministicRisk: RiskResult,
   consequences: TransactionConsequence[],
-  intelligence: ContractIntelligence
+  intelligence: ContractIntelligence,
+  simulation?: SimulationEvidence
 ): AnalysisEvidence {
+  const network = normalizeAnalysisNetwork(input.analysisNetwork);
+  const networkConfig = getAnalysisNetworkConfig(network);
+  const normalizedSimulation: SimulationEvidence = simulation ?? {
+    provider: "OKX_ONCHAINOS",
+    network,
+    chainId: networkConfig.chainId,
+    chainIndex: networkConfig.okxChainIndex,
+    status: networkConfig.simulationSupported ? "UNAVAILABLE" : "UNSUPPORTED",
+    statusDetail: networkConfig.simulationSupported ? "OKX simulation was not requested" : "OKX Transaction Simulation is not supported for X Layer Testnet",
+    intention: null,
+    assetChanges: [],
+    gasUsed: null,
+    failReason: null,
+    risks: [],
+    observedAt: new Date(0).toISOString(),
+    durationMs: 0,
+    httpStatus: null,
+    businessCode: null
+  };
   return {
-    transaction: { from: input.from, to: input.to, value: input.value, data: input.data, context: input.context },
+    network: { network, chainId: networkConfig.chainId },
+    transaction: { from: input.from, to: input.to, value: input.value, data: input.data, context: input.context, analysisNetwork: network },
     decodedAction: { ...deterministicRisk.decodedAction },
     deterministicSignals: {
       score: deterministicRisk.deterministicScore,
@@ -106,6 +161,12 @@ export function buildAnalysisEvidence(
       revertReason: intelligence.revertReason ?? null,
       estimatedGas: intelligence.estimatedGas ?? null,
       rpcStatus: intelligence.rpcStatus
-    }
+    },
+    simulation: {
+      ...normalizedSimulation,
+      assetChanges: normalizedSimulation.assetChanges.map((item) => ({ ...item })),
+      risks: normalizedSimulation.risks.map((item) => ({ ...item }))
+    },
+    evidenceConsistency: deriveEvidenceConsistency(intelligence, normalizedSimulation)
   };
 }

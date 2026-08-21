@@ -7,7 +7,8 @@ const analyzedInput: RiskInput = {
   to: "0x2222222222222222222222222222222222222222",
   value: "0",
   data: "0x",
-  context: "Known transfer"
+  context: "Known transfer",
+  analysisNetwork: "XLAYER_TESTNET"
 };
 
 describe("Analysis freshness", function () {
@@ -25,7 +26,8 @@ describe("Analysis freshness", function () {
       { to: "0x4444444444444444444444444444444444444444" },
       { value: "1" },
       { data: "0x1234" },
-      { context: "Changed intent" }
+      { context: "Changed intent" },
+      { analysisNetwork: "XLAYER_MAINNET" }
     ];
     for (const change of changes) {
       const state = invalidateStaleAnalysis({ result: { finalScore: 8 }, lastInput: analyzedInput, reviewed: true }, { ...analyzedInput, ...change });

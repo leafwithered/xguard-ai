@@ -1,9 +1,10 @@
 import type { ContractIntelligence } from "./chain/intelligence.ts";
 import { decodeCalldata, type DecodedAction } from "./calldata.ts";
+import type { SimulationEvidence } from "./okx/simulation.ts";
 import type { RiskInput } from "./risk.ts";
 
 export type ConsequenceSeverity = "INFO" | "CAUTION" | "CRITICAL";
-export type ConsequenceEvidenceSource = "DECODER" | "VALUE" | "ON_CHAIN";
+export type ConsequenceEvidenceSource = "DECODER" | "VALUE" | "ON_CHAIN" | "SIMULATION";
 export type ConsequenceConfidence = "HIGH" | "MEDIUM";
 
 export type TransactionConsequence = {
@@ -18,6 +19,7 @@ export type TransactionConsequence = {
 type ConsequenceOptions = {
   decodedAction?: DecodedAction;
   intelligence?: ContractIntelligence;
+  simulation?: SimulationEvidence;
 };
 
 function consequence(
@@ -198,6 +200,41 @@ function onChainConsequences(intelligence?: ContractIntelligence): TransactionCo
   return observations;
 }
 
+function simulationConsequences(simulation?: SimulationEvidence): TransactionConsequence[] {
+  if (!simulation || simulation.status !== "AVAILABLE") return [];
+  const observations: TransactionConsequence[] = simulation.assetChanges.map((asset, index) => {
+    const direction = asset.rawValue.startsWith("-") ? "decrease" : "increase";
+    const identity = asset.address ? `contract ${asset.address}` : asset.assetType ? `asset type ${asset.assetType}` : "an unidentified simulated asset";
+    return consequence(
+      `okx-asset-change-${index}`,
+      direction === "decrease" ? "CAUTION" : "INFO",
+      `OKX simulated asset ${direction}`,
+      `OKX OnchainOS returned rawValue ${asset.rawValue} for ${identity}. Symbol and name are provider metadata, not independent token identity proof.`,
+      "SIMULATION",
+      "MEDIUM"
+    );
+  });
+  if (simulation.failReason) {
+    observations.push(consequence(
+      "okx-simulation-fail-reason",
+      "CAUTION",
+      "OKX simulation indicates possible failure",
+      simulation.failReason,
+      "SIMULATION",
+      "MEDIUM"
+    ));
+  }
+  simulation.risks.forEach((risk, index) => observations.push(consequence(
+    `okx-simulation-risk-${index}`,
+    "CAUTION",
+    "OKX simulation risk evidence",
+    [risk.addressType, risk.address].filter(Boolean).join(" · ") || "OKX returned a risk entry without an address label.",
+    "SIMULATION",
+    "MEDIUM"
+  )));
+  return observations;
+}
+
 export function buildTransactionConsequences(input: RiskInput, options: ConsequenceOptions = {}): TransactionConsequence[] {
   const decoded = options.decodedAction ?? decodeCalldata(input.data);
   const consequences = decodedConsequences(input, decoded, options.intelligence);
@@ -211,6 +248,7 @@ export function buildTransactionConsequences(input: RiskInput, options: Conseque
     ));
   }
   consequences.push(...onChainConsequences(options.intelligence));
+  consequences.push(...simulationConsequences(options.simulation));
   return consequences;
 }
 

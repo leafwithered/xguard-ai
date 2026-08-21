@@ -65,8 +65,9 @@ h1 { font-size: clamp(44px, 7vw, 78px); line-height: .94; margin: 16px 0 18px; m
 .presets strong, .presets span { display: block; }
 .presets span { color: var(--muted); font-size: 11px; line-height: 1.35; margin-top: 6px; }
 label { display: block; color: var(--muted); font-size: 13px; margin: 18px 0 8px; }
-textarea, input { width: 100%; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 12px; color: var(--text); padding: 13px; outline: none; }
-textarea:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(119,242,194,.08); }
+textarea, input, select { width: 100%; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 12px; color: var(--text); padding: 13px; outline: none; }
+textarea:focus, input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(119,242,194,.08); }
+select { color-scheme: dark; }
 textarea { min-height: 110px; resize: vertical; }
 .field-note { margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.4; }
 .row { display: grid; grid-template-columns: .7fr 1.3fr; gap: 12px; }
@@ -94,14 +95,36 @@ textarea { min-height: 110px; resize: vertical; }
 .assessment-dimensions strong { font-size: 12px; word-break: break-word; }
 .assessment-dimensions.verdict-undetermined { border-left: 3px solid var(--warning); padding-left: 8px; }
 .confidence-reasons { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 11px; line-height: 1.55; }
-.decoded-card, .intelligence-card, .fusion-card, .consequence-card, .intent-card, .explanation, .record-card { margin-top: 18px; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-.decoded-card h3, .intelligence-card h3, .fusion-card h3, .consequence-card h3, .intent-card h3, .signal-section h3, .explanation h3 { margin: 0 0 10px; font-size: 14px; }
+.decoded-card, .intelligence-card, .simulation-card, .timing-card, .fusion-card, .consequence-card, .intent-card, .explanation, .record-card { margin-top: 18px; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.decoded-card h3, .intelligence-card h3, .simulation-card h3, .timing-card h3, .fusion-card h3, .consequence-card h3, .intent-card h3, .signal-section h3, .explanation h3 { margin: 0 0 10px; font-size: 14px; }
 .decoded-grid { display: grid; grid-template-columns: 96px minmax(0,1fr); gap: 8px 12px; font-size: 12px; }
 .decoded-grid span { color: var(--muted); }
 .decoded-grid strong { word-break: break-all; }
 .decoded-card p, .intelligence-card p, .fusion-card p, .explanation p { margin-bottom: 0; font-size: 13px; }
 .intelligence-card { border-color: rgba(119,242,194,.18); }
 .intelligence-card code { color: var(--accent); }
+.simulation-card { border-color: rgba(181,166,255,.3); }
+.simulation-card > p { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.simulation-status { border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; color: var(--muted); font-size: 10px; }
+.simulation-available { border-color: rgba(181,166,255,.45); color: #b5a6ff; }
+.simulation-error { border-color: rgba(255,124,139,.45); color: var(--danger); }
+.simulation-detail { padding: 10px; border-radius: 9px; background: rgba(8,11,18,.45); }
+.simulation-subsection { margin-top: 14px; display: grid; gap: 8px; }
+.simulation-subsection > strong { font-size: 12px; }
+.simulation-subsection > p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.simulation-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.simulation-list li { display: grid; gap: 5px; padding: 10px; border-radius: 9px; background: rgba(8,11,18,.45); }
+.simulation-list li > div { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; }
+.simulation-list p, .simulation-list code, .simulation-list small { margin: 0; overflow-wrap: anywhere; }
+.simulation-list p { font-size: 12px; }
+.simulation-list code, .simulation-list small { color: var(--muted); font-size: 10px; }
+.evidence-inconsistency { margin-top: 14px; padding: 11px; border-left: 3px solid var(--warning); border-radius: 9px; background: rgba(249,198,107,.08); }
+.evidence-inconsistency strong { color: var(--warning); font-size: 12px; }
+.evidence-inconsistency ul { margin: 7px 0 0; padding-left: 18px; color: var(--muted); font-size: 11px; }
+.timing-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.timing-grid div { display: grid; gap: 4px; padding: 10px; border-radius: 9px; background: rgba(8,11,18,.45); }
+.timing-grid span { color: var(--muted); font-size: 9px; text-transform: uppercase; }
+.timing-grid strong { font-size: 12px; }
 .card-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .card-title .eyebrow { display: block; margin-bottom: 7px; font-size: 10px; }
 .rpc-status { border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; color: var(--muted); font-size: 10px; }
@@ -142,6 +165,7 @@ textarea { min-height: 110px; resize: vertical; }
 .source-rule { color: var(--danger); background: rgba(255,124,139,.1); }
 .source-decoder { color: var(--warning); background: rgba(249,198,107,.1); }
 .source-on-chain { color: var(--accent); background: rgba(119,242,194,.1); }
+.source-okx { color: #b5a6ff; background: rgba(181,166,255,.1); }
 .safety-guarantee { display: grid; gap: 8px; margin-top: 18px; border: 1px solid rgba(119,242,194,.24); border-radius: 14px; padding: 15px; background: rgba(119,242,194,.06); }
 .safety-guarantee strong { font-size: 13px; line-height: 1.45; }
 .recommendation { background: rgba(119,242,194,.07); border: 1px solid rgba(119,242,194,.18); border-radius: 12px; padding: 14px; }
@@ -183,7 +207,7 @@ textarea { min-height: 110px; resize: vertical; }
   .panel-heading > button { width: 100%; }
   .presets, .row, .why-xlayer, .tx-search, .judge-steps { grid-template-columns: 1fr; }
   .capability-strip { grid-template-columns: repeat(2, 1fr); }
-  .fusion-grid, .assessment-dimensions { grid-template-columns: 1fr; }
+  .fusion-grid, .assessment-dimensions, .timing-grid { grid-template-columns: 1fr; }
   .presets button { min-height: 0; }
   .score { width: 88px; height: 88px; flex-basis: 88px; }
   .record-card > div:first-child { display: grid; }

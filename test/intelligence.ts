@@ -94,7 +94,7 @@ describe("X Layer contract intelligence", function () {
   });
 
   it("labels evidence-backed proxy and revert observations as ON-CHAIN", function () {
-    const signals = signalsFromIntelligence({ address: input.to as `0x${string}`, addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 10, proxyDetected: true, implementationAddress: `0x${implementation}` as `0x${string}`, preflightStatus: "REVERTED", revertReason: "Error: denied", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" });
+    const signals = signalsFromIntelligence({ network: "XLAYER_TESTNET", chainId: 1952, address: input.to as `0x${string}`, addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 10, proxyDetected: true, implementationAddress: `0x${implementation}` as `0x${string}`, preflightStatus: "REVERTED", revertReason: "Error: denied", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" });
     expect(signals).to.have.length(2);
     expect(signals.every((signal) => signal.source === "ON-CHAIN")).to.equal(true);
   });

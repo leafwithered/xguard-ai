@@ -1,5 +1,15 @@
 # Final Release Status
 
+## V4 Preview credential handoff — pending
+
+Phase A implementation and mock verification do not use real OKX credentials. After the V4 Preview and CI are ready, the project owner must add these three server-side variables in **Vercel → XGuard AI Project → Settings → Environment Variables**, scoped to **Preview** only:
+
+- `OKX_API_KEY`
+- `OKX_SECRET_KEY`
+- `OKX_API_PASSPHRASE`
+
+Do not paste values into chat, Git, documentation, screenshots, or logs. After saving the Preview variables, confirm exactly: `V4 PREVIEW CREDENTIALS CONFIGURED`. A separate read-only live verification can then begin. Production must remain unchanged until that later verification and a separate release approval.
+
 ## Stable Production
 
 - Final Judge Upgrade: merged to `main`

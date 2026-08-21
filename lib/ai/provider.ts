@@ -1,16 +1,40 @@
 import OpenAI from "openai";
+import type { TransactionConsequence } from "../consequence.ts";
+import { isAiNormalizedIntent, type AiNormalizedIntent } from "../intent.ts";
 import type { AdvisoryRiskResult, RiskInput, RiskResult } from "../risk";
+
+export type AiAdvisoryRiskResult = AdvisoryRiskResult & {
+  normalizedIntent: AiNormalizedIntent | null;
+};
 
 const riskSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["score", "level", "summary", "reasons", "recommendation"],
+  required: ["score", "level", "summary", "reasons", "recommendation", "normalizedIntent"],
   properties: {
     score: { type: "integer", minimum: 0, maximum: 100 },
     level: { type: "string", enum: ["LOW", "MEDIUM", "HIGH"] },
     summary: { type: "string" },
     reasons: { type: "array", items: { type: "string" } },
-    recommendation: { type: "string" }
+    recommendation: { type: "string" },
+    normalizedIntent: {
+      anyOf: [
+        {
+          type: "object",
+          additionalProperties: false,
+          required: ["action", "scope", "amount", "asset", "recipient", "confidence"],
+          properties: {
+            action: { type: "string", enum: ["CLAIM", "SWAP", "NATIVE_TRANSFER", "TOKEN_TRANSFER", "APPROVE", "NFT_OPERATOR", "REVOKE", "UNKNOWN"] },
+            scope: { type: "string", enum: ["FINITE", "UNLIMITED", "COLLECTION_WIDE", "NONE", "UNKNOWN"] },
+            amount: { anyOf: [{ type: "string" }, { type: "null" }] },
+            asset: { anyOf: [{ type: "string" }, { type: "null" }] },
+            recipient: { anyOf: [{ type: "string" }, { type: "null" }] },
+            confidence: { type: "string", enum: ["HIGH", "MEDIUM", "LOW"] }
+          }
+        },
+        { type: "null" }
+      ]
+    }
   }
 } as const;
 
@@ -23,14 +47,16 @@ function getProviderConfig() {
   return { apiKey, baseURL, model };
 }
 
-function parseRiskResult(value: unknown, providerProtocol: "responses" | "chat"): AdvisoryRiskResult | null {
+function parseRiskResult(value: unknown, providerProtocol: "responses" | "chat"): AiAdvisoryRiskResult | null {
   if (!value || typeof value !== "object") return null;
   const result = value as Partial<RiskResult>;
   const score = Number(result.score);
   if (!Number.isInteger(score) || score < 0 || score > 100) return null;
   if (result.level !== "LOW" && result.level !== "MEDIUM" && result.level !== "HIGH") return null;
   if (typeof result.summary !== "string" || typeof result.recommendation !== "string" || !Array.isArray(result.reasons) || !result.reasons.every((reason) => typeof reason === "string")) return null;
-  return { score, level: result.level, summary: result.summary, reasons: result.reasons, recommendation: result.recommendation, mode: "AI", providerProtocol };
+  const rawIntent = (value as { normalizedIntent?: unknown }).normalizedIntent;
+  const normalizedIntent = isAiNormalizedIntent(rawIntent) ? rawIntent : null;
+  return { score, level: result.level, summary: result.summary, reasons: result.reasons, recommendation: result.recommendation, mode: "AI", providerProtocol, normalizedIntent };
 }
 
 function parseJson(text: string) {
@@ -51,11 +77,11 @@ function extractResponsesText(response: { output_text?: unknown; output?: unknow
   return "";
 }
 
-export async function analyzeTransaction(input: RiskInput, deterministicSignals: RiskResult) {
+export async function analyzeTransaction(input: RiskInput, deterministicSignals: RiskResult, deterministicConsequences: TransactionConsequence[] = []) {
   const config = getProviderConfig();
   if (!config) return null;
   const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL, timeout: 30000, maxRetries: 0 });
-  const payload = JSON.stringify({ transaction: input, deterministicSignals });
+  const payload = JSON.stringify({ transaction: input, deterministicSignals, deterministicConsequences });
   try {
     const response = await fetch(`${config.baseURL}/responses`, {
       method: "POST",
@@ -63,7 +89,7 @@ export async function analyzeTransaction(input: RiskInput, deterministicSignals:
       body: JSON.stringify({
         model: config.model,
         input: [
-          { role: "system", content: "You are a cautious EVM transaction risk reviewer. Return only the requested risk JSON. Treat it as advisory." },
+          { role: "system", content: "You are a cautious EVM transaction risk reviewer. Return only the requested risk JSON. Treat risk output as advisory. Also normalize only the user's explicitly stated context into normalizedIntent. Return null when intent is absent or ambiguous. Never infer user intent from transaction calldata, deterministic signals, or consequences." },
           { role: "user", content: payload }
         ],
         text: { format: { type: "json_schema", name: "risk_assessment", strict: true, schema: riskSchema } }
@@ -83,7 +109,7 @@ export async function analyzeTransaction(input: RiskInput, deterministicSignals:
       temperature: 0.1,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: "You are a cautious EVM transaction risk reviewer. Return only JSON with score (integer 0-100), level (LOW|MEDIUM|HIGH), summary, reasons (string array), and recommendation. Treat it as advisory." },
+        { role: "system", content: "You are a cautious EVM transaction risk reviewer. Return only JSON with score (integer 0-100), level (LOW|MEDIUM|HIGH), summary, reasons (string array), recommendation, and normalizedIntent. normalizedIntent is null when user context is absent or ambiguous; otherwise it contains action, scope, amount, asset, recipient, and confidence. Normalize only the user's stated context and never infer intent from transaction data. Treat risk output as advisory." },
         { role: "user", content: payload }
       ]
     });

@@ -2,7 +2,7 @@
 
 > **The explainable pre-sign security layer for X Layer.**
 
-XGuard AI decodes transaction intent, inspects real X Layer on-chain context, runs a transaction preflight, and fuses deterministic security rules with AI explanation. AI may raise risk, but it cannot reduce known deterministic security signals. Users remain in control of every wallet action.
+XGuard AI decodes transaction behavior, explains the deterministic consequences of signing, compares those consequences with the user's optional stated intent, inspects real X Layer on-chain context, and fuses deterministic security rules with AI explanation. AI may raise risk, but it cannot reduce known deterministic security signals. Users remain in control of every wallet action.
 
 **Live Demo:** https://xguard-ai-six.vercel.app  ·  **GitHub:** https://github.com/leafwithered/xguard-ai  ·  **Final Judge Demo Video:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4
 
@@ -17,7 +17,7 @@ XGuard AI decodes transaction intent, inspects real X Layer on-chain context, ru
 1. Open the Live Demo and select **⚡ Try Judge Demo**.
 2. Load **Safe Transfer**, then explicitly click **Analyze risk** to see the LOW baseline.
 3. Load **Unlimited Approval** to inspect `approve(address,uint256)`, the spender, and `Amount: Unlimited`.
-4. Load **Suspicious Airdrop** to see the deterministic safety floor remain at `100 HIGH` through AI enrichment.
+4. Load **Suspicious Airdrop** to see a claim intent conflict with an unlimited approval, producing `MISMATCH` while the deterministic safety floor remains `100 HIGH`.
 5. Select **Load Verified X Layer Receipt** to inspect the existing confirmed RiskRegistry transaction from real X Layer RPC data.
 
 Judge Mode only loads examples, navigates, and explains. It never auto-analyzes, connects a wallet, signs, records an assessment, or broadcasts a transaction.
@@ -25,6 +25,8 @@ Judge Mode only loads examples, navigates, and explains. It never auto-analyzes,
 ## Why XGuard Is Different
 
 - **Deterministic first:** known security rules and decoded permissions establish an inspectable floor.
+- **Transaction consequences:** a deterministic engine answers “What happens if I sign this?” with source-labeled facts and no invented token metadata.
+- **Intent vs Reality:** optional user intent is normalized, then compared against decoded behavior; deterministic mismatches may raise risk and cannot be downgraded by AI.
 - **Transparent AI fusion:** `Final Risk = max(Deterministic Floor, AI Assessment)` is shown in the product.
 - **Real X Layer intelligence:** `eth_getCode`, EIP-1967 inspection, `eth_call`, and `eth_estimateGas` provide live context with isolated timeouts.
 - **Explainable evidence:** risk signals are labeled `RULE`, `DECODER`, `ON-CHAIN`, or `AI`; unavailable data is never fabricated.
@@ -32,13 +34,17 @@ Judge Mode only loads examples, navigates, and explains. It never auto-analyzes,
 
 ## Stable Production Baseline
 
-The Final Judge Upgrade core application baseline is commit `409aa73c211a6b350af757d130c3f41ac8cfe962` and is live on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
+The verified Production baseline is commit `8f37ee568ee02cb7affa51069eac618c3adb9363` and remains live on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
 
 - Safe Transfer: `8 LOW`, Hybrid Analysis
 - Unlimited Approval: `72 HIGH`, decoded ERC20 `approve`, spender and `Amount: Unlimited` visible
 - Suspicious Airdrop: `100 HIGH`, deterministic safety floor preserved through AI enrichment
 - Clear Analysis, wallet connection, X Layer Testnet switching, and explicit user confirmation are included
 - Contract V2 is documented as a proposal only; no new contract or chain transaction was introduced
+
+### V3 Preview Candidate
+
+The `v3-competition` branch adds a deterministic Transaction Consequence Engine, optional Intent vs Reality comparison, and a reproducible 34-case security benchmark. It is developed and deployed as a Preview candidate only until explicit approval; it does not alter the existing Production deployment, RiskRegistry contract, or verified receipt.
 
 ## Project Overview
 
@@ -70,21 +76,27 @@ The hybrid design combines a deterministic Risk Engine with a configurable OpenA
 
 1. Connect an EVM wallet.
 2. Detect or switch to X Layer Testnet (`1952`).
-3. Enter `from`, `to`, value, calldata, and context.
-4. Decode supported calldata and inspect the target through real X Layer RPC calls.
-5. Run bounded `eth_call` and `eth_estimateGas` preflight checks—not a full state-diff simulation.
-6. Run the deterministic Local Risk Engine and merge optional AI enrichment above its safety floor.
-7. Review the score, source-labeled signals, intelligence, reasons, and recommendation before signing.
-8. Optionally confirm explicitly and record the assessment hash and score through `RiskRegistry`.
+3. Enter `from`, `to`, value, calldata, and an optional plain-language expectation.
+4. Decode supported calldata and generate deterministic, provenance-labeled transaction consequences.
+5. Compare optional stated intent with decoded reality. Deterministic mismatch may raise the safety floor.
+6. Inspect the target through real X Layer RPC calls and run bounded `eth_call` / `eth_estimateGas` preflight checks—not a full state-diff simulation.
+7. Run the deterministic Local Risk Engine and merge optional AI enrichment above its safety floor.
+8. Review consequences, Intent vs Reality, score, source-labeled signals, intelligence, reasons, and recommendation before signing.
+9. Optionally confirm explicitly and record the assessment hash and score through `RiskRegistry`.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
     U[User Transaction] --> D[Transaction Decoder]
-    D --> C[On-chain Contract Intelligence]
-    C --> P[Transaction Preflight]
+    D --> C[Deterministic Consequences]
+    I[Optional User Intent] --> N[Intent Normalization]
+    C --> M[Intent vs Reality]
+    N --> M
+    D --> O[On-chain Contract Intelligence]
+    O --> P[Transaction Preflight]
     P --> L[Deterministic Risk Engine]
+    M --> L
     L --> S[Security Floor]
     L --> A[AI Enrichment]
     S --> F[Risk Fusion]
@@ -99,7 +111,7 @@ flowchart TD
 
 `lib/ai/provider.ts` isolates provider-specific behavior. Configure an OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use. Production Hybrid Analysis is verified through this server-configured adapter; public artifacts do not assert the upstream provider identity.
 
-The deterministic Local Risk Engine checks zero addresses, exact bigint native value thresholds, decoded ERC20/NFT approvals, unlimited permissions, transfer methods, malformed and unknown calldata, unknown-contract context, and common social-engineering signals.
+The deterministic Local Risk Engine checks zero addresses, exact bigint native value thresholds, decoded ERC20/NFT approvals, unlimited permissions, transfer methods, malformed and unknown calldata, intent mismatches, unknown-contract context, and common social-engineering signals. AI may normalize ambiguous natural language, but deterministic code performs the consequence comparison wherever supported.
 
 The browser never receives `AI_API_KEY`. Missing configuration, timeouts, unsupported endpoints, and malformed output automatically use Local Analysis.
 
@@ -201,7 +213,12 @@ pnpm run intelligence:test
 pnpm run transaction-analyzer:test
 pnpm run judge:test
 pnpm run analysis-state:test
+pnpm run consequence:test
+pnpm run intent:test
+pnpm run security-benchmark:test
 ```
+
+The full 34-case V3 corpus and its invariants are documented in [docs/SECURITY_BENCHMARK.md](docs/SECURITY_BENCHMARK.md).
 
 The browser smoke path is documented in [docs/DEMO.md](docs/DEMO.md). The API returns `400` for invalid transaction input and keeps Local Analysis available when the configured provider fails.
 

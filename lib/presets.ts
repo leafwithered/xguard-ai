@@ -17,7 +17,7 @@ export const judgePresets: Array<{ name: string; description: string; input: Ris
   },
   {
     name: "Suspicious Airdrop",
-    description: "Zero-address approval with urgent claim language",
-    input: { from: "", to: "0x0000000000000000000000000000000000000000", value: "12", data: unlimitedApproval, context: "Urgent airdrop claim on an unknown contract" }
+    description: "Claim intent hides an unlimited token approval",
+    input: { from: "", to: "0x0000000000000000000000000000000000000000", value: "12", data: unlimitedApproval, context: "I only want to claim an airdrop." }
   }
 ];

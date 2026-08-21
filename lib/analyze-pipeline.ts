@@ -71,7 +71,7 @@ export async function runAnalysisPipeline(input: RiskInput, dependencies: Analys
   const aiResult = await analyzeAi(evidence);
   const intentComparison = compareIntentToReality(input, localWithEvidence.decodedAction, consequences, aiResult?.normalizedIntent);
   const riskWithFinalIntent = applyIntentRisk(localWithEvidence, intentComparison);
-  const fusedRisk = applyIntentRisk(mergeRiskResults(riskWithFinalIntent, aiResult), intentComparison);
+  const fusedRisk = mergeRiskResults(riskWithFinalIntent, aiResult);
   const riskResult = applyFinalSemantics(fusedRisk, intelligence);
 
   return { ...riskResult, ...dimensions, consequences, intentComparison, contractIntelligence: intelligence };

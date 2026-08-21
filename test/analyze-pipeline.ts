@@ -105,11 +105,12 @@ describe("Evidence-first analysis pipeline", function () {
     expect(received!.consequences.map((item) => item.id)).to.include("preflight-revert");
   });
 
-  it("H preserves an unlimited-approval deterministic floor against a lower AI score", async function () {
+  it("H preserves an intent-mismatch deterministic floor against a lower AI score", async function () {
     const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] });
-    const result = await run({ ...base, value: "0", data, context: "Approve unlimited token spending" }, intelligence({ addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 120 }), ai(1));
+    const result = await run({ ...base, value: "0", data, context: "Only approve 50 USDC" }, intelligence({ addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 120 }), ai(1));
     expect(result.finalScore).to.equal(result.deterministicScore);
-    expect(result.finalScore).to.be.at.least(72);
+    expect(result.finalScore).to.be.at.least(78);
+    expect(result.recommendation.match(/The stated intent and decoded transaction do not match\./g)).to.have.length(1);
   });
 
   it("I derives confidence, verdict and execution deterministically when AI is unavailable", async function () {

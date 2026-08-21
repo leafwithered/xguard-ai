@@ -1,6 +1,15 @@
-# Human-Executed X Layer Mainnet Anchor Deployment
+# Human-Executed X Layer Mainnet Anchor Deployment Record
 
-This guide stops before signing. Deployment must be reviewed and executed personally in a browser wallet such as OKX Wallet. Never export or paste a private key, seed phrase, mnemonic, wallet password, or signing secret into a terminal, repository, website form, or model conversation.
+The deployment was completed manually by the user through a browser wallet. XGuard automation did not access a wallet secret, sign, or broadcast. Do not redeploy this contract as part of Phase B.
+
+## Verified public record
+
+- Contract: [`0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`](https://www.okx.com/web3/explorer/xlayer/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5)
+- Deployment transaction: [`0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb`](https://www.okx.com/web3/explorer/xlayer/tx/0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb)
+- Network: X Layer Mainnet, Chain ID `196`
+- Receipt status: success
+- Constructor arguments: none
+- Value transferred: zero
 
 ## Review manifest
 
@@ -19,7 +28,7 @@ This guide stops before signing. Deployment must be reviewed and executed person
 
 The expected deployed behavior is limited to rejecting zero digests, setting `anchored[digest] = true`, and emitting `ReceiptAnchored(digest, msg.sender, block.timestamp)`. The contract has no owner or privileged control.
 
-## Safe browser-wallet procedure
+## Preserved deployment safety procedure
 
 1. Review the exact committed source and compiled artifact locally.
 2. Open the chosen audited browser deployment interface and select Solidity `0.8.24`, optimizer enabled, 200 runs, with no constructor arguments.
@@ -33,4 +42,4 @@ The expected deployed behavior is limited to rejecting zero digests, setting `an
 
 STOP immediately if the wallet displays any network other than X Layer Mainnet / Chain 196, requests value transfer, shows constructor data, or displays bytecode inconsistent with the compiled artifact.
 
-Phase A does not deploy, sign, broadcast, query a wallet balance, or configure a placeholder address.
+The procedure is retained for auditability, not as authorization to deploy again. Phase B performs only read-only verification and public configuration of the already deployed address.

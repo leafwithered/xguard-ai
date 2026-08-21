@@ -1,24 +1,24 @@
-# XGuard AI — V7 Judge Demo
+# XGuard AI — Final Judge Demo
 
-**V7 Preview:** assigned after Preview deployment
+**Competition Preview:** assigned after Phase B Preview deployment
 
 **Stable Production:** https://xguard-ai-six.vercel.app
 
-The V7 path requires no wallet connection and creates no transaction. Judge Mode only loads inputs or navigates to evidence; every analysis, export, file selection, and verification is explicit. The XGuard deployment-key signature is not a user wallet signature, and AI Advisory does not control the deterministic policy action.
+The Judge path requires no wallet connection and creates no transaction. Judge Mode only loads inputs or navigates to evidence; every analysis, export, file selection, and verification is explicit. The XGuard deployment-key signature is not a user wallet signature, and AI Advisory does not control the deterministic policy action.
 
 ## Script
 
 ### 0:00–0:10 — Product promise
 
-Open the V6 Preview and say:
+Open the competition Preview and say:
 
-> Know what a transaction does before you sign. XGuard combines deterministic decoding, X Layer RPC, Intent vs Reality, optional OKX simulation, and evidence-grounded AI without treating any provider as a safety oracle.
+> XGuard is verifiable pre-sign security and policy infrastructure for X Layer. It combines deterministic decoding, X Layer RPC, Intent vs Reality, optional OKX simulation, and evidence-grounded AI without treating any provider as a safety oracle.
 
 Open **⚡ Try Judge Demo**.
 
-After each analysis, use Judge step **09 Policy Guard** to reveal the `PRE-SIGN POLICY` card. Expected actions are Safe Transfer `ALLOW`, Ambiguous Approval `REQUIRE REVIEW`, and Suspicious Airdrop `BLOCK RECOMMENDED`.
+After each analysis, use Judge step **08 Policy Guard** to reveal the `PRE-SIGN POLICY` card. Expected actions are Safe Transfer `ALLOW`, Ambiguous Approval `REQUIRE REVIEW`, and Suspicious Airdrop `BLOCK_RECOMMENDED`.
 
-Use Judge step **10 X Layer Mainnet Anchor** to reveal the deployment-pending Receipt Anchor card. Phase A must show `NOT CONFIGURED`, the exact V5 fingerprint-to-`bytes32` conversion, and a disabled Anchor Receipt action. Judge navigation performs no wallet call.
+Use Judge step **09 X Layer Mainnet Anchor** to reveal the configured Receipt Anchor card. Show Chain `196`, the real contract, the exact V5 fingerprint-to-`bytes32` conversion, and read-only confirmation for the real anchored receipt. Judge navigation performs no wallet call.
 
 ### 0:10–0:22 — Safe Transfer
 
@@ -95,11 +95,11 @@ For the decisive security demonstration, modify a security-relevant receipt fiel
 
 Say: “Recomputing an internally valid fingerprint is not enough to forge XGuard deployment-key authenticity. This still does not prove transaction safety, provider truth, finality, or on-chain anchoring.”
 
-### 1:55–2:05 — Existing X Layer receipt
+### 1:52–2:00 — Policy and Mainnet anchor
 
-Select **View Receipt** and show the existing confirmed Testnet transaction.
+Show the deterministic Policy Guard decision, then select Judge step **09** and verify the real anchored receipt.
 
-Say: “Recording is optional and user-controlled. This receipt already proves the integration; no judge wallet action is required.”
+Say: “Policy is the deterministic integration recommendation. The Mainnet anchor separately proves that this exact V5 receipt digest was recorded through the configured contract on Chain 196. Neither claim means the analyzed transaction is safe.”
 
 ## Reproducible inputs
 
@@ -132,6 +132,17 @@ The preset copies only public `from`, `to`, value, and calldata from this confir
 - User transaction: https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb
 - Receipt: success; `RiskAssessmentRecorded` score `12`
 
+This is historical Testnet `1952` evidence and is separate from the Mainnet anchor.
+
+## Live Mainnet anchor proof
+
+- Network: X Layer Mainnet (`196`)
+- Contract: https://www.okx.com/web3/explorer/xlayer/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5
+- Deployment transaction: https://www.okx.com/web3/explorer/xlayer/tx/0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb
+- First anchor transaction: https://www.okx.com/web3/explorer/xlayer/tx/0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347
+- Receipt digest: `0xef6cf319eb689233180f465d331969c91a9c5c07d893047294bdda5de0da0eab`
+- Read-only verification: `anchored(bytes32) = true`
+
 ## QA checklist
 
 - Safe: `8 LOW`
@@ -139,7 +150,7 @@ The preset copies only public `from`, `to`, value, and calldata from this confir
 - Suspicious: deterministic `78 HIGH`, `MISMATCH`
 - Policy: Safe `ALLOW`, Ambiguous `REQUIRE_REVIEW`, Suspicious `BLOCK_RECOMMENDED`
 - Policy reason codes are stable and AI-independent; `ALLOW` is never labeled safe
-- Mainnet Anchor: `NOT CONFIGURED` before human deployment; no automatic wallet, signing, or broadcasting
+- Mainnet Anchor: configured contract on Chain `196`; the real proof returns `anchored(bytes32) = true`
 - AI-raised final score is never labeled deterministic known risk
 - Live badge never appears for Testnet, mock, unavailable, error, non-200, or non-zero business-code evidence
 - EIP-1967 wording is scoped; it does not exclude every proxy type
@@ -150,7 +161,7 @@ The preset copies only public `from`, `to`, value, and calldata from this confir
 - Tampered receipt with a recomputed V5 fingerprint keeps integrity valid but fails attestation
 - Uploaded package keys are never trusted; verification resolves the deployment key endpoint
 - Missing attestation configuration does not change risk, confidence, verdict, execution, or receipt output
-- Verification never says that a transaction is safe, provider evidence is true, or the receipt is anchored on-chain
+- Receipt integrity, attestation, policy, and Mainnet anchoring remain separate claims
 - No connection, signature, broadcast, deployment, or new chain transaction
 
-The existing public MP4 remains the historical stable Production capture. It is not evidence of the V6 Preview attestation path.
+The existing public MP4 remains the historical stable Production capture. It is not evidence of the final competition Preview trust path.

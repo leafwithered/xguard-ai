@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import type { Address, Hex, PublicClient } from "viem";
 import type { AnalysisReceipt } from "../lib/analysis-receipt.ts";
 import type { AnalysisAttestation } from "../lib/analysis-attestation.ts";
-import { X_LAYER_MAINNET_CHAIN_ID, X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, receiptFingerprintToBytes32, requireNonZeroReceiptDigest, submitReceiptAnchor, verifyReceiptAnchor } from "../lib/anchor.ts";
+import { XGUARD_MAINNET_ANCHOR_ADDRESS, XGUARD_MAINNET_ANCHOR_DEPLOYMENT_TRANSACTION, XGUARD_MAINNET_FIRST_ANCHORED_DIGEST, XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION, X_LAYER_MAINNET_CHAIN_ID, X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, knownAnchorTransactionForDigest, receiptFingerprintToBytes32, requireNonZeroReceiptDigest, submitReceiptAnchor, verifyReceiptAnchor } from "../lib/anchor.ts";
 import type { WalletProvider } from "../types/ethereum.ts";
 
 const knownFingerprint = "sha256:98aa567bd73427cefda86c9fd16e8b998bc95649aab3915a34fb862109e37114";
@@ -73,6 +73,18 @@ describe("Receipt anchor fingerprint conversion", function () {
 describe("Receipt anchor client and eligibility", function () {
   it("exposes canonical X Layer Mainnet configuration", function () {
     expect({ chainId: X_LAYER_MAINNET_CHAIN_ID, primary: X_LAYER_MAINNET_PRIMARY_RPC, fallback: X_LAYER_MAINNET_FALLBACK_RPC, explorer: X_LAYER_MAINNET_EXPLORER }).to.deep.equal({ chainId: 196, primary: "https://rpc.xlayer.tech", fallback: "https://xlayerrpc.okx.com", explorer: "https://www.okx.com/web3/explorer/xlayer" });
+  });
+
+  it("exposes the independently verified public Mainnet proof", function () {
+    expect(XGUARD_MAINNET_ANCHOR_ADDRESS).to.equal("0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5");
+    expect(XGUARD_MAINNET_ANCHOR_DEPLOYMENT_TRANSACTION).to.equal("0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb");
+    expect(XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION).to.equal("0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347");
+    expect(XGUARD_MAINNET_FIRST_ANCHORED_DIGEST).to.equal("0xef6cf319eb689233180f465d331969c91a9c5c07d893047294bdda5de0da0eab");
+  });
+
+  it("maps only the known anchored digest to its public proof transaction", function () {
+    expect(knownAnchorTransactionForDigest(XGUARD_MAINNET_FIRST_ANCHORED_DIGEST)).to.equal(XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION);
+    expect(knownAnchorTransactionForDigest(knownDigest)).to.equal(null);
   });
 
   it("uses null rather than a fake unconfigured address", function () {
@@ -174,9 +186,30 @@ describe("Receipt anchor application safety", function () {
     expect(effects).not.to.match(/anchorCurrentReceipt|submitReceiptAnchor|writeContract|sendTransaction/);
   });
 
-  it("shows NOT CONFIGURED and disables anchoring before deployment", function () {
-    expect(pageSource).to.include('anchorContractAddress ?? "NOT CONFIGURED"');
+  it("uses only the verified public contract and preserves fail-closed transaction controls", function () {
+    expect(pageSource).to.include("configuredAnchorAddress(XGUARD_MAINNET_ANCHOR_ADDRESS)");
+    expect(pageSource).not.to.include("NEXT_PUBLIC_XGUARD_MAINNET_ANCHOR_ADDRESS");
     expect(pageSource).to.include('disabled={!anchorContractAddress || currentAnchorEligibility.state !== "READY"');
+  });
+
+  it("makes confirmed state primary and links the proof transaction", function () {
+    expect(pageSource).to.include("X LAYER ANCHOR CONFIRMED");
+    expect(pageSource).to.include('anchorStatus === "CONFIRMED" ? "Exact receipt digest confirmed on Chain 196."');
+    expect(pageSource).to.include("knownAnchorTransactionForDigest(currentReceiptDigest)");
+    expect(pageSource).to.include("Anchor Transaction:");
+  });
+
+  it("presents the final nine-step Judge path without the legacy Testnet proof step", function () {
+    const judgePath = pageSource.slice(pageSource.indexOf('<div className="judge-steps">'), pageSource.indexOf('<div className="judge-checklist">'));
+    const sequence = ["Safe Transfer", "Ambiguous Approval", "Suspicious Airdrop", "Live OKX Mainnet Simulation", "Analysis Receipt", "Verify Receipt", "Signed Analysis Attestation", "Policy Guard", "X Layer Mainnet Anchor"];
+    let previous = -1;
+    for (const label of sequence) {
+      const index = judgePath.indexOf(label);
+      expect(index, label).to.be.greaterThan(previous);
+      previous = index;
+    }
+    expect(judgePath).not.to.include("Existing X Layer Receipt");
+    expect(judgePath).not.to.include("<b>10</b>");
   });
 
   it("requires successful receipt confirmation and anchored readback", function () {

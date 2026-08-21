@@ -20,11 +20,11 @@ import { ANALYSIS_ATTESTATION_AUTHENTICITY_NOTICE, ATTESTED_ANALYSIS_MAX_FILE_BY
 import { addDiscoveredWallet, preferredWalletProvider, requestWalletConnection, switchConnectedWalletToXLayer, switchConnectedWalletToXLayerMainnet, type DiscoveredWallet } from "../lib/wallet-lifecycle";
 import { initialJudgeModeState, reduceJudgeMode } from "../lib/judge-mode";
 import { isPolicyDecision, type PolicyDecision, type PolicyDecisionState } from "../lib/policy-engine";
-import { X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, confirmReceiptAnchor, receiptFingerprintToBytes32, submitReceiptAnchor, verifyReceiptAnchor, type AnchorState } from "../lib/anchor";
+import { XGUARD_MAINNET_ANCHOR_ADDRESS, X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, confirmReceiptAnchor, knownAnchorTransactionForDigest, receiptFingerprintToBytes32, submitReceiptAnchor, verifyReceiptAnchor, type AnchorState } from "../lib/anchor";
 import type { WalletProvider } from "../types/ethereum";
 
 const registryAddress = process.env.NEXT_PUBLIC_RISK_REGISTRY_ADDRESS as Address | undefined;
-const anchorContractAddress = configuredAnchorAddress(process.env.NEXT_PUBLIC_XGUARD_MAINNET_ANCHOR_ADDRESS);
+const anchorContractAddress = configuredAnchorAddress(XGUARD_MAINNET_ANCHOR_ADDRESS);
 const explorerBase = "https://www.okx.com/web3/explorer/xlayer-test";
 const demoUrl = "https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4";
 const contractUrl = `${explorerBase}/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`;
@@ -473,7 +473,10 @@ export default function Home() {
     setAnchorState("CHECKING");
     setAnchorError("");
     const verification = await verifyReceiptAnchor(anchorContractAddress, currentReceiptDigest);
-    if (verification === "CONFIRMED") setAnchorState("CONFIRMED");
+    if (verification === "CONFIRMED") {
+      setAnchorState("CONFIRMED");
+      setAnchorHash((current) => knownAnchorTransactionForDigest(currentReceiptDigest) ?? current);
+    }
     else if (verification === "NOT_ANCHORED") setAnchorState("NOT_ANCHORED");
     else { setAnchorState("FAILED"); setAnchorError("Anchor verification is unavailable. This is not a NOT ANCHORED result."); }
   }
@@ -532,7 +535,7 @@ export default function Home() {
       <div className="network-pill live"><span className="live-dot" />Analysis: {networkName} · Chain {analysisNetworkConfig.chainId}</div>
     </header>
     <section className="hero">
-      <div><div className="eyebrow">Evidence-grounded pre-sign intelligence</div><h1>Know what a transaction does before you sign.</h1><p className="lead">XGuard combines deterministic decoding, X Layer RPC facts, optional OKX Mainnet simulation, Intent vs Reality, and evidence-grounded AI—without treating any provider as a safety oracle.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeMode.open} aria-controls="judge-demo" onClick={openJudgeMode}>⚡ Try Judge Demo</button></div></div>
+      <div><div className="eyebrow">XGuard AI</div><h1>Verifiable pre-sign security and policy infrastructure for X Layer.</h1><p className="lead">Know what a transaction does before you sign. XGuard combines deterministic decoding, X Layer RPC facts, optional OKX Mainnet simulation, Intent vs Reality, and evidence-grounded AI—without treating any provider as a safety oracle.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeMode.open} aria-controls="judge-demo" onClick={openJudgeMode}>⚡ Try Judge Demo</button></div></div>
       <div className="hero-card"><h2>What happens if I sign this?</h2><div className="signal"><span>Analysis Network</span><strong>{networkName}</strong></div><div className="signal"><span>Wallet</span><strong>{walletNetworkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
     <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Verifiable Receipts</span><span>Signed Attestations</span><span>Policy Guard</span><span>Mainnet Receipt Anchor</span></section>
@@ -546,9 +549,8 @@ export default function Home() {
         <article><b>05</b><span>Analysis Receipt</span><strong>Versioned + exportable</strong><p>Inspect the current analysis ID, provenance and SHA-256 fingerprint.</p><button className="secondary" onClick={scrollToReceipt} disabled={!activeResult}>View</button></article>
         <article><b>06</b><span>Verify Receipt</span><strong>Local integrity check</strong><p>Verify the current receipt or import JSON without provider or AI calls.</p><button className="secondary" onClick={scrollToReceipt} disabled={!activeResult}>Verify</button></article>
         <article><b>07</b><span>Signed Analysis Attestation</span><strong>Deployment-key authenticity</strong><p>Verify that the current receipt fingerprint was signed by this deployment&apos;s Ed25519 key.</p><button className="secondary" onClick={scrollToAttestation} disabled={!activeResult?.analysisAttestation}>Verify</button></article>
-        <article><b>08</b><span>Existing X Layer Receipt</span><strong>On-chain: Confirmed</strong><p>Real user-signed RiskRegistry evidence on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View</button></article>
-        <article><b>09</b><span>Policy Guard</span><strong>Deterministic integration action</strong><p>Safe → ALLOW · Ambiguous → REQUIRE REVIEW · Suspicious → BLOCK RECOMMENDED.</p><button className="secondary" onClick={scrollToPolicy} disabled={!activeResult?.policyDecision}>View</button></article>
-        <article><b>10</b><span>X Layer Mainnet Anchor</span><strong>On-chain receipt evidence</strong><p>{anchorContractAddress ? "Verify or explicitly anchor the current verified Mainnet receipt." : "Deployment pending · contract not configured."}</p><button className="secondary" onClick={scrollToAnchor} disabled={!activeResult}>View</button></article>
+        <article><b>08</b><span>Policy Guard</span><strong>Deterministic integration action</strong><p>Safe → ALLOW · Ambiguous → REQUIRE REVIEW · Suspicious → BLOCK RECOMMENDED.</p><button className="secondary" onClick={scrollToPolicy} disabled={!activeResult?.policyDecision}>View</button></article>
+        <article><b>09</b><span>X Layer Mainnet Anchor</span><strong>On-chain receipt evidence</strong><p>Configured on Chain 196 · the exact V5 SHA-256 receipt digest can be verified on-chain.</p><button className="secondary" onClick={scrollToAnchor} disabled={!activeResult}>View</button></article>
       </div>
       <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ Receipt integrity</span><span>✓ Deployment-key authenticity</span><span>✓ User-controlled wallet signing</span></div>
     </section>}
@@ -670,7 +672,8 @@ export default function Home() {
           </section>
           <section className={`anchor-card anchor-${anchorStatus.toLowerCase().replaceAll("_", "-")}`} id="mainnet-receipt-anchor">
             <div className="card-title"><div><span className="eyebrow">X Layer Mainnet Anchor</span><h3>Receipt Anchor</h3></div><span className="anchor-badge">{anchorStatus.replaceAll("_", " ")}</span></div>
-            <div className="anchor-grid"><span>Network</span><strong>X Layer Mainnet · Chain 196</strong><span>Receipt Fingerprint</span><code>{activeResult.analysisReceipt.integrity.fingerprint}</code><span>On-chain bytes32 digest</span><code>{currentReceiptDigest ?? "INVALID RECEIPT DIGEST"}</code><span>Anchor Contract</span><strong>{anchorContractAddress ?? "NOT CONFIGURED"}</strong><span>Current Policy</span><strong>{activeResult.policyDecision.decision.replaceAll("_", " ")}</strong><span>Wallet / Network</span><strong>{walletNetworkName}</strong><span>Eligibility</span><strong>{currentAnchorEligibility.reason}</strong></div>
+            {anchorStatus === "CONFIRMED" && <div className="anchor-confirmation" role="status"><strong>X LAYER ANCHOR CONFIRMED</strong><span>The configured contract returns anchored(bytes32) = true for this exact receipt digest.</span></div>}
+            <div className="anchor-grid"><span>Network</span><strong>X Layer Mainnet · Chain 196</strong><span>Receipt Fingerprint</span><code>{activeResult.analysisReceipt.integrity.fingerprint}</code><span>On-chain bytes32 digest</span><code>{currentReceiptDigest ?? "INVALID RECEIPT DIGEST"}</code><span>Anchor Contract</span>{anchorContractAddress ? <a href={`${X_LAYER_MAINNET_EXPLORER}/address/${anchorContractAddress}`} target="_blank" rel="noreferrer">{anchorContractAddress}</a> : <strong>NOT CONFIGURED</strong>}<span>Current Policy</span><strong>{activeResult.policyDecision.decision.replaceAll("_", " ")}</strong><span>Wallet / Network</span><strong>{walletNetworkName}</strong><span>{anchorStatus === "CONFIRMED" ? "On-chain Status" : "Eligibility"}</span><strong>{anchorStatus === "CONFIRMED" ? "Exact receipt digest confirmed on Chain 196." : currentAnchorEligibility.reason}</strong></div>
             <div className="receipt-actions"><button className="secondary" onClick={checkReceiptAnchor} disabled={!anchorContractAddress || !currentReceiptDigest || anchorState === "CHECKING"}>Verify On-chain Anchor</button><button className="secondary" onClick={connectWallet}>{address ? shortAddress(address) : "Connect Wallet"}</button><button className="secondary" onClick={switchToXLayerMainnet} disabled={!walletProvider || chainId === 196}>Switch wallet to X Layer Mainnet</button><button className="primary" onClick={anchorCurrentReceipt} disabled={!anchorContractAddress || currentAnchorEligibility.state !== "READY" || !walletProvider || !address || chainId !== 196 || ["AWAITING_SIGNATURE", "SUBMITTED", "CONFIRMING", "CONFIRMED"].includes(anchorState)}>{anchorState === "AWAITING_SIGNATURE" ? "Check wallet…" : anchorState === "CONFIRMING" ? "Confirming…" : anchorState === "CONFIRMED" ? "Confirmed" : "Anchor Receipt"}</button></div>
             {anchorHash && <div className="anchor-transaction">Anchor Transaction: <a href={`${X_LAYER_MAINNET_EXPLORER}/tx/${anchorHash}`} target="_blank" rel="noreferrer">{anchorHash}</a></div>}
             {anchorError && <div className="status-message" role="status">{anchorError}</div>}

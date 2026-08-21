@@ -17,9 +17,9 @@ The policy does not change Analysis Receipt schema `1.0.0` or V6 Ed25519 attesta
 
 ## X Layer Mainnet Receipt Anchor
 
-Phase A exposes an unconfigured, fail-closed anchor integration for Chain `196`. It converts the existing `sha256:<64 lowercase hex>` V5 fingerprint directly to the same digest as `bytes32`; it never applies a second hash. Read-only verification calls `anchored(digest)` through public RPC and requires no wallet.
+The configured anchor contract is `0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5` on Chain `196`. The client converts the existing `sha256:<64 lowercase hex>` V5 fingerprint directly to the same digest as `bytes32`; it never applies a second hash. Read-only verification calls `anchored(digest)` through public RPC and requires no wallet.
 
-The future transaction flow keeps Connect Wallet, Switch to X Layer Mainnet, and Anchor Receipt as separate explicit actions. Eligibility requires a current Mainnet receipt plus verified V5 integrity and V6 attestation, but does not require V7 `ALLOW`. See [Mainnet Anchor](MAINNET_ANCHOR.md).
+The transaction flow keeps Connect Wallet, Switch to X Layer Mainnet, and Anchor Receipt as separate explicit actions. Eligibility requires a current Mainnet receipt plus verified V5 integrity and V6 attestation, but does not require V7 `ALLOW`. The first verified proof transaction is `0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347`. See [Mainnet Anchor](MAINNET_ANCHOR.md).
 
 ## Request
 

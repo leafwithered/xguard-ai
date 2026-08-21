@@ -1,6 +1,6 @@
 # XGuard X Layer Mainnet Receipt Anchor
 
-The Phase A anchor adds one narrow X Layer-native claim to the existing trust pipeline:
+The anchor adds one narrow X Layer-native claim to the existing trust pipeline:
 
 `Evidence → Receipt Integrity → Deployment-key Authenticity → Deterministic Policy → X Layer Mainnet Receipt Anchor`
 
@@ -46,6 +46,15 @@ Policy does not determine eligibility. `BLOCK_RECOMMENDED` evidence may still be
 
 The transaction path requires separate explicit actions: Connect Wallet, Switch wallet to X Layer Mainnet, and Anchor Receipt. Initial render, refresh, Judge navigation, eligibility, and read-only verification never request wallet accounts, network switching, signing, or broadcasting.
 
-## Predeployment configuration
+## Live Mainnet proof
 
-Phase A intentionally has no deployed address. `NEXT_PUBLIC_XGUARD_MAINNET_ANCHOR_ADDRESS` is absent and the application displays `NOT CONFIGURED`. A missing, malformed, or zero address fails closed. Only the real public address from the human-signed deployment may be configured in the follow-up phase.
+- Chain: X Layer Mainnet `196`
+- Contract: [`0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`](https://www.okx.com/web3/explorer/xlayer/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5)
+- Deployment transaction: [`0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb`](https://www.okx.com/web3/explorer/xlayer/tx/0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb)
+- First anchor transaction: [`0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347`](https://www.okx.com/web3/explorer/xlayer/tx/0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347)
+- Receipt digest: `0xef6cf319eb689233180f465d331969c91a9c5c07d893047294bdda5de0da0eab`
+- Read-only result: `anchored(bytes32) = true`
+
+Both configured RPC endpoints report Chain ID `196`. The deployment and first anchor receipts have successful status, the anchor call contains the exact digest with zero value, and the deployed executable bytecode matches the reviewed artifact when compiler metadata is excluded.
+
+The application configures only this real public address. Missing, malformed, and zero-address configuration paths remain fail-closed in the shared client boundary. The known first proof transaction is shown only when its exact digest is verified; other receipt digests are never associated with that transaction.

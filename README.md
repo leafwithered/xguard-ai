@@ -1,14 +1,22 @@
 # XGuard AI
 
-> **Know what a transaction does before you sign.**
+> **Verifiable pre-sign security and policy infrastructure for X Layer.**
 
-XGuard AI is explainable, verifiable pre-sign security infrastructure for X Layer. V7 adds deterministic wallet/dApp policy action to the existing evidence, receipt integrity, and deployment-key authenticity layers:
+Know what a transaction does before you sign. XGuard combines deterministic transaction decoding, X Layer RPC intelligence, OKX OnchainOS Mainnet simulation evidence, Intent vs Reality, and evidence-grounded AI advisory with versioned receipts, SHA-256 integrity, Ed25519 deployment-key attestation, deterministic wallet/dApp policy, and real X Layer Mainnet receipt anchoring.
 
-`Evidence → Integrity → Authenticity → Policy Action`
+`Transaction → Evidence → Receipt Integrity → Deployment-key Authenticity → Policy Action → Mainnet Receipt Anchor`
 
 The Policy Guard returns `ALLOW`, `WARN`, `REQUIRE_REVIEW`, or `BLOCK_RECOMMENDED`. AI Advisory never controls policy state, `ALLOW` is not a guarantee of safety, and nothing connects, signs, or broadcasts automatically.
 
-The post-V7 Phase A branch also prepares a minimal X Layer Mainnet Receipt Anchor. It commits the exact existing V5 SHA-256 receipt digest—without rehashing—only after explicit integrity, attestation, wallet, network, and transaction actions. No Mainnet contract is deployed in Phase A.
+## Live Mainnet Proof
+
+- **Chain:** X Layer Mainnet — `196`
+- **Anchor Contract:** [`0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`](https://www.okx.com/web3/explorer/xlayer/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5)
+- **Deployment Tx:** [`0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb`](https://www.okx.com/web3/explorer/xlayer/tx/0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb)
+- **First Anchor Tx:** [`0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347`](https://www.okx.com/web3/explorer/xlayer/tx/0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347)
+- **Receipt Digest:** `0xef6cf319eb689233180f465d331969c91a9c5c07d893047294bdda5de0da0eab` · `anchored(bytes32) = true`
+
+The anchor records the exact existing V5 SHA-256 receipt digest without rehashing. It proves only that the configured contract recorded that digest in a confirmed Chain 196 transaction; receipt integrity, XGuard authorship, policy, and transaction safety remain separate claims.
 
 **Production:** [xguard-ai-six.vercel.app](https://xguard-ai-six.vercel.app) · **Source:** [github.com/leafwithered/xguard-ai](https://github.com/leafwithered/xguard-ai) · **Demo:** [xguard-ai-build-x-demo.mp4](https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4)
 
@@ -25,15 +33,14 @@ The post-V7 Phase A branch also prepares a minimal X Layer Mainnet Receipt Ancho
 5. **Analysis Receipt** — inspect a random analysis ID, schema version, normalized provenance, and SHA-256 fingerprint; export JSON explicitly.
 6. **Verify Receipt** — verify the current receipt or import a JSON receipt locally; tampering fails the integrity check.
 7. **Signed Analysis Attestation** — verify that the exact receipt fingerprint was signed by the Ed25519 key configured for this deployment.
-8. **Existing X Layer receipt** — a real, user-signed RiskRegistry receipt is verifiable on X Layer Testnet (`1952`).
-9. **Policy Guard** — inspect a deterministic integration recommendation and stable reason codes; AI does not control the decision.
-10. **X Layer Mainnet Anchor** — inspect the exact receipt digest and deployment-pending anchor state without triggering wallet interaction.
+8. **Policy Guard** — inspect a deterministic integration recommendation and stable reason codes; AI does not control the decision.
+9. **X Layer Mainnet Anchor** — verify the exact V5 SHA-256 receipt digest through the configured contract on Mainnet `196` without automatic wallet interaction.
 
 Judge Mode only loads examples and navigates. The user must explicitly select **Analyze risk**. It never connects a wallet, signs, records, or broadcasts.
 
-## V7 Preview status
+## Competition candidate status
 
-`codex/v7-policy-engine` is a Preview-only candidate based exactly on the human-QA-passed V6 checkpoint. It has not been merged into `main` and does not change the canonical V4.1 Production deployment.
+`codex/mainnet-receipt-anchor` is the final competition candidate. It has not been merged into `main` and does not change the canonical V4.1 Production deployment.
 
 - Testnet `1952` retains the V3 RPC/preflight path and never calls the Mainnet simulator.
 - Mainnet `196` adds optional OKX OnchainOS simulation with `chainIndex: "196"`.
@@ -99,6 +106,8 @@ flowchart TD
     K --> Z[SHA-256 fingerprint]
     Z --> T[Ed25519 deployment attestation]
     T --> X[Export / Verify / API]
+    Z --> M[X Layer Mainnet Receipt Anchor]
+    V --> G[Deterministic Policy Guard]
     V --> H[Human decision]
     H --> Q[Optional existing Testnet RiskRegistry]
 ```
@@ -125,7 +134,7 @@ RPC checks are isolated and timeout-bounded:
 
 These are bounded preflight checks, not an audit or full trace/state-diff guarantee.
 
-## Verified on-chain evidence
+## Historical Testnet evidence
 
 - Network: X Layer Testnet (`1952`)
 - RiskRegistry: [`0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`](https://www.okx.com/web3/explorer/xlayer-test/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5)
@@ -133,7 +142,7 @@ These are bounded preflight checks, not an audit or full trace/state-diff guaran
 - Verified user transaction: [`0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`](https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb)
 - Receipt: success; `RiskAssessmentRecorded` emitted with score `12`
 
-The deployed V1 contract holds no funds and creates no token. Contract V2 remains a proposal only; V4 deploys no contract and creates no transaction.
+This separate historical RiskRegistry proof is on Testnet `1952`; it is not the Mainnet `196` receipt anchor. Neither contract holds funds or creates a token.
 
 ## Local development
 
@@ -200,7 +209,7 @@ V6 preserves the complete V5 corpus and its exact receipt fingerprints, then add
 
 ## Historical evidence note
 
-The unchanged public video captures the earlier stable Production Judge path, including the historical Unlimited Approval result `72 HIGH`. It is retained as stable Production evidence, not as the current V4 Preview Judge semantics. The current Preview path uses selector-hardened Ambiguous Approval instead.
+The unchanged public video captures the earlier stable Production Judge path, including the historical Unlimited Approval result `72 HIGH`. It is retained as stable Production evidence, not as the final competition Preview semantics. The competition candidate uses selector-hardened Ambiguous Approval instead.
 
 ## License
 

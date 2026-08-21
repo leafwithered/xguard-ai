@@ -7,6 +7,10 @@ export const X_LAYER_MAINNET_CHAIN_ID = 196 as const;
 export const X_LAYER_MAINNET_PRIMARY_RPC = "https://rpc.xlayer.tech" as const;
 export const X_LAYER_MAINNET_FALLBACK_RPC = "https://xlayerrpc.okx.com" as const;
 export const X_LAYER_MAINNET_EXPLORER = "https://www.okx.com/web3/explorer/xlayer" as const;
+export const XGUARD_MAINNET_ANCHOR_ADDRESS = "0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5" as Address;
+export const XGUARD_MAINNET_ANCHOR_DEPLOYMENT_TRANSACTION = "0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb" as Hash;
+export const XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION = "0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347" as Hash;
+export const XGUARD_MAINNET_FIRST_ANCHORED_DIGEST = "0xef6cf319eb689233180f465d331969c91a9c5c07d893047294bdda5de0da0eab" as Hex;
 
 export const anchorStates = ["UNCONFIGURED", "NOT_ELIGIBLE", "READY", "CHECKING", "NOT_ANCHORED", "WALLET_NOT_CONNECTED", "WRONG_NETWORK", "AWAITING_SIGNATURE", "SUBMITTED", "CONFIRMING", "CONFIRMED", "FAILED"] as const;
 export type AnchorState = typeof anchorStates[number];
@@ -28,6 +32,10 @@ export function requireNonZeroReceiptDigest(digest: Hex): Hex {
 
 export function configuredAnchorAddress(value: unknown): Address | null {
   return typeof value === "string" && isAddress(value) && value.toLowerCase() !== zeroAddress ? value : null;
+}
+
+export function knownAnchorTransactionForDigest(digest: Hex): Hash | null {
+  return digest.toLowerCase() === XGUARD_MAINNET_FIRST_ANCHORED_DIGEST ? XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION : null;
 }
 
 export function createAnchorPublicClient() {

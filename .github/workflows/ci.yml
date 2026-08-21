@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, enhancement-v2]
+    branches: [main, enhancement-v2, final-judge-upgrade]
   pull_request:
     branches: [main]
 
@@ -26,3 +26,7 @@ jobs:
       - run: pnpm run ai:test
       - run: pnpm run decoder:test
       - run: pnpm run fusion:test
+      - run: pnpm run intelligence:test
+      - run: pnpm run transaction-analyzer:test
+      - run: pnpm run judge:test
+      - run: pnpm run analysis-state:test

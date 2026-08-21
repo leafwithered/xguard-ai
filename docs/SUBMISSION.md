@@ -1,7 +1,7 @@
 # Build X Series Submission
 
 - Project Name: `XGuard AI`
-- Short Description: `AI-powered transaction risk intelligence for X Layer: a hybrid Local Risk Engine and configurable AI explanation layer that helps users review EVM transactions before signing and record assessment receipts on-chain.`
+- Short Description: `An explainable pre-sign security layer for X Layer that combines transaction decoding, real RPC intelligence, deterministic safety rules, and provider-neutral AI without allowing AI to lower known risk.`
 - Website: `https://xguard-ai-six.vercel.app`
 - GitHub: `https://github.com/leafwithered/xguard-ai`
 - X Layer Network: `X Layer Testnet (Chain ID 1952)`
@@ -29,6 +29,7 @@
 - [x] Project has an independent X account and its public profile URL is verified.
 - [x] Project X post is publicly accessible and its thread includes `@XLayerOfficial`.
 - [x] V2 is merged to `main`, deployed to the canonical Production URL, and smoke-tested with Safe, Unlimited Approval, and Suspicious Airdrop presets.
+- [x] Provider-backed Hybrid Analysis is verified in Production through the provider-neutral adapter; provider configuration and secrets are not exposed to the browser or repository.
 - [ ] Submission form is completed before `2026-08-21 23:59 UTC`.
 
 ## Current readiness
@@ -41,8 +42,8 @@
 ## Final submission fields
 
 - Project Name: `XGuard AI`
-- Short Description: `AI-powered transaction risk intelligence for X Layer with a hybrid Local Risk Engine and configurable AI explanation layer.`
-- Long Description: `XGuard AI reviews EVM transaction intent before signing, returns a 0–100 risk score with reasons and a recommendation, and leaves signing entirely to the user. Real AI Mode uses a configurable OpenAI-compatible Responses API; deterministic Local Analysis remains available when the provider is unavailable. After explicit review, the user may record the assessment hash and score through RiskRegistry on X Layer Testnet.`
+- Short Description: `Explainable pre-sign security for X Layer with deterministic safety rules, real RPC intelligence, and provider-neutral AI enrichment.`
+- Long Description: `XGuard AI decodes EVM transaction intent, inspects real X Layer target bytecode and EIP-1967 state, runs bounded eth_call and gas preflight checks, and returns a transparent 0–100 risk result. Final Risk is the maximum of the deterministic security floor and the AI assessment, so AI cannot weaken known signals. RPC or AI failure never disables Local Analysis. Users retain final control and may optionally record a compact assessment receipt through RiskRegistry on X Layer Testnet after explicit review.`
 - Website URL: `https://xguard-ai-six.vercel.app`
 - GitHub URL: `https://github.com/leafwithered/xguard-ai`
 - X Layer Network: `X Layer Testnet`

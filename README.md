@@ -1,8 +1,8 @@
 # XGuard AI
 
-> **Know the risk before you sign.**
+> **The explainable pre-sign security layer for X Layer.**
 
-XGuard AI is transaction risk intelligence for X Layer. Deterministic safety rules establish a risk floor, AI adds context and explanation, and users can record a compact assessment receipt only after explicit review.
+XGuard AI decodes transaction intent, inspects real X Layer on-chain context, runs a transaction preflight, and fuses deterministic security rules with AI explanation. AI may raise risk, but it cannot reduce known deterministic security signals. Users remain in control of every wallet action.
 
 **Live Demo:** https://xguard-ai-six.vercel.app  ·  **GitHub:** https://github.com/leafwithered/xguard-ai  ·  **Demo Video:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4
 
@@ -12,9 +12,27 @@ XGuard AI is transaction risk intelligence for X Layer. Deterministic safety rul
 
 ![XGuard AI V2 interface](docs/assets/xguard-v2-hero.png)
 
-## V2 Release
+## 60-Second Judge Path
 
-V2 is live on the canonical Vercel Production URL. The release keeps the existing third-party OpenAI-compatible provider and the V1 RiskRegistry evidence unchanged; the official OpenAI migration remains an optional Preview-only follow-up.
+1. Open the Live Demo and select **⚡ Try Judge Demo**.
+2. Load **Safe Transfer**, then explicitly click **Analyze risk** to see the LOW baseline.
+3. Load **Unlimited Approval** to inspect `approve(address,uint256)`, the spender, and `Amount: Unlimited`.
+4. Load **Suspicious Airdrop** to see the deterministic safety floor remain at `100 HIGH` through AI enrichment.
+5. Select **Load Verified X Layer Receipt** to inspect the existing confirmed RiskRegistry transaction from real X Layer RPC data.
+
+Judge Mode only loads examples, navigates, and explains. It never auto-analyzes, connects a wallet, signs, records an assessment, or broadcasts a transaction.
+
+## Why XGuard Is Different
+
+- **Deterministic first:** known security rules and decoded permissions establish an auditable floor.
+- **Transparent AI fusion:** `Final Risk = max(Deterministic Floor, AI Assessment)` is shown in the product.
+- **Real X Layer intelligence:** `eth_getCode`, EIP-1967 inspection, `eth_call`, and `eth_estimateGas` provide live context with isolated timeouts.
+- **Explainable evidence:** risk signals are labeled `RULE`, `DECODER`, or `AI`; unavailable data is never fabricated.
+- **User-controlled signing:** analysis and receipt recording are advisory and require explicit user actions.
+
+## Stable Production Baseline
+
+V2 is live on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
 
 - Safe Transfer: `8 LOW`, Hybrid Analysis
 - Unlimited Approval: `72 HIGH`, decoded ERC20 `approve`, spender and `Amount: Unlimited` visible
@@ -24,7 +42,7 @@ V2 is live on the canonical Vercel Production URL. The release keeps the existin
 
 ## Project Overview
 
-The MVP supports wallet connection, X Layer Testnet detection and switching, transaction input validation, configurable third-party AI analysis, deterministic local fallback analysis, user confirmation, and an optional on-chain risk record.
+The application supports wallet connection, X Layer Testnet detection and switching, transaction decoding, real RPC intelligence, bounded preflight checks, provider-neutral AI analysis, deterministic fallback analysis, post-hoc transaction inspection, Judge Mode, user confirmation, and an optional on-chain risk receipt.
 
 ### Verified V2 Product
 
@@ -46,38 +64,40 @@ Wallet confirmation screens expose raw addresses, values, and calldata that many
 
 XGuard AI converts transaction fields into a `0–100` risk score, a `LOW / MEDIUM / HIGH` level, concise reasons, and an actionable recommendation. The app never signs automatically; users retain final control.
 
-The hybrid design combines a deterministic Risk Engine with an optional third-party OpenAI-compatible explanation layer. If the provider is unavailable, Local Analysis remains fully demoable.
+The hybrid design combines a deterministic Risk Engine with a configurable OpenAI-compatible explanation layer. Production Hybrid Analysis is verified, while the public repository remains neutral about the server-configured upstream provider. If that provider is unavailable, Local Analysis remains fully demoable.
 
 ## How XGuard AI Works
 
 1. Connect an EVM wallet.
 2. Detect or switch to X Layer Testnet (`1952`).
 3. Enter `from`, `to`, value, calldata, and context.
-4. Validate the input and run the Local Risk Engine.
-5. Merge provider-backed AI explanation with the deterministic safety floor; AI can raise but never lower final risk.
-6. Review the score, reasons, and recommendation before signing.
-7. Confirm explicitly and record the assessment hash and score through `RiskRegistry`.
+4. Decode supported calldata and inspect the target through real X Layer RPC calls.
+5. Run bounded `eth_call` and `eth_estimateGas` preflight checks—not a full state-diff simulation.
+6. Run the deterministic Local Risk Engine and merge optional AI enrichment above its safety floor.
+7. Review the score, source-labeled signals, intelligence, reasons, and recommendation before signing.
+8. Optionally confirm explicitly and record the assessment hash and score through `RiskRegistry`.
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    U[User] --> UI[Next.js Client]
-    UI --> API[POST /api/analyze]
-    API --> L[Deterministic Safety Floor]
-    API --> P[Configurable AI Provider]
-    L --> F[Safety Fusion]
-    P --> F
-    P -. timeout or invalid output .-> F
-    F --> UI
-    UI --> W[EVM Wallet]
-    W --> R[RiskRegistry]
-    R --> X[X Layer Testnet]
+flowchart TD
+    U[User Transaction] --> D[Transaction Decoder]
+    D --> C[On-chain Contract Intelligence]
+    C --> P[Transaction Preflight]
+    P --> L[Deterministic Risk Engine]
+    L --> S[Security Floor]
+    L --> A[AI Enrichment]
+    S --> F[Risk Fusion]
+    A --> F
+    A -. unavailable or invalid .-> S
+    F --> R[Final Risk and Explanation]
+    R --> Q[User Decision]
+    Q --> O[Optional X Layer Receipt]
 ```
 
 ## AI Risk Engine
 
-`lib/ai/provider.ts` isolates provider-specific behavior. Configure any OpenAI-compatible third-party provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use.
+`lib/ai/provider.ts` isolates provider-specific behavior. Configure an official or third-party OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use.
 
 The deterministic Local Risk Engine checks zero addresses, exact bigint native value thresholds, decoded ERC20/NFT approvals, unlimited permissions, transfer methods, malformed and unknown calldata, unknown-contract context, and common social-engineering signals.
 
@@ -92,6 +112,17 @@ The adapter is intentionally provider-neutral: `AI_BASE_URL` may point at a thir
 - Native token: `OKB`
 - Official RPC: `https://testrpc.xlayer.tech/terigon`
 - Explorer: `https://www.okx.com/web3/explorer/xlayer-test`
+
+### On-chain Intelligence and Preflight
+
+For each valid destination, the server performs isolated, timeout-bounded X Layer RPC checks:
+
+- `eth_getCode` distinguishes an EOA from a smart contract and reports actual bytecode size.
+- `eth_getStorageAt` inspects the EIP-1967 implementation slot without claiming trust, verification, or audit status.
+- `eth_call` reports whether the proposed call succeeds or reverts and decodes standard `Error(string)` and `Panic(uint256)` data when available.
+- `eth_estimateGas` reports an estimate when the RPC can produce one.
+
+RPC failure never blocks deterministic analysis. Unavailable results are labeled `Unavailable`; XGuard does not invent contract reputation or simulation output. The Transaction Analyzer can also load a real X Layer transaction and receipt for clearly labeled **post-hoc** analysis.
 
 ## Smart Contract
 
@@ -139,7 +170,7 @@ The public production deployment is available at https://xguard-ai-six.vercel.ap
 
 | Variable | Purpose |
 | --- | --- |
-| `AI_API_KEY` | Third-party AI provider key; server-side only |
+| `AI_API_KEY` | AI provider key; server-side only |
 | `AI_BASE_URL` | OpenAI-compatible provider base URL, with or without `/v1` |
 | `AI_MODEL` | Provider-specific model identifier |
 | `XLAYER_RPC_URL` | X Layer Testnet deployment RPC |
@@ -166,6 +197,9 @@ npm run risk:test
 npm run ai:test
 npm run decoder:test
 npm run fusion:test
+npm run intelligence:test
+npm run transaction-analyzer:test
+npm run judge:test
 ```
 
 The browser smoke path is documented in [docs/DEMO.md](docs/DEMO.md). The API returns `400` for invalid transaction input and keeps Local Analysis available when the configured provider fails.
@@ -182,18 +216,19 @@ XGuard AI is an advisory prototype, not an audit, wallet firewall, or guarantee 
 
 ## Limitations
 
-- The MVP does not simulate state changes or prove contract safety.
+- Transaction Preflight uses `eth_call` and `eth_estimateGas`; it is not a full state-diff simulation and does not prove contract safety.
 - Contract reputation and verified source metadata are not yet integrated.
 - The on-chain registry stores the submitting address, score, hash, and timestamp only; it does not execute or protect transactions.
-- AI provider behavior depends on the configured third-party service and its compatibility with the adapter.
+- AI provider behavior depends on the configured service and its OpenAI-compatible endpoint behavior.
 
 ## Roadmap
 
-- Fetch verified contract metadata and bytecode provenance.
-- Simulate state changes before signing.
-- Decode calldata and human-readable approval amounts.
-- Add address reputation and phishing intelligence.
-- Deploy and verify `RiskRegistry` on X Layer mainnet after the required testnet phase.
+- Wallet SDK/API integration for other X Layer applications.
+- Browser extension and wallet-native pre-sign delivery after the web prototype.
+- Verified source metadata and bytecode provenance from authoritative sources.
+- Full state-diff simulation with explicit trace provenance.
+- Evidence-backed phishing intelligence without fabricated reputation scores.
+- X Layer mainnet deployment only after the required testnet phase and a separate security review.
 
 The append-only registry design is documented in [docs/CONTRACT_V2.md](docs/CONTRACT_V2.md). It is a proposal only; the deployed V1 contract and verified evidence remain unchanged.
 

@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useReducer, useState } from "react";
 import { createPublicClient, createWalletClient, custom, http, isAddress, keccak256, toHex, type Address } from "viem";
 import { riskRegistryAbi, xLayerTestnet } from "../lib/xlayer";
 import type { RiskInput, RiskResult } from "../lib/risk";
+import type { ContractIntelligence } from "../lib/chain/intelligence";
+import type { XLayerTransaction } from "../lib/chain/transaction-analyzer";
+import { judgePresets as presets } from "../lib/presets";
+import { currentAnalysisResult, invalidateStaleAnalysis } from "../lib/analysis-state";
 import { initialRecordState, isRecordPending, reduceRecordState } from "../lib/transaction-state";
 import type { WalletProvider } from "../types/ethereum";
 
@@ -12,31 +16,23 @@ const explorerBase = "https://www.okx.com/web3/explorer/xlayer-test";
 const demoUrl = "https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4";
 const contractUrl = `${explorerBase}/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`;
 const verifiedTxUrl = `${explorerBase}/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`;
-const maxUint = "f".repeat(64);
-const spender = "1234567890123456789012345678901234567890";
-const unlimitedApproval = `0x095ea7b3${"0".repeat(24)}${spender}${maxUint}`;
-
+const verifiedTxHash = "0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb";
 type WalletOption = { info: { uuid: string; name: string; icon: string }; provider: WalletProvider };
-
-const presets: Array<{ name: string; description: string; input: RiskInput }> = [
-  {
-    name: "Safe Transfer",
-    description: "Simple zero-value transfer intent",
-    input: { from: "", to: "0x1111111111111111111111111111111111111111", value: "0", data: "0x", context: "Routine transfer to a known address" }
-  },
-  {
-    name: "Unlimited Approval",
-    description: "ERC20 spender receives unlimited permission",
-    input: { from: "", to: "0x2222222222222222222222222222222222222222", value: "0", data: unlimitedApproval, context: "Approve a token router after independently verifying the contract" }
-  },
-  {
-    name: "Suspicious Airdrop",
-    description: "Zero-address approval with urgent claim language",
-    input: { from: "", to: "0x0000000000000000000000000000000000000000", value: "12", data: unlimitedApproval, context: "Urgent airdrop claim on an unknown contract" }
-  }
-];
+type AnalysisResult = RiskResult & { contractIntelligence?: ContractIntelligence };
 
 const shortAddress = (value: string) => value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "";
+const signalSources = new Set(["RULE", "DECODER", "ON-CHAIN", "AI"]);
+
+function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<AnalysisResult>;
+  const validSignals = (signals: unknown) => Array.isArray(signals) && signals.every((item) => item && typeof item === "object" && signalSources.has(String((item as { source?: unknown }).source)));
+  return typeof candidate.finalScore === "number"
+    && typeof candidate.deterministicScore === "number"
+    && validSignals(candidate.criticalSignals)
+    && validSignals(candidate.advisorySignals)
+    && Boolean(candidate.contractIntelligence);
+}
 
 export default function Home() {
   const [walletProvider, setWalletProvider] = useState<WalletProvider | null>(null);
@@ -48,29 +44,54 @@ export default function Home() {
   const [value, setValue] = useState("0");
   const [data, setData] = useState("0x");
   const [context, setContext] = useState("Swap on a new token router");
-  const [result, setResult] = useState<RiskResult | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const [lastInput, setLastInput] = useState<RiskInput | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [reviewed, setReviewed] = useState(false);
   const [recordState, dispatchRecord] = useReducer(reduceRecordState, initialRecordState);
   const [message, setMessage] = useState("");
+  const [transactionHash, setTransactionHash] = useState("");
+  const [transactionResult, setTransactionResult] = useState<XLayerTransaction | null>(null);
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionError, setTransactionError] = useState("");
+  const [judgeModeOpen, setJudgeModeOpen] = useState(false);
   const networkName = chainId === null ? "Not connected" : chainId === 1952 ? "X Layer Testnet" : `Wrong network · ${chainId}`;
   const isCorrectNetwork = chainId === 1952;
   const recordPending = isRecordPending(recordState);
-  const analysisHash = useMemo(() => lastInput && result ? keccak256(toHex(JSON.stringify({ input: lastInput, result }))) : null, [lastInput, result]);
+  const currentTransactionInput: RiskInput = { from, to, value, data, context };
+  const activeResult = currentAnalysisResult({ result, lastInput, reviewed }, currentTransactionInput);
+  const analysisHash = useMemo(() => lastInput && activeResult ? keccak256(toHex(JSON.stringify({ input: lastInput, result: activeResult }))) : null, [lastInput, activeResult]);
 
   useEffect(() => {
     window.localStorage.removeItem("xguard-last-result");
     const saved = window.sessionStorage.getItem("xguard-session-result");
     if (!saved) return;
     try {
-      const parsed = JSON.parse(saved) as { input: RiskInput; result: RiskResult };
+      const parsed = JSON.parse(saved) as { input: RiskInput; result: AnalysisResult };
+      if (!isCurrentAnalysisResult(parsed.result)) throw new Error("Stored result uses an older schema");
       setLastInput(parsed.input);
       setResult(parsed.result);
+      setFrom(parsed.input.from);
+      setTo(parsed.input.to);
+      setValue(parsed.input.value);
+      setData(parsed.input.data);
+      setContext(parsed.input.context);
     } catch {
       window.sessionStorage.removeItem("xguard-session-result");
     }
   }, []);
+
+  useLayoutEffect(() => {
+    const currentInput: RiskInput = { from, to, value, data, context };
+    const freshness = invalidateStaleAnalysis({ result, lastInput, reviewed }, currentInput);
+    if (!freshness.invalidated) return;
+    setResult(freshness.snapshot.result);
+    setLastInput(freshness.snapshot.lastInput);
+    setReviewed(freshness.snapshot.reviewed);
+    dispatchRecord({ type: "RESET" });
+    window.sessionStorage.removeItem("xguard-session-result");
+    setMessage(freshness.notice);
+  }, [from, to, value, data, context, result, lastInput, reviewed]);
 
   useEffect(() => {
     const discovered = new Map<string, WalletOption>();
@@ -152,7 +173,6 @@ export default function Home() {
     setValue(input.value);
     setData(input.data);
     setContext(input.context);
-    clearAnalysis(false);
   }
 
   function clearAnalysis(clearFields = true) {
@@ -172,7 +192,7 @@ export default function Home() {
     setAnalyzing(true);
     try {
       const response = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
-      const payload = await response.json() as RiskResult & { error?: string };
+      const payload = await response.json() as AnalysisResult & { error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Risk analysis failed");
       setResult(payload);
       setLastInput(input);
@@ -185,12 +205,12 @@ export default function Home() {
   }
 
   async function recordOnchain() {
-    if (!registryAddress || !analysisHash || !walletProvider || !address || !result || !isCorrectNetwork || !reviewed || recordPending) return;
+    if (!registryAddress || !analysisHash || !walletProvider || !address || !activeResult || !isCorrectNetwork || !reviewed || recordPending) return;
     setMessage("");
     dispatchRecord({ type: "SIGNATURE_REQUESTED" });
     try {
       const walletClient = createWalletClient({ account: address, chain: xLayerTestnet, transport: custom(walletProvider) });
-      const hash = await walletClient.writeContract({ address: registryAddress, abi: riskRegistryAbi, functionName: "recordAssessment", args: [analysisHash, result.finalScore], account: address });
+      const hash = await walletClient.writeContract({ address: registryAddress, abi: riskRegistryAbi, functionName: "recordAssessment", args: [analysisHash, activeResult.finalScore], account: address });
       dispatchRecord({ type: "SUBMITTED", hash });
       dispatchRecord({ type: "CONFIRMING" });
       const publicClient = createPublicClient({ chain: xLayerTestnet, transport: http(xLayerTestnet.rpcUrls.default.http[0]) });
@@ -201,9 +221,43 @@ export default function Home() {
     }
   }
 
-  const modeLabel = result?.mode === "HYBRID" ? "Hybrid Analysis" : result?.mode === "AI" ? "AI Analysis" : "Local Safety Engine";
+  async function loadXLayerTransaction(hash = transactionHash) {
+    setTransactionError("");
+    setTransactionResult(null);
+    setTransactionHash(hash);
+    setTransactionLoading(true);
+    try {
+      const response = await fetch("/api/transaction", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hash }) });
+      const payload = await response.json() as XLayerTransaction & { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Transaction lookup failed");
+      setTransactionResult(payload);
+    } catch (error) {
+      setTransactionError(error instanceof Error ? error.message : "Transaction lookup failed");
+    } finally {
+      setTransactionLoading(false);
+    }
+  }
+
+  function loadTransactionIntoAnalyzer() {
+    if (!transactionResult?.analysisInput) return;
+    applyPreset(transactionResult.analysisInput);
+    document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function loadJudgePreset(index: number) {
+    applyPreset(presets[index].input);
+    document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function openVerifiedEvidence() {
+    void loadXLayerTransaction(verifiedTxHash);
+    document.querySelector(".tx-analyzer")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  const modeLabel = activeResult?.mode === "HYBRID" ? "Hybrid Analysis" : activeResult?.mode === "AI" ? "AI Analysis" : "Local Safety Engine";
   const recordLabel = recordState.phase === "awaiting-signature" ? "Awaiting wallet signature" : recordState.phase === "submitted" ? "Submitted" : recordState.phase === "confirming" ? "Confirming on X Layer" : recordState.phase === "confirmed" ? "Confirmed on X Layer" : recordState.phase === "reverted" ? "Transaction reverted" : recordState.phase === "error" ? "Confirmation error" : "Ready after review";
-  const decoded = result?.decodedAction;
+  const decoded = activeResult?.decodedAction;
+  const intelligence = activeResult?.contractIntelligence;
 
   return <main className="shell">
     <header className="topbar">
@@ -212,9 +266,20 @@ export default function Home() {
       <div className={`network-pill ${isCorrectNetwork ? "live" : ""}`}>{isCorrectNetwork && <span className="live-dot" />}{networkName} · Chain 1952</div>
     </header>
     <section className="hero">
-      <div><div className="eyebrow">Transaction risk intelligence</div><h1>Know the risk before you sign.</h1><p className="lead">Deterministic safety rules establish a risk floor. AI adds context and explanation, but can never weaken critical signals.</p></div>
+      <div><div className="eyebrow">Explainable pre-sign intelligence</div><h1>The pre-sign security layer for X Layer.</h1><p className="lead">Decode transactions, inspect on-chain context, apply deterministic safety rules, and use AI without allowing AI to override known security signals.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeModeOpen} aria-controls="judge-demo" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
       <div className="hero-card"><h2>Built for X Layer</h2><div className="signal"><span>Network</span><strong>{networkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
+    <section className="capability-strip"><span>Transaction Decoder</span><span>On-chain Intelligence</span><span>Deterministic Safety Floor</span><span>AI Risk Analysis</span></section>
+    {judgeModeOpen && <section className="judge-mode" id="judge-demo">
+      <div className="panel-heading"><div><span className="eyebrow">60-Second Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => setJudgeModeOpen(false)}>Close</button></div>
+      <div className="judge-steps">
+        <article><b>01</b><span>Safe Transfer</span><strong>Expected: LOW</strong><p>Baseline deterministic analysis plus optional AI enrichment.</p><button className="secondary" onClick={() => loadJudgePreset(0)}>Load</button></article>
+        <article><b>02</b><span>Unlimited Approval</span><strong>Expected: HIGH</strong><p>Decoded approve(), visible spender, and Unlimited amount.</p><button className="secondary" onClick={() => loadJudgePreset(1)}>Load</button></article>
+        <article><b>03</b><span>Suspicious Airdrop</span><strong>Expected: HIGH</strong><p>Demonstrates that AI cannot lower the deterministic floor.</p><button className="secondary" onClick={() => loadJudgePreset(2)}>Load</button></article>
+        <article><b>04</b><span>Verified X Layer Evidence</span><strong>Receipt: Confirmed</strong><p>Real user-signed RiskRegistry receipt on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View Receipt</button></article>
+      </div>
+      <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ User-controlled signing</span><span>✓ Verified on-chain receipt</span></div>
+    </section>}
     <section className="workspace">
       <div className="panel transaction-panel">
         <div className="panel-heading"><div><h2>1. Prepare transaction</h2><p>Start with a preset or inspect a transaction manually.</p></div><button className="text-button" onClick={() => clearAnalysis()}>Clear analysis</button></div>
@@ -227,20 +292,49 @@ export default function Home() {
         <div className="actions"><button className="primary" onClick={analyze} disabled={analyzing || recordPending}>{analyzing ? "Analyzing…" : "Analyze risk"}</button><button className="secondary" onClick={connectWallet}>{address ? shortAddress(address) : "Connect wallet"}</button>{!isCorrectNetwork && <button className="secondary" onClick={switchToXLayer}>Switch to X Layer</button>}</div>
         <div className="footer-note">AI is advisory. XGuard AI never signs or broadcasts automatically.</div>
       </div>
-      <div className="panel result-panel">
+      <div className="panel result-panel" aria-busy={analyzing}>
         <h2>2. Review risk</h2>
-        {result ? <>
-          <div className="score-wrap"><div className={`score score-${result.level.toLowerCase()}`}>{result.finalScore}</div><div className="score-copy"><span>Final Risk Score</span><strong>{result.level} RISK</strong><small>Local floor {result.deterministicScore}{typeof result.aiScore === "number" ? ` · AI ${result.aiScore}` : ""}</small></div></div>
+        {activeResult ? <>
+          <div className="score-wrap"><div className={`score score-${activeResult.level.toLowerCase()}`}>{activeResult.finalScore}</div><div className="score-copy"><span>Final Risk Score</span><strong>{activeResult.level} RISK</strong><small>Local floor {activeResult.deterministicScore}{typeof activeResult.aiScore === "number" ? ` · AI ${activeResult.aiScore}` : ""}</small></div></div>
           <div className="analysis-mode">{modeLabel}</div>
+          <section className="fusion-card">
+            <div className="card-title"><div><span className="eyebrow">Transparent decision logic</span><h3>Risk Fusion</h3></div><span className="formula">max(floor, AI)</span></div>
+            <div className="fusion-grid"><div><span>Deterministic Floor</span><strong>{activeResult.deterministicScore}</strong></div><div><span>AI Assessment</span><strong>{typeof activeResult.aiScore === "number" ? activeResult.aiScore : "Unavailable"}</strong></div><div><span>Final Risk</span><strong>{activeResult.finalScore}</strong></div></div>
+            <p>Final Risk = max(Deterministic Floor, AI Assessment). {typeof activeResult.aiScore !== "number" || activeResult.aiScore <= activeResult.deterministicScore ? "Deterministic floor preserved." : "AI raised the advisory risk."}</p>
+          </section>
           {decoded && <section className="decoded-card"><h3>{decoded.action}</h3><div className="decoded-grid"><span>Method</span><strong>{decoded.method}</strong>{decoded.spender && <><span>Spender</span><strong>{decoded.spender}</strong></>}{decoded.recipient && <><span>Recipient</span><strong>{decoded.recipient}</strong></>}{decoded.from && <><span>From</span><strong>{decoded.from}</strong></>}{decoded.operator && <><span>Operator</span><strong>{decoded.operator}</strong></>}{decoded.amount && <><span>Amount</span><strong>{decoded.isUnlimited ? "Unlimited" : decoded.amount}</strong></>}{typeof decoded.approved === "boolean" && <><span>Approved</span><strong>{decoded.approved ? "Yes" : "No"}</strong></>}</div>{decoded.riskHint && <p>{decoded.riskHint}</p>}</section>}
-          {result.criticalSignals.length > 0 && <section className="signal-section"><h3>Critical Signals</h3><ul className="risk-list critical">{result.criticalSignals.map((item) => <li key={item.id}><strong>{item.title}</strong><span>{item.detail}</span></li>)}</ul></section>}
-          {result.advisorySignals.length > 0 && <section className="signal-section"><h3>Advisory Signals</h3><ul className="risk-list">{result.advisorySignals.map((item) => <li key={`${item.id}-${item.title}`}><strong>{item.title}</strong><span>{item.detail}</span></li>)}</ul></section>}
-          <section className="explanation"><h3>AI Explanation</h3><p>{result.aiExplanation ?? "AI provider unavailable; deterministic Local Safety Engine result shown."}</p></section>
-          <p className="recommendation"><strong>Recommendation:</strong> {result.recommendation}</p>
+          <section className="intelligence-card">
+            <div className="card-title"><div><span className="eyebrow">X Layer RPC</span><h3>On-chain Intelligence</h3></div><span className={`rpc-status rpc-${intelligence?.rpcStatus.toLowerCase() ?? "unavailable"}`}>{intelligence?.rpcStatus ?? "UNAVAILABLE"}</span></div>
+            <div className="decoded-grid">
+              <span>Target</span><strong>{intelligence?.address ?? to}</strong>
+              <span>Address Type</span><strong>{intelligence?.addressType === "SMART_CONTRACT" ? "Smart Contract" : intelligence?.addressType === "EOA" ? "EOA" : "Unavailable"}</strong>
+              <span>Code</span><strong>{intelligence?.codePresent === true ? `Present · ${intelligence.codeSizeBytes?.toLocaleString() ?? "?"} bytes` : intelligence?.codePresent === false ? "Not present" : "Unavailable"}</strong>
+              <span>EIP-1967 Proxy</span><strong>{intelligence?.proxyDetected === true ? "Implementation detected" : intelligence?.proxyDetected === false ? "Not detected" : "Unavailable"}</strong>
+              {intelligence?.implementationAddress && <><span>Implementation</span><strong>{intelligence.implementationAddress}</strong></>}
+              <span>Preflight</span><strong>{intelligence?.preflightStatus === "SUCCEEDED" ? "Call succeeded" : intelligence?.preflightStatus === "REVERTED" ? "Reverted" : "Unavailable"}</strong>
+              {intelligence?.revertReason && <><span>Revert Reason</span><strong>{intelligence.revertReason}</strong></>}
+              <span>Estimated Gas</span><strong>{intelligence?.estimatedGas ? BigInt(intelligence.estimatedGas).toLocaleString() : "Unavailable"}</strong>
+            </div>
+            <p>Preflight uses <code>eth_call</code> and <code>eth_estimateGas</code>. It is not a full state-diff simulation.</p>
+          </section>
+          {activeResult.criticalSignals.length > 0 && <section className="signal-section"><h3>Critical Signals</h3><ul className="risk-list critical">{activeResult.criticalSignals.map((item) => <li key={item.id}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
+          {activeResult.advisorySignals.length > 0 && <section className="signal-section"><h3>Advisory Signals</h3><ul className="risk-list">{activeResult.advisorySignals.map((item) => <li key={`${item.id}-${item.title}`}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
+          <section className="safety-guarantee"><span className="eyebrow">Safety Guarantee</span><strong>AI can explain or raise risk, but it cannot reduce deterministic security signals.</strong></section>
+          <section className="explanation"><h3>AI Explanation</h3><p>{activeResult.aiExplanation ?? "AI provider unavailable; deterministic Local Safety Engine result shown."}</p></section>
+          <p className="recommendation"><strong>Recommendation:</strong> {activeResult.recommendation}</p>
           <section className={`record-card phase-${recordState.phase}`}><div><span>On-chain assessment receipt</span><strong>{recordLabel}</strong></div><div className="actions"><button className="secondary" onClick={() => setReviewed((current) => !current)} disabled={recordPending}>{reviewed ? "Reviewed ✓" : "I reviewed this result"}</button><button className="primary" onClick={recordOnchain} disabled={!registryAddress || !analysisHash || !address || !isCorrectNetwork || !reviewed || recordPending || recordState.phase === "confirmed"}>{recordState.phase === "awaiting-signature" ? "Check wallet…" : recordState.phase === "confirming" ? "Confirming…" : recordState.phase === "confirmed" ? "Confirmed" : "Record on X Layer"}</button></div>{recordState.hash && <div className="receipt">Transaction: <a href={`${explorerBase}/tx/${recordState.hash}`} target="_blank" rel="noreferrer">{recordState.hash}</a></div>}{recordState.error && <div className="status-message">{recordState.error}</div>}</section>
         </> : <div className="empty">Choose a preset or enter a transaction.<br />Nothing is analyzed, signed, or broadcast automatically.</div>}
-        {message && <div className="status-message">{message}</div>}
+        {message && <div className="status-message" role="status">{message}</div>}
       </div>
+    </section>
+    <section className="tx-analyzer panel">
+      <div className="panel-heading"><div><span className="eyebrow">X Layer Transaction Analyzer</span><h2>Post-hoc Transaction Analysis</h2><p>Load a confirmed or reverted X Layer transaction from real RPC data. This is not pre-sign simulation.</p></div><button className="secondary" onClick={() => loadXLayerTransaction(verifiedTxHash)} disabled={transactionLoading}>Load Verified X Layer Receipt</button></div>
+      <div className="tx-search"><input aria-label="X Layer transaction hash" placeholder="0x… transaction hash" value={transactionHash} onChange={(event) => setTransactionHash(event.target.value)} /><button className="primary" onClick={() => loadXLayerTransaction()} disabled={transactionLoading}>{transactionLoading ? "Loading…" : "Inspect Transaction"}</button></div>
+      {transactionError && <div className="status-message" role="status">{transactionError}</div>}
+      {transactionResult && <div className="tx-result">
+        <div className="decoded-grid"><span>Status</span><strong>{transactionResult.status}</strong><span>Block</span><strong>{transactionResult.blockNumber ?? "Pending"}</strong><span>From</span><strong>{transactionResult.from}</strong><span>To</span><strong>{transactionResult.to ?? "Contract creation"}</strong><span>Value</span><strong>{transactionResult.value} OKB</strong><span>Gas</span><strong>{BigInt(transactionResult.gasLimit).toLocaleString()}{transactionResult.gasUsed ? ` limit · ${BigInt(transactionResult.gasUsed).toLocaleString()} used` : " limit"}</strong><span>Method</span><strong>{transactionResult.decodedAction.method}</strong><span>Calldata</span><strong>{transactionResult.input}</strong></div>
+        <div className="actions"><a className="secondary link-button" href={`${explorerBase}/tx/${transactionResult.hash}`} target="_blank" rel="noreferrer">Open Official Explorer</a><button className="primary" onClick={loadTransactionIntoAnalyzer} disabled={!transactionResult.analysisInput}>Load into Analyzer</button></div>
+      </div>}
     </section>
     <section className="why-xlayer"><div><span className="eyebrow">Why X Layer</span><h2>Compact, user-confirmed evidence.</h2></div><p>After review, users can record only an assessment hash and final score through RiskRegistry on X Layer Testnet (Chain ID 1952). The receipt is evidence of review—not a guarantee of safety and not transaction execution.</p></section>
   </main>;

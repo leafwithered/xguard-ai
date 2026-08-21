@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, enhancement-v2, final-judge-upgrade, final-polish]
+    branches: [main, enhancement-v2, final-judge-upgrade, final-polish, v3-competition]
   pull_request:
     branches: [main]
 
@@ -30,3 +30,6 @@ jobs:
       - run: pnpm run transaction-analyzer:test
       - run: pnpm run judge:test
       - run: pnpm run analysis-state:test
+      - run: pnpm run consequence:test
+      - run: pnpm run intent:test
+      - run: pnpm run security-benchmark:test

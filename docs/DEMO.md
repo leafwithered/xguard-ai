@@ -1,10 +1,10 @@
-# XGuard AI — 75–90 Second Judge Demo
+# XGuard AI — V5 Judge Demo
 
-**V4 Preview:** https://xguard-ai-git-codex-v4-okx-simulation-leafwithereds-projects.vercel.app
+**V5 Preview:** assigned after Preview deployment
 
 **Stable Production:** https://xguard-ai-six.vercel.app
 
-The V4 path requires no wallet connection and creates no transaction. Judge Mode only loads inputs; every analysis is an explicit click.
+The V5 path requires no wallet connection and creates no transaction. Judge Mode only loads inputs or navigates to evidence; every analysis, export, file selection, and verification is explicit.
 
 ## Script
 
@@ -63,13 +63,19 @@ In Judge Mode, load **Live OKX Mainnet Simulation**, then explicitly click **Ana
 
 Say: “This is a real, read-only simulation of a public historical fixture. Provider evidence is additional consequence evidence—not a safety verdict.”
 
-### 1:12–1:24 — Evidence hierarchy
+### 1:12–1:24 — Analysis Receipt
 
-Point to Final Risk, deterministic known risk, AI advisory, confidence/verdict/execution, consequences, Intent vs Reality, RPC, and OKX evidence.
+Show Analysis ID, schema `1.0.0`, four provenance sources, and the `sha256:` fingerprint. Select **Export JSON**, then **Verify Current**.
 
-Say: “Each claim keeps its provenance. Missing evidence stays missing; conflicts remain visible.”
+Say: “The API now returns a portable, versioned evidence receipt. The same canonicalizer generates and verifies its fingerprint.”
 
-### 1:24–1:30 — Existing receipt
+### 1:24–1:36 — Tamper boundary
+
+Import the original exported JSON and show `INTEGRITY VERIFIED`. In a local copy, change one assessment value without updating the fingerprint, then import it and show `INTEGRITY CHECK FAILED`.
+
+Say: “Integrity detects content changes. It does not prove safety or XGuard authorship.”
+
+### 1:36–1:45 — Existing X Layer receipt
 
 Select **View Receipt** and show the existing confirmed Testnet transaction.
 
@@ -115,6 +121,9 @@ The preset copies only public `from`, `to`, value, and calldata from this confir
 - Live badge never appears for Testnet, mock, unavailable, error, non-200, or non-zero business-code evidence
 - EIP-1967 wording is scoped; it does not exclude every proxy type
 - Editing any input or network invalidates the previous analysis
+- Exported JSON contains schema, provenance, and fingerprint but no original free-text context or provider authentication metadata
+- Original receipt verifies; an undigested change fails
+- Verification never says that a transaction is safe or that XGuard signed the receipt
 - No connection, signature, broadcast, deployment, or new chain transaction
 
 The existing public MP4 remains the historical stable Production capture. Do not regenerate it until V4 is explicitly approved for Production so the public path continues to represent deployed behavior.

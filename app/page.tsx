@@ -15,6 +15,7 @@ import { judgePresets as presets, publicMainnetSimulationFixture } from "../lib/
 import { currentAnalysisResult, invalidateStaleAnalysis } from "../lib/analysis-state";
 import { initialRecordState, isRecordPending, reduceRecordState } from "../lib/transaction-state";
 import { buildRiskScorePresentation, isLiveOkxProviderEvidence } from "../lib/presentation";
+import { ANALYSIS_RECEIPT_INTEGRITY_NOTICE, ANALYSIS_RECEIPT_MAX_FILE_BYTES, isAnalysisReceipt, verifyAnalysisReceipt, type AnalysisReceipt, type AnalysisReceiptVerificationStatus } from "../lib/analysis-receipt";
 import type { WalletProvider } from "../types/ethereum";
 
 const registryAddress = process.env.NEXT_PUBLIC_RISK_REGISTRY_ADDRESS as Address | undefined;
@@ -35,6 +36,7 @@ type AnalysisResult = RiskResult & {
   analysisTimings: { rpcMs: number; simulationMs: number; aiMs: number; totalMs: number };
   simulationEvidence: SimulationEvidence;
   evidenceConsistency: { status: "CONSISTENT" | "INCONSISTENT" | "NOT_COMPARABLE"; reasons: string[] };
+  analysisReceipt: AnalysisReceipt;
 };
 
 const shortAddress = (value: string) => value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "";
@@ -81,7 +83,8 @@ function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
     && validIntent
     && validTimings
     && validSimulation
-    && validConsistency;
+    && validConsistency
+    && isAnalysisReceipt(candidate.analysisReceipt);
 }
 
 export default function Home() {
@@ -106,6 +109,8 @@ export default function Home() {
   const [transactionLoading, setTransactionLoading] = useState(false);
   const [transactionError, setTransactionError] = useState("");
   const [judgeModeOpen, setJudgeModeOpen] = useState(false);
+  const [receiptVerification, setReceiptVerification] = useState<AnalysisReceiptVerificationStatus | null>(null);
+  const [receiptDownloadUrl, setReceiptDownloadUrl] = useState<string | null>(null);
   const walletNetworkName = chainId === null ? "Wallet not connected" : chainId === 1952 ? "Wallet on X Layer Testnet" : `Wallet network · ${chainId}`;
   const analysisNetworkConfig = getAnalysisNetworkConfig(analysisNetwork);
   const networkName = analysisNetworkConfig.name;
@@ -114,6 +119,16 @@ export default function Home() {
   const currentTransactionInput: RiskInput = { from, to, value, data, context, analysisNetwork };
   const activeResult = currentAnalysisResult({ result, lastInput, reviewed }, currentTransactionInput);
   const analysisHash = useMemo(() => lastInput && activeResult ? keccak256(toHex(JSON.stringify({ input: lastInput, result: activeResult }))) : null, [lastInput, activeResult]);
+
+  useEffect(() => {
+    if (!activeResult?.analysisReceipt) {
+      setReceiptDownloadUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([`${JSON.stringify(activeResult.analysisReceipt, null, 2)}\n`], { type: "application/json" }));
+    setReceiptDownloadUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [activeResult?.analysisReceipt]);
 
   useEffect(() => {
     window.localStorage.removeItem("xguard-last-result");
@@ -142,6 +157,7 @@ export default function Home() {
     setResult(freshness.snapshot.result);
     setLastInput(freshness.snapshot.lastInput);
     setReviewed(freshness.snapshot.reviewed);
+    setReceiptVerification(null);
     dispatchRecord({ type: "RESET" });
     window.sessionStorage.removeItem("xguard-session-result");
     setMessage(freshness.notice);
@@ -235,13 +251,14 @@ export default function Home() {
     setLastInput(null);
     setReviewed(false);
     setMessage("");
+    setReceiptVerification(null);
     dispatchRecord({ type: "RESET" });
     window.sessionStorage.removeItem("xguard-session-result");
     if (clearFields) { setTo(""); setValue("0"); setData("0x"); setContext(""); }
   }
 
   async function analyze() {
-    setMessage(""); setReviewed(false); dispatchRecord({ type: "RESET" });
+    setMessage(""); setReceiptVerification(null); setReviewed(false); dispatchRecord({ type: "RESET" });
     const input: RiskInput = { from, to, value, data, context, analysisNetwork };
     if (!isAddress(to)) { setMessage("Enter a valid recipient contract address."); return; }
     setAnalyzing(true);
@@ -309,6 +326,38 @@ export default function Home() {
     document.querySelector(".tx-analyzer")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function scrollToReceipt() {
+    document.querySelector(".analysis-receipt-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  async function copyReceiptFingerprint() {
+    if (!activeResult?.analysisReceipt) return;
+    try {
+      await navigator.clipboard.writeText(activeResult.analysisReceipt.integrity.fingerprint);
+      setMessage("Receipt fingerprint copied.");
+    } catch {
+      setMessage("Clipboard access was unavailable. Select the fingerprint manually.");
+    }
+  }
+
+  async function verifyCurrentReceipt() {
+    if (!activeResult?.analysisReceipt) return;
+    setReceiptVerification((await verifyAnalysisReceipt(activeResult.analysisReceipt)).status);
+  }
+
+  async function verifyReceiptFile(file: File | undefined) {
+    if (!file) return;
+    if (file.size > ANALYSIS_RECEIPT_MAX_FILE_BYTES) {
+      setReceiptVerification("INVALID RECEIPT FORMAT");
+      return;
+    }
+    try {
+      setReceiptVerification((await verifyAnalysisReceipt(JSON.parse(await file.text()))).status);
+    } catch {
+      setReceiptVerification("INVALID RECEIPT FORMAT");
+    }
+  }
+
   const modeLabel = activeResult?.mode === "HYBRID" ? "Hybrid Analysis" : activeResult?.mode === "AI" ? "AI Analysis" : "Local Safety Engine";
   const recordLabel = recordState.phase === "awaiting-signature" ? "Awaiting wallet signature" : recordState.phase === "submitted" ? "Submitted" : recordState.phase === "confirming" ? "Confirming on X Layer" : recordState.phase === "confirmed" ? "Confirmed on X Layer" : recordState.phase === "reverted" ? "Transaction reverted" : recordState.phase === "error" ? "Confirmation error" : "Ready after review";
   const decoded = activeResult?.decodedAction;
@@ -327,7 +376,7 @@ export default function Home() {
       <div><div className="eyebrow">Evidence-grounded pre-sign intelligence</div><h1>Know what a transaction does before you sign.</h1><p className="lead">XGuard combines deterministic decoding, X Layer RPC facts, optional OKX Mainnet simulation, Intent vs Reality, and evidence-grounded AI—without treating any provider as a safety oracle.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeModeOpen} aria-controls="judge-demo" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
       <div className="hero-card"><h2>What happens if I sign this?</h2><div className="signal"><span>Analysis Network</span><strong>{networkName}</strong></div><div className="signal"><span>Wallet</span><strong>{walletNetworkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
-    <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Evidence-grounded AI</span></section>
+    <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Verifiable Receipts</span></section>
     {judgeModeOpen && <section className="judge-mode" id="judge-demo">
       <div className="panel-heading"><div><span className="eyebrow">60-Second Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => setJudgeModeOpen(false)}>Close</button></div>
       <div className="judge-steps">
@@ -335,7 +384,9 @@ export default function Home() {
         <article><b>02</b><span>Ambiguous Approval</span><strong>Expected: UNDETERMINED</strong><p>The shared approve() selector stays ambiguous unless token-standard evidence resolves it.</p><button className="secondary" onClick={() => loadJudgePreset(1)}>Load</button></article>
         <article><b>03</b><span>Suspicious Airdrop</span><strong>Expected: HIGH + MISMATCH</strong><p>Claim intent contradicts contract-wide operator permission; deterministic evidence is not weakened by AI.</p><button className="secondary" onClick={() => loadJudgePreset(2)}>Load</button></article>
         <article><b>04</b><span>Live OKX Mainnet Simulation</span><strong>Expected: PROVIDER EVIDENCE</strong><p>Loads a public historical approval fixture. Analysis remains explicit and read-only.</p><button className="secondary" onClick={() => { applyPreset(publicMainnetSimulationFixture.input); document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Load</button></article>
-        <article><b>05</b><span>Verified X Layer Evidence</span><strong>Receipt: Confirmed</strong><p>Real user-signed RiskRegistry receipt on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View Receipt</button></article>
+        <article><b>05</b><span>Analysis Receipt</span><strong>Versioned + exportable</strong><p>Inspect the current analysis ID, provenance and SHA-256 fingerprint.</p><button className="secondary" onClick={scrollToReceipt} disabled={!activeResult}>View</button></article>
+        <article><b>06</b><span>Verify Receipt</span><strong>Local integrity check</strong><p>Verify the current receipt or import JSON without provider or AI calls.</p><button className="secondary" onClick={scrollToReceipt} disabled={!activeResult}>Verify</button></article>
+        <article><b>07</b><span>Existing X Layer Receipt</span><strong>On-chain: Confirmed</strong><p>Real user-signed RiskRegistry evidence on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View</button></article>
       </div>
       <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ User-controlled signing</span><span>✓ Verified on-chain receipt</span></div>
     </section>}
@@ -429,6 +480,18 @@ export default function Home() {
           <section className="timing-card">
             <div className="card-title"><div><span className="eyebrow">Observed request latency</span><h3>Analysis Timings</h3></div></div>
             <div className="timing-grid"><div><span>RPC</span><strong>{activeResult.analysisTimings.rpcMs} ms</strong></div><div><span>Simulation</span><strong>{activeResult.analysisTimings.simulationMs} ms</strong></div><div><span>AI</span><strong>{activeResult.analysisTimings.aiMs} ms</strong></div><div><span>Total</span><strong>{activeResult.analysisTimings.totalMs} ms</strong></div></div>
+          </section>
+          <section className="provenance-card">
+            <div className="card-title"><div><span className="eyebrow">Separated evidence classes</span><h3>Evidence Provenance</h3></div></div>
+            <div className="provenance-list">{activeResult.analysisReceipt.provenance.sources.map((source) => <div key={source.type}><span>{source.type.replaceAll("_", " ")}</span><strong>{source.provider}</strong><small>{source.status}{source.type === "OKX_ONCHAINOS" && liveOkxEvidence ? " · LIVE PROVIDER EVIDENCE" : ""}</small><time>{source.observedAt}</time></div>)}</div>
+            <p>Provenance identifies the evidence source and availability. Provider evidence is not a safety verdict.</p>
+          </section>
+          <section className="analysis-receipt-card" id="analysis-receipt">
+            <div className="card-title"><div><span className="eyebrow">Machine-consumable evidence</span><h3>Analysis Receipt</h3></div><span className="receipt-ready">Fingerprint available</span></div>
+            <div className="receipt-grid"><span>Analysis ID</span><strong>{activeResult.analysisReceipt.analysisId}</strong><span>Schema</span><strong>{activeResult.analysisReceipt.schemaVersion}</strong><span>Engine</span><strong>{activeResult.analysisReceipt.engine.xguardVersion}</strong><span>Observed At</span><strong>{activeResult.analysisReceipt.observedAt}</strong><span>Network</span><strong>{getAnalysisNetworkConfig(activeResult.analysisReceipt.network.analysisNetwork).name} · Chain {activeResult.analysisReceipt.network.chainId}</strong><span>Fingerprint</span><code>{activeResult.analysisReceipt.integrity.fingerprint}</code></div>
+            <div className="receipt-actions"><a className="secondary link-button" href={receiptDownloadUrl ?? undefined} download={`xguard-analysis-${activeResult.analysisReceipt.analysisId}.json`} aria-disabled={!receiptDownloadUrl}>Export JSON</a><button className="secondary" onClick={copyReceiptFingerprint}>Copy Fingerprint</button><button className="secondary" onClick={verifyCurrentReceipt}>Verify Current</button><label className="secondary file-button">Verify Receipt File<input type="file" accept="application/json,.json" onChange={(event) => { void verifyReceiptFile(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label></div>
+            {receiptVerification && <div className={`verification-result ${receiptVerification === "INTEGRITY VERIFIED" ? "verification-pass" : "verification-fail"}`} role="status">{receiptVerification}</div>}
+            <p>{ANALYSIS_RECEIPT_INTEGRITY_NOTICE}</p><small>Local imports are limited to {ANALYSIS_RECEIPT_MAX_FILE_BYTES / 1024} KiB. Verification makes no network, AI, OKX, signing or broadcast request.</small>
           </section>
           {activeResult.criticalSignals.length > 0 && <section className="signal-section"><h3>Critical Signals</h3><ul className="risk-list critical">{activeResult.criticalSignals.map((item) => <li key={item.id}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
           {activeResult.advisorySignals.length > 0 && <section className="signal-section"><h3>Advisory Signals</h3><ul className="risk-list">{activeResult.advisorySignals.map((item) => <li key={`${item.id}-${item.title}`}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}

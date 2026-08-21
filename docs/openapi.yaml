@@ -1,0 +1,166 @@
+openapi: 3.1.0
+info:
+  title: XGuard Analysis API
+  version: 5.0.0-preview
+  description: Explainable pre-sign analysis for X Layer with a versioned, integrity-verifiable Analysis Receipt.
+paths:
+  /api/analyze:
+    post:
+      summary: Analyze a proposed X Layer transaction
+      description: Read-only analysis. This operation never connects a wallet, signs, or broadcasts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyzeRequest'
+      responses:
+        '200':
+          description: Completed analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeResponse'
+        '400':
+          description: Invalid request
+        '413':
+          description: Request body too large
+        '429':
+          description: Rate limited
+components:
+  schemas:
+    AnalyzeRequest:
+      type: object
+      required: [from, to, value, data, context]
+      additionalProperties: false
+      properties:
+        analysisNetwork:
+          type: string
+          enum: [XLAYER_TESTNET, XLAYER_MAINNET]
+          default: XLAYER_TESTNET
+        from:
+          type: string
+          description: Public sender address; may be empty on Testnet.
+        to:
+          type: string
+          pattern: '^0x[0-9a-fA-F]{40}$'
+        value:
+          type: string
+          description: Human OKB decimal, not wei.
+        data:
+          type: string
+          pattern: '^0x(?:[0-9a-fA-F]{2})*$'
+        context:
+          type: string
+          maxLength: 2000
+          description: Optional untrusted user intent. The raw value is not included in the Analysis Receipt.
+    AnalyzeResponse:
+      type: object
+      description: Existing V4.1 analysis fields plus the backward-compatible analysisReceipt field.
+      required: [finalScore, deterministicScore, level, analysisConfidence, analysisVerdict, executionStatus, analysisReceipt]
+      properties:
+        finalScore: { type: integer, minimum: 0, maximum: 100 }
+        deterministicScore: { type: integer, minimum: 0, maximum: 100 }
+        aiScore: { type: integer, minimum: 0, maximum: 100 }
+        level: { $ref: '#/components/schemas/RiskLevel' }
+        analysisConfidence: { type: string, enum: [HIGH, MEDIUM, LOW] }
+        analysisVerdict: { type: string, enum: [ASSESSED, UNDETERMINED] }
+        executionStatus: { type: string, enum: [SUCCEEDED, REVERTED, UNAVAILABLE] }
+        analysisReceipt: { $ref: '#/components/schemas/AnalysisReceipt' }
+      additionalProperties: true
+    RiskLevel:
+      type: string
+      enum: [LOW, MEDIUM, HIGH]
+    RiskComponent:
+      type: object
+      required: [score, level]
+      additionalProperties: false
+      properties:
+        score: { type: integer, minimum: 0, maximum: 100 }
+        level: { $ref: '#/components/schemas/RiskLevel' }
+    AnalysisReceipt:
+      type: object
+      additionalProperties: false
+      required: [receiptType, schemaVersion, analysisId, engine, observedAt, network, transaction, assessment, evidence, provenance, integrity]
+      properties:
+        receiptType: { type: string, const: xguard.analysis-receipt }
+        schemaVersion: { type: string, const: 1.0.0 }
+        analysisId: { type: string, format: uuid }
+        engine:
+          type: object
+          additionalProperties: false
+          required: [xguardVersion, ruleVersion, decoderVersion]
+          properties:
+            xguardVersion: { type: string }
+            ruleVersion: { type: string }
+            decoderVersion: { type: string }
+        observedAt: { type: string, format: date-time }
+        network:
+          type: object
+          additionalProperties: false
+          required: [analysisNetwork, chainId]
+          properties:
+            analysisNetwork: { type: string, enum: [XLAYER_TESTNET, XLAYER_MAINNET] }
+            chainId: { type: integer, enum: [1952, 196] }
+        transaction:
+          type: object
+          additionalProperties: false
+          required: [from, to, value, calldata]
+          properties:
+            from: { type: [string, 'null'] }
+            to: { type: string }
+            value: { type: string }
+            calldata: { type: string }
+        assessment:
+          type: object
+          additionalProperties: false
+          required: [deterministicKnownRisk, aiAdvisory, finalRisk, confidence, verdict, execution, recommendation]
+          properties:
+            deterministicKnownRisk: { $ref: '#/components/schemas/RiskComponent' }
+            aiAdvisory:
+              oneOf:
+                - { $ref: '#/components/schemas/RiskComponent' }
+                - { type: 'null' }
+            finalRisk: { $ref: '#/components/schemas/RiskComponent' }
+            confidence: { type: string, enum: [HIGH, MEDIUM, LOW] }
+            verdict: { type: string, enum: [ASSESSED, UNDETERMINED] }
+            execution: { type: string, enum: [SUCCEEDED, REVERTED, UNAVAILABLE] }
+            recommendation: { type: string }
+        evidence:
+          type: object
+          additionalProperties: false
+          required: [decodedAction, consequences, intentComparison, contractIntelligence, simulationEvidence, evidenceConsistency]
+          properties:
+            decodedAction: { type: object }
+            consequences: { type: array, items: { type: object } }
+            intentComparison: { type: object }
+            contractIntelligence: { type: object }
+            simulationEvidence: { type: object }
+            evidenceConsistency: { type: object }
+        provenance:
+          type: object
+          additionalProperties: false
+          required: [sources]
+          properties:
+            sources:
+              type: array
+              minItems: 4
+              maxItems: 4
+              items:
+                type: object
+                additionalProperties: false
+                required: [type, provider, status, observedAt, network]
+                properties:
+                  type: { type: string, enum: [DETERMINISTIC_DECODER, XLAYER_RPC, OKX_ONCHAINOS, AI_ADVISORY] }
+                  provider: { type: string }
+                  status: { type: string }
+                  observedAt: { type: string, format: date-time }
+                  network: { type: string, enum: [XLAYER_TESTNET, XLAYER_MAINNET] }
+        integrity:
+          type: object
+          additionalProperties: false
+          required: [canonicalizationVersion, hashAlgorithm, fingerprint]
+          properties:
+            canonicalizationVersion: { type: string, const: xguard-c14n-v1 }
+            hashAlgorithm: { type: string, const: SHA-256 }
+            fingerprint: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }

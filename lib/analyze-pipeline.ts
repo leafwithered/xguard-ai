@@ -6,6 +6,7 @@ import { applyIntentRisk, compareIntentToReality, type IntentComparison } from "
 import { signalsFromSimulation, simulateTransaction, type SimulationEvidence } from "./okx/simulation.ts";
 import { localRiskAnalysis, type RiskInput, type RiskResult, type RiskSignal } from "./risk.ts";
 import { mergeRiskResults } from "./risk-fusion.ts";
+import { createAnalysisReceipt, type AnalysisReceipt } from "./analysis-receipt.ts";
 
 export type AnalysisPipelineResult = RiskResult & {
   analysisConfidence: AnalysisConfidence;
@@ -18,6 +19,7 @@ export type AnalysisPipelineResult = RiskResult & {
   contractIntelligence: ContractIntelligence;
   simulationEvidence: SimulationEvidence;
   evidenceConsistency: EvidenceConsistency;
+  analysisReceipt: AnalysisReceipt;
 };
 
 export type AnalysisPipelineDependencies = {
@@ -117,5 +119,7 @@ export async function runAnalysisPipeline(input: RiskInput, dependencies: Analys
   const fusedRisk = mergeRiskResults(riskWithFinalIntent, aiResult);
   const riskResult = applyFinalSemantics(fusedRisk, intelligence, simulation, evidenceConsistency);
 
-  return { ...riskResult, ...dimensions, analysisTimings: { rpcMs, simulationMs, aiMs, totalMs: Date.now() - startedAt }, consequences, intentComparison, contractIntelligence: intelligence, simulationEvidence: simulation, evidenceConsistency };
+  const analysisResult = { ...riskResult, ...dimensions, analysisTimings: { rpcMs, simulationMs, aiMs, totalMs: Date.now() - startedAt }, consequences, intentComparison, contractIntelligence: intelligence, simulationEvidence: simulation, evidenceConsistency };
+  const analysisReceipt = await createAnalysisReceipt(input, analysisResult);
+  return { ...analysisResult, analysisReceipt };
 }

@@ -3,5 +3,9 @@ packages:
 
 allowBuilds:
   keccak: true
+  sharp: true
 overrides:
   '@scure/base': 1.2.1
+  postcss: 8.5.23
+  sharp: 0.35.0
+  ws: 8.21.0

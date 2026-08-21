@@ -2,7 +2,7 @@
 
 > **Know what a transaction does before you sign.**
 
-XGuard AI is an explainable pre-sign security layer for X Layer. It decodes calldata, applies deterministic security rules, inspects live X Layer RPC facts, compares user intent with observed behavior, and uses AI only as an advisory evidence interpreter. On X Layer Mainnet, V4 can add read-only OKX OnchainOS Transaction Simulation evidence. No provider is treated as a safety oracle, and nothing connects, signs, or broadcasts automatically.
+XGuard AI is explainable, verifiable pre-sign security infrastructure for X Layer. It combines deterministic transaction decoding, consequence analysis, X Layer contract intelligence, real OKX OnchainOS simulation evidence, Intent vs Reality comparison, bounded AI advisory, and versioned Analysis Receipts with SHA-256 integrity verification. No provider is treated as a safety oracle, and nothing connects, signs, or broadcasts automatically.
 
 **Production:** [xguard-ai-six.vercel.app](https://xguard-ai-six.vercel.app) · **Source:** [github.com/leafwithered/xguard-ai](https://github.com/leafwithered/xguard-ai) · **Demo:** [xguard-ai-build-x-demo.mp4](https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4)
 
@@ -16,13 +16,15 @@ XGuard AI is an explainable pre-sign security layer for X Layer. It decodes call
 2. **Ambiguous Approval** — deterministic `20 LOW`, `LOW` confidence, `UNDETERMINED`; `approve(address,uint256)` is not forced into ERC20 semantics without token-standard evidence.
 3. **Suspicious Airdrop** — deterministic `78 HIGH`, `MISMATCH`; claim intent conflicts with `setApprovalForAll(true)`.
 4. **Live OKX Mainnet Simulation** — a public historical approval fixture can be loaded explicitly for real, read-only provider evidence on Chain `196`.
-5. **Existing receipt** — a real, user-signed RiskRegistry receipt is verifiable on X Layer Testnet (`1952`).
+5. **Analysis Receipt** — inspect a random analysis ID, schema version, normalized provenance, and SHA-256 fingerprint; export JSON explicitly.
+6. **Verify Receipt** — verify the current receipt or import a JSON receipt locally; tampering fails the integrity check.
+7. **Existing X Layer receipt** — a real, user-signed RiskRegistry receipt is verifiable on X Layer Testnet (`1952`).
 
 Judge Mode only loads examples and navigates. The user must explicitly select **Analyze risk**. It never connects a wallet, signs, records, or broadcasts.
 
-## V4 Preview status
+## V5 Preview status
 
-`codex/v4-okx-simulation` is a Preview-only candidate based on frozen V3 Stable commit `04575cc764163c7cb99b948c050e974e4cd20a2e` (`v3.1.1-stable`). It has not been merged into `main` and has not changed the canonical Production deployment.
+`codex/v5-analysis-receipts` is a Preview-only candidate based on frozen V4.1 Stable tag `v4.1.0-stable`. It has not been merged into `main` and does not change the canonical V4.1 Production deployment.
 
 - Testnet `1952` retains the V3 RPC/preflight path and never calls the Mainnet simulator.
 - Mainnet `196` adds optional OKX OnchainOS simulation with `chainIndex: "196"`.
@@ -30,8 +32,10 @@ Judge Mode only loads examples and navigates. The user must explicitly select **
 - RPC and OKX simulation remain separate evidence sources; disagreement is surfaced and lowers confidence.
 - Missing credentials, timeout, rate limiting, malformed responses, and provider errors never disable deterministic analysis.
 - Empty provider risk entries mean only that no entries were returned—not that a transaction is safe.
+- Every completed analysis adds a backward-compatible `analysisReceipt` response field with schema `1.0.0` and `xguard-c14n-v1` integrity.
+- Export and verification are explicit local actions. Verification does not call AI, OKX, RPC, a wallet, or a blockchain.
 
-See [V4 evidence and live verification](docs/V4_OKX_SIMULATION.md), [integration guide](docs/INTEGRATION.md), and [75–90 second demo](docs/DEMO.md).
+See the [Analysis Receipt specification](docs/ANALYSIS_RECEIPT_SPEC.md), [integration guide](docs/INTEGRATION.md), [OpenAPI](docs/openapi.yaml), and [judge demo](docs/DEMO.md).
 
 ## Evidence hierarchy
 
@@ -75,12 +79,18 @@ flowchart TD
     E --> A[One optional AI advisory call]
     C --> F[Deterministic safety invariant]
     A --> F
-    F --> V[Final evidence report]
+    F --> V[Final assessment]
+    V --> P[Versioned Analysis Receipt]
+    P --> K[xguard-c14n-v1]
+    K --> Z[SHA-256 fingerprint]
+    Z --> X[Export / Verify / API]
     V --> H[Human decision]
     H --> Q[Optional existing Testnet RiskRegistry]
 ```
 
 `lib/analyze-pipeline.ts` owns evidence-first orchestration. `lib/evidence.ts` creates a bounded, normalized evidence object before `lib/ai/provider.ts` is called. The provider adapter is configured only on the server through `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`; the public client does not expose or prove the upstream provider identity.
+
+`lib/analysis-receipt.ts` is the shared server/browser implementation for receipt construction, strict validation, canonicalization, fingerprinting, and local verification. Integrity verification confirms content consistency only; it does not prove safety or XGuard authorship.
 
 ## X Layer integration
 
@@ -154,9 +164,10 @@ pnpm run token-standard:test
 pnpm run security-benchmark:test
 pnpm run simulation:test
 pnpm run presentation:test
+pnpm run receipt:test
 ```
 
-The V3.1 security corpus contains 57 adversarial and invariant cases. V4 adds authentication, network-boundary, normalization, failure-isolation, evidence-immutability, live-badge eligibility, and score-semantics regression coverage.
+V5 preserves the complete V4.1 corpus and adds receipt canonicalization, validation, privacy, tamper detection, stale-state, and trust-language coverage.
 
 ## Limitations
 
@@ -165,6 +176,7 @@ The V3.1 security corpus contains 57 adversarial and invariant cases. V4 adds au
 - Contract reputation and verified-source provenance are not yet integrated.
 - AI and deterministic rules can miss malicious behavior or create false positives.
 - This prototype has a basic in-memory API rate limit and no availability SLA.
+- Receipt fingerprints provide content integrity, not cryptographic authorship or provider authentication.
 
 ## Historical evidence note
 

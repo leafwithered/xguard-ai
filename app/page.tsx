@@ -5,6 +5,8 @@ import { createPublicClient, createWalletClient, custom, http, isAddress, keccak
 import { riskRegistryAbi, xLayerTestnet } from "../lib/xlayer";
 import type { RiskInput, RiskResult } from "../lib/risk";
 import type { ContractIntelligence } from "../lib/chain/intelligence";
+import type { TransactionConsequence } from "../lib/consequence";
+import type { IntentComparison } from "../lib/intent";
 import type { XLayerTransaction } from "../lib/chain/transaction-analyzer";
 import { judgePresets as presets } from "../lib/presets";
 import { currentAnalysisResult, invalidateStaleAnalysis } from "../lib/analysis-state";
@@ -18,20 +20,30 @@ const contractUrl = `${explorerBase}/address/0xf4505A4e8dEca4659b8A2054555788Ddc
 const verifiedTxUrl = `${explorerBase}/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`;
 const verifiedTxHash = "0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb";
 type WalletOption = { info: { uuid: string; name: string; icon: string }; provider: WalletProvider };
-type AnalysisResult = RiskResult & { contractIntelligence?: ContractIntelligence };
+type AnalysisResult = RiskResult & {
+  contractIntelligence: ContractIntelligence;
+  consequences: TransactionConsequence[];
+  intentComparison: IntentComparison;
+};
 
 const shortAddress = (value: string) => value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "";
 const signalSources = new Set(["RULE", "DECODER", "ON-CHAIN", "AI"]);
+const consequenceSources = new Set(["DECODER", "VALUE", "ON_CHAIN"]);
+const intentStatuses = new Set(["MATCH", "PARTIAL", "MISMATCH", "UNKNOWN"]);
 
 function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<AnalysisResult>;
   const validSignals = (signals: unknown) => Array.isArray(signals) && signals.every((item) => item && typeof item === "object" && signalSources.has(String((item as { source?: unknown }).source)));
+  const validConsequences = Array.isArray(candidate.consequences) && candidate.consequences.every((item) => item && typeof item === "object" && consequenceSources.has(String((item as { evidenceSource?: unknown }).evidenceSource)));
+  const validIntent = Boolean(candidate.intentComparison && intentStatuses.has(String(candidate.intentComparison.status)));
   return typeof candidate.finalScore === "number"
     && typeof candidate.deterministicScore === "number"
     && validSignals(candidate.criticalSignals)
     && validSignals(candidate.advisorySignals)
-    && Boolean(candidate.contractIntelligence);
+    && Boolean(candidate.contractIntelligence)
+    && validConsequences
+    && validIntent;
 }
 
 export default function Home() {
@@ -43,7 +55,7 @@ export default function Home() {
   const [to, setTo] = useState("");
   const [value, setValue] = useState("0");
   const [data, setData] = useState("0x");
-  const [context, setContext] = useState("Swap on a new token router");
+  const [context, setContext] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [lastInput, setLastInput] = useState<RiskInput | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -267,7 +279,7 @@ export default function Home() {
     </header>
     <section className="hero">
       <div><div className="eyebrow">Explainable pre-sign intelligence</div><h1>The pre-sign security layer for X Layer.</h1><p className="lead">Decode transactions, inspect on-chain context, apply deterministic safety rules, and use AI without allowing AI to override known security signals.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeModeOpen} aria-controls="judge-demo" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
-      <div className="hero-card"><h2>Built for X Layer</h2><div className="signal"><span>Network</span><strong>{networkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
+      <div className="hero-card"><h2>What happens if I sign this?</h2><div className="signal"><span>Network</span><strong>{networkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
     <section className="capability-strip"><span>Transaction Decoder</span><span>On-chain Intelligence</span><span>Deterministic Safety Floor</span><span>AI Risk Analysis</span></section>
     {judgeModeOpen && <section className="judge-mode" id="judge-demo">
@@ -275,7 +287,7 @@ export default function Home() {
       <div className="judge-steps">
         <article><b>01</b><span>Safe Transfer</span><strong>Expected: LOW</strong><p>Baseline deterministic analysis plus optional AI enrichment.</p><button className="secondary" onClick={() => loadJudgePreset(0)}>Load</button></article>
         <article><b>02</b><span>Unlimited Approval</span><strong>Expected: HIGH</strong><p>Decoded approve(), visible spender, and Unlimited amount.</p><button className="secondary" onClick={() => loadJudgePreset(1)}>Load</button></article>
-        <article><b>03</b><span>Suspicious Airdrop</span><strong>Expected: HIGH</strong><p>Demonstrates that AI cannot lower the deterministic floor.</p><button className="secondary" onClick={() => loadJudgePreset(2)}>Load</button></article>
+        <article><b>03</b><span>Suspicious Airdrop</span><strong>Expected: HIGH + MISMATCH</strong><p>Claim intent contradicts decoded unlimited permission; the safety floor remains deterministic.</p><button className="secondary" onClick={() => loadJudgePreset(2)}>Load</button></article>
         <article><b>04</b><span>Verified X Layer Evidence</span><strong>Receipt: Confirmed</strong><p>Real user-signed RiskRegistry receipt on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View Receipt</button></article>
       </div>
       <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ User-controlled signing</span><span>✓ Verified on-chain receipt</span></div>
@@ -287,7 +299,7 @@ export default function Home() {
         <label htmlFor="from">From address</label><input id="from" placeholder="0x..." value={from} onChange={(event) => setFrom(event.target.value)} />
         <label htmlFor="to">Recipient contract</label><input id="to" placeholder="0x..." value={to} onChange={(event) => setTo(event.target.value)} />
         <div className="row"><div><label htmlFor="value">Value (OKB)</label><input id="value" inputMode="decimal" value={value} onChange={(event) => setValue(event.target.value)} /></div><div><label htmlFor="data">Calldata</label><input id="data" value={data} onChange={(event) => setData(event.target.value)} /></div></div>
-        <label htmlFor="context">What are you trying to do?</label><textarea id="context" maxLength={2000} value={context} onChange={(event) => setContext(event.target.value)} />
+        <label htmlFor="context">What do you expect this transaction to do? (optional)</label><textarea id="context" maxLength={2000} placeholder="Example: I only want to claim an airdrop." value={context} onChange={(event) => setContext(event.target.value)} /><div className="field-note">Used for Intent vs Reality. Your words never replace decoded transaction facts.</div>
         {wallets.length > 1 && <div className="wallet-options"><span>Detected wallets</span>{wallets.map((wallet) => <button key={wallet.info.uuid} onClick={() => setWalletProvider(wallet.provider)}>{wallet.info.name}</button>)}</div>}
         <div className="actions"><button className="primary" onClick={analyze} disabled={analyzing || recordPending}>{analyzing ? "Analyzing…" : "Analyze risk"}</button><button className="secondary" onClick={connectWallet}>{address ? shortAddress(address) : "Connect wallet"}</button>{!isCorrectNetwork && <button className="secondary" onClick={switchToXLayer}>Switch to X Layer</button>}</div>
         <div className="footer-note">AI is advisory. XGuard AI never signs or broadcasts automatically.</div>
@@ -302,6 +314,14 @@ export default function Home() {
             <div className="fusion-grid"><div><span>Deterministic Floor</span><strong>{activeResult.deterministicScore}</strong></div><div><span>AI Assessment</span><strong>{typeof activeResult.aiScore === "number" ? activeResult.aiScore : "Unavailable"}</strong></div><div><span>Final Risk</span><strong>{activeResult.finalScore}</strong></div></div>
             <p>Final Risk = max(Deterministic Floor, AI Assessment). {typeof activeResult.aiScore !== "number" || activeResult.aiScore <= activeResult.deterministicScore ? "Deterministic floor preserved." : "AI raised the advisory risk."}</p>
           </section>
+          <section className="consequence-card">
+            <div className="card-title"><div><span className="eyebrow">Deterministic consequences</span><h3>What happens if I sign this?</h3></div></div>
+            <ul className="consequence-list">{activeResult.consequences.map((item) => <li key={item.id} className={`consequence-${item.severity.toLowerCase()}`}><div><b>{item.evidenceSource.replace("_", "-")}</b><span>{item.confidence}</span></div><strong>{item.title}</strong><p>{item.description}</p></li>)}</ul>
+          </section>
+          {activeResult.intentComparison.userIntent && <section className={`intent-card intent-${activeResult.intentComparison.status.toLowerCase()}`}>
+            <div className="card-title"><div><span className="eyebrow">Pre-sign reasoning</span><h3>Intent vs Reality</h3></div><span className="intent-status">{activeResult.intentComparison.status}</span></div>
+            <div className="intent-grid"><span>Your Intent</span><strong>{activeResult.intentComparison.userIntent}</strong><span>Observed Transaction</span><strong>{activeResult.intentComparison.observedTransaction}</strong><span>Why</span><strong>{activeResult.intentComparison.why}</strong><span>Normalization</span><strong>{activeResult.intentComparison.normalizationSource.replace("_", " ")} · {activeResult.intentComparison.confidence}</strong></div>
+          </section>}
           {decoded && <section className="decoded-card"><h3>{decoded.action}</h3><div className="decoded-grid"><span>Method</span><strong>{decoded.method}</strong>{decoded.spender && <><span>Spender</span><strong>{decoded.spender}</strong></>}{decoded.recipient && <><span>Recipient</span><strong>{decoded.recipient}</strong></>}{decoded.from && <><span>From</span><strong>{decoded.from}</strong></>}{decoded.operator && <><span>Operator</span><strong>{decoded.operator}</strong></>}{decoded.amount && <><span>Amount</span><strong>{decoded.isUnlimited ? "Unlimited" : decoded.amount}</strong></>}{typeof decoded.approved === "boolean" && <><span>Approved</span><strong>{decoded.approved ? "Yes" : "No"}</strong></>}</div>{decoded.riskHint && <p>{decoded.riskHint}</p>}</section>}
           <section className="intelligence-card">
             <div className="card-title"><div><span className="eyebrow">X Layer RPC</span><h3>On-chain Intelligence</h3></div><span className={`rpc-status rpc-${intelligence?.rpcStatus.toLowerCase() ?? "unavailable"}`}>{intelligence?.rpcStatus ?? "UNAVAILABLE"}</span></div>

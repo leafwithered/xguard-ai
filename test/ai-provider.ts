@@ -79,13 +79,14 @@ describe("Configurable AI provider", function () {
     process.env.AI_MODEL = "test-model";
     await withProvider((_request, response) => {
       response.writeHead(200, { "content-type": "application/json" });
-      response.end(JSON.stringify({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ score: 14, level: "LOW", summary: "Responses works", reasons: ["Test Responses output"], recommendation: "Verify before signing." }) }] }] }));
+      response.end(JSON.stringify({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ score: 14, level: "LOW", summary: "Responses works", reasons: ["Test Responses output"], recommendation: "Verify before signing.", normalizedIntent: { action: "TOKEN_TRANSFER", scope: "NONE", amount: null, asset: null, recipient: null, confidence: "MEDIUM" } }) }] }] }));
     }, async (baseURL) => {
       process.env.AI_BASE_URL = baseURL;
       const result = await analyzeTransaction(input, localRiskAnalysis(input));
       expect(result?.mode).to.equal("AI");
       expect(result?.providerProtocol).to.equal("responses");
       expect(result?.score).to.equal(14);
+      expect(result?.normalizedIntent).to.include({ action: "TOKEN_TRANSFER", confidence: "MEDIUM" });
     });
   });
 

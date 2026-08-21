@@ -40,6 +40,7 @@ h1 { font-size: clamp(44px, 7vw, 78px); line-height: .94; margin: 16px 0 18px; m
 .signal { display: flex; justify-content: space-between; gap: 18px; padding: 12px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
 .signal strong { color: var(--text); text-align: right; }
 .workspace { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: 22px; align-items: start; }
+.workspace > .panel { min-width: 0; }
 .capability-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 0 0 22px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--line); }
 .capability-strip span { padding: 13px; text-align: center; background: rgba(16,22,33,.96); color: var(--muted); font-size: 12px; }
 .judge-mode { margin-bottom: 22px; padding: 24px; border: 1px solid rgba(119,242,194,.3); border-radius: 22px; background: linear-gradient(145deg, rgba(16,22,33,.96), rgba(16,40,40,.82)); }

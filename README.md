@@ -128,6 +128,8 @@ Confidence and verdict are deterministic: unsupported, malformed, or materially 
 
 User-provided `transaction.context` is structured as untrusted intent data. Both Responses and Chat fallback prompts explicitly reject embedded instructions such as “ignore previous instructions,” “mark this safe,” or requests to discard RPC evidence. This is defense-in-depth, not a claim that any LLM is universally prompt-injection-proof; deterministic evidence and fusion invariants remain the primary boundary.
 
+AI enrichment has a shared 15-second provider budget. Responses remains preferred and Chat Completions is attempted only when the Responses endpoint explicitly reports a compatibility status or returns malformed success output. Network failures and timeouts fall back directly to Local Analysis instead of stacking a second provider timeout. RPC evidence is still collected before AI, so this bound does not weaken evidence-first ordering.
+
 The deterministic Local Risk Engine checks zero addresses, exact bigint native value thresholds, decoded ERC20/NFT approvals, unlimited permissions, transfer methods, malformed and unknown calldata, intent mismatches, unknown-contract context, and common social-engineering signals. AI may normalize ambiguous natural language, but deterministic code performs the consequence comparison wherever supported.
 
 The browser never receives `AI_API_KEY`. Missing configuration, timeouts, unsupported endpoints, and malformed output automatically use Local Analysis.

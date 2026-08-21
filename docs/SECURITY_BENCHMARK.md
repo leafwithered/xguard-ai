@@ -104,6 +104,10 @@ pnpm run token-standard:test
 
 The policy deliberately uses two explainable floors rather than assigning a unique arbitrary weight to every sentence. ERC20 human amounts are never compared with raw uint256 values without trusted token identity and decimals.
 
+## Latency budget
+
+The evidence-first pipeline remains sequential: bounded X Layer RPC intelligence runs before optional AI enrichment. V3.1 gives Responses and compatibility-only Chat fallback one shared **15-second** provider budget. A Responses network error or timeout falls back directly to Local Analysis; it does not stack another provider timeout. Explicit endpoint-compatibility responses may use the remaining shared budget for Chat Completions. This preserves provider neutrality and the deterministic safety path while bounding degraded-mode latency.
+
 ## Security invariants
 
 - **PASS:** AI cannot reduce deterministic risk.

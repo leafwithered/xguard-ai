@@ -91,6 +91,40 @@ describe("Configurable AI provider", function () {
     });
   });
 
+  it("uses Local Analysis immediately after a Responses network failure instead of stacking another provider timeout", async function () {
+    process.env.AI_API_KEY = "test-only-key";
+    process.env.AI_MODEL = "test-model";
+    let requestCount = 0;
+    await withProvider((_request, response) => {
+      requestCount += 1;
+      response.destroy();
+    }, async (baseURL) => {
+      process.env.AI_BASE_URL = baseURL;
+      const startedAt = Date.now();
+      expect(await analyzeTransaction(evidenceFor())).to.equal(null);
+      expect(requestCount).to.equal(1);
+      expect(Date.now() - startedAt).to.be.lessThan(2_000);
+    });
+  });
+
+  it("uses Chat Completions within the shared budget after malformed Responses JSON", async function () {
+    process.env.AI_API_KEY = "test-only-key";
+    process.env.AI_MODEL = "test-model";
+    let requestCount = 0;
+    await withProvider((_request, response) => {
+      requestCount += 1;
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(requestCount === 1
+        ? "not-json"
+        : JSON.stringify({ choices: [{ message: { content: JSON.stringify({ score: 16, level: "LOW", summary: "Chat recovered", reasons: ["Compatibility fallback"], recommendation: "Review before signing." }) } }] }));
+    }, async (baseURL) => {
+      process.env.AI_BASE_URL = baseURL;
+      const result = await analyzeTransaction(evidenceFor());
+      expect(requestCount).to.equal(2);
+      expect(result).to.include({ score: 16, providerProtocol: "chat" });
+    });
+  });
+
   it("accepts Responses output content when output_text is absent", async function () {
     process.env.AI_API_KEY = "test-only-key";
     process.env.AI_MODEL = "test-model";

@@ -29,7 +29,7 @@
 - [x] Project has an independent X account and its public profile URL is verified.
 - [x] Project X post is publicly accessible and its thread includes `@XLayerOfficial`.
 - [x] V2 is merged to `main`, deployed to the canonical Production URL, and smoke-tested with Safe, Unlimited Approval, and Suspicious Airdrop presets.
-- [x] Official OpenAI is verified in Production through the provider-neutral adapter; no secret is exposed to the browser or repository.
+- [x] Provider-backed Hybrid Analysis is verified in Production through the provider-neutral adapter; provider configuration and secrets are not exposed to the browser or repository.
 - [ ] Submission form is completed before `2026-08-21 23:59 UTC`.
 
 ## Current readiness

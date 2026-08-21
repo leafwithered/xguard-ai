@@ -24,9 +24,10 @@
 - Deployment provider: `Vercel`
 - Source repository: `https://github.com/leafwithered/xguard-ai`
 - Production V2 deployment: live at the canonical URL
-- Production AI Analysis smoke test: passed with the official OpenAI provider through the provider-neutral adapter
+- Production Hybrid Analysis smoke test: passed through the server-configured OpenAI-compatible provider adapter
 - V2 smoke matrix: Safe `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
-- Official OpenAI: active and verified in Production; Local Analysis remains the failure-isolated fallback
+- Provider identity: intentionally not asserted by public artifacts; `AI_BASE_URL` and `AI_MODEL` remain server-side deployment configuration
+- Local Analysis remains the failure-isolated fallback
 
 ## Verified deployment
 

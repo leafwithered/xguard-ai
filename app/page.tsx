@@ -7,6 +7,7 @@ import type { RiskInput, RiskResult } from "../lib/risk";
 import type { ContractIntelligence } from "../lib/chain/intelligence";
 import type { XLayerTransaction } from "../lib/chain/transaction-analyzer";
 import { judgePresets as presets } from "../lib/presets";
+import { currentAnalysisResult, invalidateStaleAnalysis } from "../lib/analysis-state";
 import { initialRecordState, isRecordPending, reduceRecordState } from "../lib/transaction-state";
 import type { WalletProvider } from "../types/ethereum";
 
@@ -57,7 +58,9 @@ export default function Home() {
   const networkName = chainId === null ? "Not connected" : chainId === 1952 ? "X Layer Testnet" : `Wrong network · ${chainId}`;
   const isCorrectNetwork = chainId === 1952;
   const recordPending = isRecordPending(recordState);
-  const analysisHash = useMemo(() => lastInput && result ? keccak256(toHex(JSON.stringify({ input: lastInput, result }))) : null, [lastInput, result]);
+  const currentTransactionInput: RiskInput = { from, to, value, data, context };
+  const activeResult = currentAnalysisResult({ result, lastInput, reviewed }, currentTransactionInput);
+  const analysisHash = useMemo(() => lastInput && activeResult ? keccak256(toHex(JSON.stringify({ input: lastInput, result: activeResult }))) : null, [lastInput, activeResult]);
 
   useEffect(() => {
     window.localStorage.removeItem("xguard-last-result");
@@ -68,10 +71,27 @@ export default function Home() {
       if (!isCurrentAnalysisResult(parsed.result)) throw new Error("Stored result uses an older schema");
       setLastInput(parsed.input);
       setResult(parsed.result);
+      setFrom(parsed.input.from);
+      setTo(parsed.input.to);
+      setValue(parsed.input.value);
+      setData(parsed.input.data);
+      setContext(parsed.input.context);
     } catch {
       window.sessionStorage.removeItem("xguard-session-result");
     }
   }, []);
+
+  useEffect(() => {
+    const currentInput: RiskInput = { from, to, value, data, context };
+    const freshness = invalidateStaleAnalysis({ result, lastInput, reviewed }, currentInput);
+    if (!freshness.invalidated) return;
+    setResult(freshness.snapshot.result);
+    setLastInput(freshness.snapshot.lastInput);
+    setReviewed(freshness.snapshot.reviewed);
+    dispatchRecord({ type: "RESET" });
+    window.sessionStorage.removeItem("xguard-session-result");
+    setMessage(freshness.notice);
+  }, [from, to, value, data, context, result, lastInput, reviewed]);
 
   useEffect(() => {
     const discovered = new Map<string, WalletOption>();
@@ -153,7 +173,6 @@ export default function Home() {
     setValue(input.value);
     setData(input.data);
     setContext(input.context);
-    clearAnalysis(false);
   }
 
   function clearAnalysis(clearFields = true) {
@@ -186,12 +205,12 @@ export default function Home() {
   }
 
   async function recordOnchain() {
-    if (!registryAddress || !analysisHash || !walletProvider || !address || !result || !isCorrectNetwork || !reviewed || recordPending) return;
+    if (!registryAddress || !analysisHash || !walletProvider || !address || !activeResult || !isCorrectNetwork || !reviewed || recordPending) return;
     setMessage("");
     dispatchRecord({ type: "SIGNATURE_REQUESTED" });
     try {
       const walletClient = createWalletClient({ account: address, chain: xLayerTestnet, transport: custom(walletProvider) });
-      const hash = await walletClient.writeContract({ address: registryAddress, abi: riskRegistryAbi, functionName: "recordAssessment", args: [analysisHash, result.finalScore], account: address });
+      const hash = await walletClient.writeContract({ address: registryAddress, abi: riskRegistryAbi, functionName: "recordAssessment", args: [analysisHash, activeResult.finalScore], account: address });
       dispatchRecord({ type: "SUBMITTED", hash });
       dispatchRecord({ type: "CONFIRMING" });
       const publicClient = createPublicClient({ chain: xLayerTestnet, transport: http(xLayerTestnet.rpcUrls.default.http[0]) });
@@ -235,10 +254,10 @@ export default function Home() {
     document.querySelector(".tx-analyzer")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const modeLabel = result?.mode === "HYBRID" ? "Hybrid Analysis" : result?.mode === "AI" ? "AI Analysis" : "Local Safety Engine";
+  const modeLabel = activeResult?.mode === "HYBRID" ? "Hybrid Analysis" : activeResult?.mode === "AI" ? "AI Analysis" : "Local Safety Engine";
   const recordLabel = recordState.phase === "awaiting-signature" ? "Awaiting wallet signature" : recordState.phase === "submitted" ? "Submitted" : recordState.phase === "confirming" ? "Confirming on X Layer" : recordState.phase === "confirmed" ? "Confirmed on X Layer" : recordState.phase === "reverted" ? "Transaction reverted" : recordState.phase === "error" ? "Confirmation error" : "Ready after review";
-  const decoded = result?.decodedAction;
-  const intelligence = result?.contractIntelligence;
+  const decoded = activeResult?.decodedAction;
+  const intelligence = activeResult?.contractIntelligence;
 
   return <main className="shell">
     <header className="topbar">
@@ -275,13 +294,13 @@ export default function Home() {
       </div>
       <div className="panel result-panel" aria-busy={analyzing}>
         <h2>2. Review risk</h2>
-        {result ? <>
-          <div className="score-wrap"><div className={`score score-${result.level.toLowerCase()}`}>{result.finalScore}</div><div className="score-copy"><span>Final Risk Score</span><strong>{result.level} RISK</strong><small>Local floor {result.deterministicScore}{typeof result.aiScore === "number" ? ` · AI ${result.aiScore}` : ""}</small></div></div>
+        {activeResult ? <>
+          <div className="score-wrap"><div className={`score score-${activeResult.level.toLowerCase()}`}>{activeResult.finalScore}</div><div className="score-copy"><span>Final Risk Score</span><strong>{activeResult.level} RISK</strong><small>Local floor {activeResult.deterministicScore}{typeof activeResult.aiScore === "number" ? ` · AI ${activeResult.aiScore}` : ""}</small></div></div>
           <div className="analysis-mode">{modeLabel}</div>
           <section className="fusion-card">
             <div className="card-title"><div><span className="eyebrow">Transparent decision logic</span><h3>Risk Fusion</h3></div><span className="formula">max(floor, AI)</span></div>
-            <div className="fusion-grid"><div><span>Deterministic Floor</span><strong>{result.deterministicScore}</strong></div><div><span>AI Assessment</span><strong>{typeof result.aiScore === "number" ? result.aiScore : "Unavailable"}</strong></div><div><span>Final Risk</span><strong>{result.finalScore}</strong></div></div>
-            <p>Final Risk = max(Deterministic Floor, AI Assessment). {typeof result.aiScore !== "number" || result.aiScore <= result.deterministicScore ? "Deterministic floor preserved." : "AI raised the advisory risk."}</p>
+            <div className="fusion-grid"><div><span>Deterministic Floor</span><strong>{activeResult.deterministicScore}</strong></div><div><span>AI Assessment</span><strong>{typeof activeResult.aiScore === "number" ? activeResult.aiScore : "Unavailable"}</strong></div><div><span>Final Risk</span><strong>{activeResult.finalScore}</strong></div></div>
+            <p>Final Risk = max(Deterministic Floor, AI Assessment). {typeof activeResult.aiScore !== "number" || activeResult.aiScore <= activeResult.deterministicScore ? "Deterministic floor preserved." : "AI raised the advisory risk."}</p>
           </section>
           {decoded && <section className="decoded-card"><h3>{decoded.action}</h3><div className="decoded-grid"><span>Method</span><strong>{decoded.method}</strong>{decoded.spender && <><span>Spender</span><strong>{decoded.spender}</strong></>}{decoded.recipient && <><span>Recipient</span><strong>{decoded.recipient}</strong></>}{decoded.from && <><span>From</span><strong>{decoded.from}</strong></>}{decoded.operator && <><span>Operator</span><strong>{decoded.operator}</strong></>}{decoded.amount && <><span>Amount</span><strong>{decoded.isUnlimited ? "Unlimited" : decoded.amount}</strong></>}{typeof decoded.approved === "boolean" && <><span>Approved</span><strong>{decoded.approved ? "Yes" : "No"}</strong></>}</div>{decoded.riskHint && <p>{decoded.riskHint}</p>}</section>}
           <section className="intelligence-card">
@@ -290,7 +309,7 @@ export default function Home() {
               <span>Target</span><strong>{intelligence?.address ?? to}</strong>
               <span>Address Type</span><strong>{intelligence?.addressType === "SMART_CONTRACT" ? "Smart Contract" : intelligence?.addressType === "EOA" ? "EOA" : "Unavailable"}</strong>
               <span>Code</span><strong>{intelligence?.codePresent === true ? `Present · ${intelligence.codeSizeBytes?.toLocaleString() ?? "?"} bytes` : intelligence?.codePresent === false ? "Not present" : "Unavailable"}</strong>
-              <span>Proxy</span><strong>{intelligence?.proxyDetected === true ? "EIP-1967 detected" : intelligence?.proxyDetected === false ? "Not detected" : "Unavailable"}</strong>
+              <span>EIP-1967 Proxy</span><strong>{intelligence?.proxyDetected === true ? "Implementation detected" : intelligence?.proxyDetected === false ? "Not detected" : "Unavailable"}</strong>
               {intelligence?.implementationAddress && <><span>Implementation</span><strong>{intelligence.implementationAddress}</strong></>}
               <span>Preflight</span><strong>{intelligence?.preflightStatus === "SUCCEEDED" ? "Call succeeded" : intelligence?.preflightStatus === "REVERTED" ? "Reverted" : "Unavailable"}</strong>
               {intelligence?.revertReason && <><span>Revert Reason</span><strong>{intelligence.revertReason}</strong></>}
@@ -298,11 +317,11 @@ export default function Home() {
             </div>
             <p>Preflight uses <code>eth_call</code> and <code>eth_estimateGas</code>. It is not a full state-diff simulation.</p>
           </section>
-          {result.criticalSignals.length > 0 && <section className="signal-section"><h3>Critical Signals</h3><ul className="risk-list critical">{result.criticalSignals.map((item) => <li key={item.id}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
-          {result.advisorySignals.length > 0 && <section className="signal-section"><h3>Advisory Signals</h3><ul className="risk-list">{result.advisorySignals.map((item) => <li key={`${item.id}-${item.title}`}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
+          {activeResult.criticalSignals.length > 0 && <section className="signal-section"><h3>Critical Signals</h3><ul className="risk-list critical">{activeResult.criticalSignals.map((item) => <li key={item.id}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
+          {activeResult.advisorySignals.length > 0 && <section className="signal-section"><h3>Advisory Signals</h3><ul className="risk-list">{activeResult.advisorySignals.map((item) => <li key={`${item.id}-${item.title}`}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
           <section className="safety-guarantee"><span className="eyebrow">Safety Guarantee</span><strong>AI can explain or raise risk, but it cannot reduce deterministic security signals.</strong></section>
-          <section className="explanation"><h3>AI Explanation</h3><p>{result.aiExplanation ?? "AI provider unavailable; deterministic Local Safety Engine result shown."}</p></section>
-          <p className="recommendation"><strong>Recommendation:</strong> {result.recommendation}</p>
+          <section className="explanation"><h3>AI Explanation</h3><p>{activeResult.aiExplanation ?? "AI provider unavailable; deterministic Local Safety Engine result shown."}</p></section>
+          <p className="recommendation"><strong>Recommendation:</strong> {activeResult.recommendation}</p>
           <section className={`record-card phase-${recordState.phase}`}><div><span>On-chain assessment receipt</span><strong>{recordLabel}</strong></div><div className="actions"><button className="secondary" onClick={() => setReviewed((current) => !current)} disabled={recordPending}>{reviewed ? "Reviewed ✓" : "I reviewed this result"}</button><button className="primary" onClick={recordOnchain} disabled={!registryAddress || !analysisHash || !address || !isCorrectNetwork || !reviewed || recordPending || recordState.phase === "confirmed"}>{recordState.phase === "awaiting-signature" ? "Check wallet…" : recordState.phase === "confirming" ? "Confirming…" : recordState.phase === "confirmed" ? "Confirmed" : "Record on X Layer"}</button></div>{recordState.hash && <div className="receipt">Transaction: <a href={`${explorerBase}/tx/${recordState.hash}`} target="_blank" rel="noreferrer">{recordState.hash}</a></div>}{recordState.error && <div className="status-message">{recordState.error}</div>}</section>
         </> : <div className="empty">Choose a preset or enter a transaction.<br />Nothing is analyzed, signed, or broadcast automatically.</div>}
         {message && <div className="status-message" role="status">{message}</div>}

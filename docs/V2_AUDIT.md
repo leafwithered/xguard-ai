@@ -5,7 +5,7 @@ Audit scope: `app`, `lib`, `contracts`, `test`, `scripts`, configuration, Vercel
 ## Production release
 
 - Status: V2 is merged to `main` and live at https://xguard-ai-six.vercel.app.
-- Provider: official OpenAI is verified and active in Production through the provider-neutral adapter; the prior third-party configuration remains rollback-only.
+- Provider: Production Hybrid Analysis is verified through the provider-neutral adapter. The exact upstream identity is controlled by server-side environment variables and is not asserted by the public repository or client response.
 - Public URLs, the deployed V1 `RiskRegistry`, and the verified user transaction are unchanged.
 - Demo video: `demo/xguard-ai-build-x-demo.mp4` is a 1920×1080 H.264 MP4 of approximately 2:56.
 
@@ -45,8 +45,8 @@ Audit scope: `app`, `lib`, `contracts`, `test`, `scripts`, configuration, Vercel
 - [x] Add decoder, safety-fusion, transaction-state, and rate-limit tests.
 - [x] Add GitHub Actions CI without secrets, deployments, real AI calls, or funds.
 - [x] Document the append-only Contract V2 design without deployment.
-- [x] Deploy and validate a Vercel Preview with the existing third-party provider (Safe and Suspicious presets returned Hybrid Analysis).
-- [x] Validate the official OpenAI Responses API in Preview and switch Production only after Safe, Unlimited Approval, and Suspicious Airdrop smoke tests passed.
+- [x] Deploy and validate a Vercel Preview with a configured OpenAI-compatible provider (Safe and Suspicious presets returned Hybrid Analysis).
+- [x] Preserve provider-neutral code and verify Production Hybrid Analysis without exposing deployment secrets or claiming an upstream identity that public runtime evidence cannot establish.
 
 ## Known limits
 

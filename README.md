@@ -32,7 +32,7 @@ Judge Mode only loads examples, navigates, and explains. It never auto-analyzes,
 
 ## Stable Production Baseline
 
-V2 is live on the canonical Vercel Production URL. Production uses the verified official OpenAI API through the provider-neutral adapter. The V1 RiskRegistry evidence and every public URL remain unchanged.
+V2 is live on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
 
 - Safe Transfer: `8 LOW`, Hybrid Analysis
 - Unlimited Approval: `72 HIGH`, decoded ERC20 `approve`, spender and `Amount: Unlimited` visible
@@ -64,7 +64,7 @@ Wallet confirmation screens expose raw addresses, values, and calldata that many
 
 XGuard AI converts transaction fields into a `0–100` risk score, a `LOW / MEDIUM / HIGH` level, concise reasons, and an actionable recommendation. The app never signs automatically; users retain final control.
 
-The hybrid design combines a deterministic Risk Engine with a configurable OpenAI-compatible explanation layer. Production currently uses official OpenAI, while the adapter remains provider-neutral. If the provider is unavailable, Local Analysis remains fully demoable.
+The hybrid design combines a deterministic Risk Engine with a configurable OpenAI-compatible explanation layer. Production Hybrid Analysis is verified, while the public repository remains neutral about the server-configured upstream provider. If that provider is unavailable, Local Analysis remains fully demoable.
 
 ## How XGuard AI Works
 

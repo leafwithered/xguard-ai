@@ -15,6 +15,7 @@
     "intelligence:test": "hardhat test test/intelligence.ts",
     "transaction-analyzer:test": "hardhat test test/transaction-analyzer.ts",
     "judge:test": "hardhat test test/judge-presets.ts",
+    "analysis-state:test": "hardhat test test/analysis-state.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

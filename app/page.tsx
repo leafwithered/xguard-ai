@@ -18,6 +18,7 @@ import { buildRiskScorePresentation, isLiveOkxProviderEvidence } from "../lib/pr
 import { ANALYSIS_RECEIPT_INTEGRITY_NOTICE, ANALYSIS_RECEIPT_MAX_FILE_BYTES, isAnalysisReceipt, verifyAnalysisReceipt, type AnalysisReceipt, type AnalysisReceiptVerificationStatus } from "../lib/analysis-receipt";
 import { ANALYSIS_ATTESTATION_AUTHENTICITY_NOTICE, ATTESTED_ANALYSIS_MAX_FILE_BYTES, createAttestedAnalysisPackage, isAnalysisAttestation, isTrustedAttestationKey, verifyAttestedAnalysisPackage, type AnalysisAttestation, type AttestationKeyResponse, type AttestationVerificationStatus, type AttestedPackageVerification, type TrustedKeyResolution } from "../lib/analysis-attestation";
 import { addDiscoveredWallet, preferredWalletProvider, requestWalletConnection, switchConnectedWalletToXLayer, type DiscoveredWallet } from "../lib/wallet-lifecycle";
+import { initialJudgeModeState, reduceJudgeMode } from "../lib/judge-mode";
 import type { WalletProvider } from "../types/ethereum";
 
 const registryAddress = process.env.NEXT_PUBLIC_RISK_REGISTRY_ADDRESS as Address | undefined;
@@ -132,7 +133,7 @@ export default function Home() {
   const [transactionResult, setTransactionResult] = useState<XLayerTransaction | null>(null);
   const [transactionLoading, setTransactionLoading] = useState(false);
   const [transactionError, setTransactionError] = useState("");
-  const [judgeModeOpen, setJudgeModeOpen] = useState(false);
+  const [judgeMode, dispatchJudgeMode] = useReducer(reduceJudgeMode, initialJudgeModeState);
   const [receiptVerification, setReceiptVerification] = useState<AnalysisReceiptVerificationStatus | null>(null);
   const [receiptDownloadUrl, setReceiptDownloadUrl] = useState<string | null>(null);
   const [attestedPackageVerification, setAttestedPackageVerification] = useState<AttestedPackageVerification | null>(null);
@@ -243,6 +244,18 @@ export default function Home() {
       walletProvider.removeListener?.("disconnect", disconnected);
     };
   }, [walletProvider]);
+
+  function openJudgeMode() {
+    dispatchJudgeMode({ type: "OPEN" });
+  }
+
+  useEffect(() => {
+    if (!judgeMode.open || judgeMode.revealRequest === 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("judge-demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [judgeMode.open, judgeMode.revealRequest]);
 
   function applyConnectedWalletState(state: { address: Address | ""; chainId: number | null }) {
     setAddress(state.address);
@@ -435,12 +448,12 @@ export default function Home() {
       <div className="network-pill live"><span className="live-dot" />Analysis: {networkName} · Chain {analysisNetworkConfig.chainId}</div>
     </header>
     <section className="hero">
-      <div><div className="eyebrow">Evidence-grounded pre-sign intelligence</div><h1>Know what a transaction does before you sign.</h1><p className="lead">XGuard combines deterministic decoding, X Layer RPC facts, optional OKX Mainnet simulation, Intent vs Reality, and evidence-grounded AI—without treating any provider as a safety oracle.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeModeOpen} aria-controls="judge-demo" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
+      <div><div className="eyebrow">Evidence-grounded pre-sign intelligence</div><h1>Know what a transaction does before you sign.</h1><p className="lead">XGuard combines deterministic decoding, X Layer RPC facts, optional OKX Mainnet simulation, Intent vs Reality, and evidence-grounded AI—without treating any provider as a safety oracle.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeMode.open} aria-controls="judge-demo" onClick={openJudgeMode}>⚡ Try Judge Demo</button></div></div>
       <div className="hero-card"><h2>What happens if I sign this?</h2><div className="signal"><span>Analysis Network</span><strong>{networkName}</strong></div><div className="signal"><span>Wallet</span><strong>{walletNetworkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
     <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Verifiable Receipts</span><span>Signed Attestations</span></section>
-    {judgeModeOpen && <section className="judge-mode" id="judge-demo">
-      <div className="panel-heading"><div><span className="eyebrow">60-Second Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => setJudgeModeOpen(false)}>Close</button></div>
+    {judgeMode.open && <section className="judge-mode" id="judge-demo">
+      <div className="panel-heading"><div><span className="eyebrow">60-Second Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => dispatchJudgeMode({ type: "CLOSE" })}>Close</button></div>
       <div className="judge-steps">
         <article><b>01</b><span>Safe Transfer</span><strong>Expected: LOW</strong><p>Baseline deterministic analysis plus optional AI enrichment.</p><button className="secondary" onClick={() => loadJudgePreset(0)}>Load</button></article>
         <article><b>02</b><span>Ambiguous Approval</span><strong>Expected: UNDETERMINED</strong><p>The shared approve() selector stays ambiguous unless token-standard evidence resolves it.</p><button className="secondary" onClick={() => loadJudgePreset(1)}>Load</button></article>

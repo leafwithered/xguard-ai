@@ -46,7 +46,7 @@ export function deriveAnalysisDimensions(result: RiskResult, intelligence: Contr
   const analysisVerdict: AnalysisVerdict = undecodable ? "UNDETERMINED" : "ASSESSED";
   let analysisConfidence: AnalysisConfidence;
   if (undecodable) analysisConfidence = "LOW";
-  else if (intelligence.rpcStatus !== "AVAILABLE" || intelligence.proxyDetected === true) analysisConfidence = "MEDIUM";
+  else if (intelligence.rpcStatus !== "AVAILABLE" || intelligence.proxyDetected !== false) analysisConfidence = "MEDIUM";
   else analysisConfidence = "HIGH";
   return { analysisConfidence, analysisVerdict, executionStatus: intelligence.preflightStatus };
 }

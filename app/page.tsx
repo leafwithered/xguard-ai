@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useReducer, useState } from "react";
 import { createPublicClient, createWalletClient, custom, http, isAddress, keccak256, toHex, type Address } from "viem";
 import { riskRegistryAbi, xLayerTestnet } from "../lib/xlayer";
 import type { RiskInput, RiskResult } from "../lib/risk";
@@ -81,7 +81,7 @@ export default function Home() {
     }
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const currentInput: RiskInput = { from, to, value, data, context };
     const freshness = invalidateStaleAnalysis({ result, lastInput, reviewed }, currentInput);
     if (!freshness.invalidated) return;

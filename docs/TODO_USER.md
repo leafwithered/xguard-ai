@@ -8,7 +8,7 @@ The project owner configured these three server-side variables in **Vercel → X
 - `OKX_SECRET_KEY`
 - `OKX_API_PASSPHRASE`
 
-The `V4 PREVIEW CREDENTIALS CONFIGURED` gate was confirmed. Three bounded real read-only X Layer Mainnet samples returned provider HTTP `200`, business code `0`, and normalized status `AVAILABLE`; sanitized evidence is recorded in `docs/V4_OKX_SIMULATION.md`. No values were copied into chat, Git, documentation, screenshots, or logs. Production remains unchanged and requires a separate explicit release approval.
+The `V4 PREVIEW CREDENTIALS CONFIGURED` gate was confirmed. Four bounded real read-only X Layer Mainnet samples returned provider HTTP `200`, business code `0`, and normalized status `AVAILABLE`; sanitized evidence is recorded in `docs/V4_OKX_SIMULATION.md`. No values were copied into chat, Git, documentation, screenshots, or logs. Production remains unchanged and requires a separate explicit release approval.
 
 ## Stable Production
 

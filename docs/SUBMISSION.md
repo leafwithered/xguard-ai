@@ -42,7 +42,7 @@
 
 ## V4 Preview candidate (not Production)
 
-The `codex/v4-okx-simulation` branch adds X Layer Mainnet (`196`) OKX OnchainOS Transaction Simulation as read-only evidence while keeping Testnet (`1952`) on the existing RPC/preflight path. Three sanitized real Preview samples returned `HTTP 200`, business code `0`, and `AVAILABLE`; median simulation latency was `394 ms` and the slowest sample was `492 ms`. A public historical token approval fixture is available in Judge Mode, but nothing analyzes, connects, signs, or broadcasts automatically. V4 remains unmerged and does not change the submitted Production URL, contract, receipt, or public media path.
+The `codex/v4-okx-simulation` branch adds X Layer Mainnet (`196`) OKX OnchainOS Transaction Simulation as read-only evidence while keeping Testnet (`1952`) on the existing RPC/preflight path. Four sanitized real Preview samples returned `HTTP 200`, business code `0`, and `AVAILABLE`; median simulation latency was `376 ms` and the slowest sample was `492 ms`. A public historical token approval fixture is available in Judge Mode, but nothing analyzes, connects, signs, or broadcasts automatically. V4 remains unmerged and does not change the submitted Production URL, contract, receipt, or public media path.
 
 ## V3 stable semantics inherited by V4
 

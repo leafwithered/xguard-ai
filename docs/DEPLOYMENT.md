@@ -39,7 +39,7 @@ The `codex/v4-okx-simulation` branch is based on frozen V3 commit `04575cc764163
 - Mainnet `196`: `XLAYER_MAINNET_RPC_URL` intelligence/preflight plus optional OKX OnchainOS Transaction Simulation using chain index `196`.
 - Preview can deploy without OKX credentials; Mainnet simulation is then visibly `UNAVAILABLE` while the remaining analysis continues.
 - The owner configured Preview-only `OKX_API_KEY`, `OKX_SECRET_KEY`, and `OKX_API_PASSPHRASE` after the explicit credential gate.
-- Three real read-only Mainnet samples returned provider HTTP `200`, business code `0`, and normalized status `AVAILABLE`; the matrix median was `394 ms`, the slowest sample was `492 ms`, and sanitized evidence is recorded in `docs/V4_OKX_SIMULATION.md`.
+- Four real read-only Mainnet samples returned provider HTTP `200`, business code `0`, and normalized status `AVAILABLE`; the matrix median was `376 ms`, the slowest sample was `492 ms`, and sanitized evidence is recorded in `docs/V4_OKX_SIMULATION.md`.
 - Credentials remain Preview-scoped. Do not configure or merge V4 into Production without a separate explicit release approval.
 
 ### V3 Stable evidence architecture inherited by V4

@@ -93,6 +93,7 @@ textarea { min-height: 110px; resize: vertical; }
 .assessment-dimensions span { color: var(--muted); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
 .assessment-dimensions strong { font-size: 12px; word-break: break-word; }
 .assessment-dimensions.verdict-undetermined { border-left: 3px solid var(--warning); padding-left: 8px; }
+.confidence-reasons { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .decoded-card, .intelligence-card, .fusion-card, .consequence-card, .intent-card, .explanation, .record-card { margin-top: 18px; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
 .decoded-card h3, .intelligence-card h3, .fusion-card h3, .consequence-card h3, .intent-card h3, .signal-section h3, .explanation h3 { margin: 0 0 10px; font-size: 14px; }
 .decoded-grid { display: grid; grid-template-columns: 96px minmax(0,1fr); gap: 8px 12px; font-size: 12px; }

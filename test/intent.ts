@@ -4,8 +4,8 @@ import { buildTransactionConsequences } from "../lib/consequence.ts";
 import { applyIntentRisk, compareIntentToReality, normalizeIntentDeterministically } from "../lib/intent.ts";
 import { localRiskAnalysis, type RiskInput } from "../lib/risk.ts";
 
-const target = "0x2222222222222222222222222222222222222222";
-const spender = "0x1234567890123456789012345678901234567890";
+const target = "0x2222222222222222222222222222222222222222" as const;
+const spender = "0x1234567890123456789012345678901234567890" as const;
 const base: RiskInput = { from: "", to: target, value: "0", data: "0x", context: "" };
 const approveAbi = [{ type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ name: "", type: "bool" }] }] as const;
 const operatorAbi = [{ type: "function", name: "setApprovalForAll", stateMutability: "nonpayable", inputs: [{ name: "operator", type: "address" }, { name: "approved", type: "bool" }], outputs: [] }] as const;
@@ -37,19 +37,30 @@ describe("Intent vs Reality", function () {
     expect(comparison.deterministicMismatch).to.equal(true);
   });
 
-  it("detects finite intent versus unlimited approval", function () {
+  it("does not infer a finite-vs-unlimited mismatch while approve standard is unresolved", function () {
     const input = { ...base, data: encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [spender, maxUint256] }), context: "I only want to approve 50 USDC" };
     const { local, comparison } = compare(input);
     const raised = applyIntentRisk(local, comparison);
-    expect(comparison.status).to.equal("MISMATCH");
-    expect(comparison.why).to.include("limited approval");
-    expect(raised.deterministicScore).to.be.at.least(78);
-    expect(raised.finalScore).to.be.at.least(raised.deterministicScore);
+    expect(comparison.status).to.equal("UNKNOWN");
+    expect(comparison.why).to.include("target standard is unresolved");
+    expect(raised.deterministicScore).to.equal(local.deterministicScore);
   });
 
-  it("matches a finite approval scope without comparing unknown token decimals", function () {
+  it("does not compare a human approval amount with raw uint256 units", function () {
     const input = { ...base, data: encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [spender, 50n] }), context: "I only want to approve 50 USDC" };
-    expect(compare(input).comparison.status).to.equal("MATCH");
+    const comparison = compare(input).comparison;
+    expect(comparison.status).to.equal("UNKNOWN");
+    expect(comparison.why).to.include("cannot compare a human token allowance");
+  });
+
+  it("applies the approval-scope floor only when ERC20 semantics are independently trusted", function () {
+    const input = { ...base, data: encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [spender, maxUint256] }), context: "I only want to approve 50 USDC" };
+    const local = localRiskAnalysis(input);
+    const decoded = { ...local.decodedAction, action: "ERC20 Approval", assetStandard: "ERC20" as const, spender, amount: maxUint256.toString(), isUnlimited: true };
+    const consequences = buildTransactionConsequences(input, { decodedAction: decoded });
+    const comparison = compareIntentToReality(input, decoded, consequences);
+    expect(comparison).to.include({ status: "MISMATCH", mismatchType: "APPROVAL_SCOPE" });
+    expect(applyIntentRisk({ ...local, decodedAction: decoded }, comparison).deterministicScore).to.be.at.least(78);
   });
 
   it("detects a claim intent versus unlimited approval", function () {

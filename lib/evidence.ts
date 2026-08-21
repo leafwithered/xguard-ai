@@ -22,6 +22,8 @@ export type AnalysisEvidence = {
     codeSizeBytes: number | null;
     eip1967Implementation: string | null;
     proxyDetected: boolean | null;
+    tokenStandard: ContractIntelligence["tokenStandard"];
+    tokenStandardSource: ContractIntelligence["tokenStandardSource"];
   };
   execution: {
     status: ExecutionStatus;
@@ -35,6 +37,7 @@ export type AnalysisDimensions = {
   analysisConfidence: AnalysisConfidence;
   analysisVerdict: AnalysisVerdict;
   executionStatus: ExecutionStatus;
+  confidenceReasons: string[];
 };
 
 function copySignal(signal: RiskSignal): RiskSignal {
@@ -43,12 +46,34 @@ function copySignal(signal: RiskSignal): RiskSignal {
 
 export function deriveAnalysisDimensions(result: RiskResult, intelligence: ContractIntelligence): AnalysisDimensions {
   const undecodable = result.decodedAction.status === "unknown" || result.decodedAction.status === "malformed";
-  const analysisVerdict: AnalysisVerdict = undecodable ? "UNDETERMINED" : "ASSESSED";
+  const standardAmbiguity = result.decodedAction.assetStandard === "UNKNOWN"
+    && (result.decodedAction.method === "approve(address,uint256)" || result.decodedAction.method === "transferFrom(address,address,uint256)");
+  const analysisVerdict: AnalysisVerdict = undecodable || standardAmbiguity ? "UNDETERMINED" : "ASSESSED";
   let analysisConfidence: AnalysisConfidence;
-  if (undecodable) analysisConfidence = "LOW";
+  const confidenceReasons: string[] = [];
+  if (result.decodedAction.status === "unknown") {
+    analysisConfidence = "LOW";
+    confidenceReasons.push("Unsupported selector prevents deterministic method interpretation");
+  } else if (result.decodedAction.status === "malformed") {
+    analysisConfidence = "LOW";
+    confidenceReasons.push("Malformed calldata prevents safe argument decoding");
+  } else if (standardAmbiguity) {
+    analysisConfidence = "LOW";
+    confidenceReasons.push("Token standard could not be confirmed and changes uint256 semantics");
+  }
   else if (intelligence.rpcStatus !== "AVAILABLE" || intelligence.proxyDetected !== false) analysisConfidence = "MEDIUM";
   else analysisConfidence = "HIGH";
-  return { analysisConfidence, analysisVerdict, executionStatus: intelligence.preflightStatus };
+  if (analysisConfidence === "HIGH") {
+    confidenceReasons.push("Method semantics decoded", "RPC evidence available", "No unresolved proxy or token-standard ambiguity");
+  } else if (!undecodable && !standardAmbiguity) {
+    confidenceReasons.push(intelligence.rpcStatus === "UNAVAILABLE" ? "RPC evidence unavailable" : intelligence.rpcStatus === "PARTIAL" ? "RPC evidence is partial" : "RPC evidence available");
+    if (intelligence.proxyDetected === true) confidenceReasons.push("EIP-1967 implementation detected; implementation behavior is not fully inspected");
+    else if (intelligence.proxyDetected === null) confidenceReasons.push("EIP-1967 implementation observation is incomplete");
+  }
+  if (intelligence.preflightStatus === "SUCCEEDED") confidenceReasons.push("Current-state preflight call succeeded");
+  else if (intelligence.preflightStatus === "REVERTED") confidenceReasons.push("Current-state preflight call reverted");
+  else confidenceReasons.push("Current-state execution could not be evaluated");
+  return { analysisConfidence, analysisVerdict, executionStatus: intelligence.preflightStatus, confidenceReasons: Array.from(new Set(confidenceReasons)) };
 }
 
 export function buildAnalysisEvidence(
@@ -72,7 +97,9 @@ export function buildAnalysisEvidence(
       codePresent: intelligence.codePresent,
       codeSizeBytes: intelligence.codeSizeBytes,
       eip1967Implementation: intelligence.implementationAddress ?? null,
-      proxyDetected: intelligence.proxyDetected
+      proxyDetected: intelligence.proxyDetected,
+      tokenStandard: intelligence.tokenStandard,
+      tokenStandardSource: intelligence.tokenStandardSource
     },
     execution: {
       status: intelligence.preflightStatus,

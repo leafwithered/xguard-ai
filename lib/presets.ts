@@ -12,12 +12,12 @@ export const judgePresets: Array<{ name: string; description: string; input: Ris
   },
   {
     name: "Unlimited Approval",
-    description: "ERC20 spender receives unlimited permission",
+    description: "Shared approve selector requires token-standard evidence",
     input: { from: "", to: "0x2222222222222222222222222222222222222222", value: "0", data: unlimitedApproval, context: "Approve a token router after independently verifying the contract" }
   },
   {
     name: "Suspicious Airdrop",
-    description: "Claim intent hides an unlimited token approval",
+    description: "Claim intent conflicts with an approval-like permission call",
     input: { from: "", to: "0x0000000000000000000000000000000000000000", value: "12", data: unlimitedApproval, context: "I only want to claim an airdrop." }
   }
 ];

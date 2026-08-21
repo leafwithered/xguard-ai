@@ -1,5 +1,5 @@
 import { parseUnits } from "viem";
-import { decodeCalldata, type DecodedAction } from "./calldata.ts";
+import { decodeCalldata, resolveDecodedAction, type DecodedAction } from "./calldata.ts";
 
 export type RiskInput = {
   from: string;
@@ -44,6 +44,10 @@ export type RiskResult = {
   aiExplanation?: string;
   mode: "AI" | "LOCAL" | "HYBRID";
   providerProtocol?: "responses" | "chat";
+};
+
+export type RiskAnalysisOptions = {
+  tokenStandard?: "ERC721" | "ERC1155" | "UNKNOWN";
 };
 
 const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -94,12 +98,12 @@ function uniqueText(values: string[]) {
   });
 }
 
-export function localRiskAnalysis(input: RiskInput): RiskResult {
+export function localRiskAnalysis(input: RiskInput, options: RiskAnalysisOptions = {}): RiskResult {
   const text = `${input.to} ${input.value} ${input.data} ${input.context}`.toLowerCase();
   const reasons: string[] = [];
   const criticalSignals: RiskSignal[] = [];
   const advisorySignals: RiskSignal[] = [];
-  const decodedAction = decodeCalldata(input.data);
+  const decodedAction = resolveDecodedAction(decodeCalldata(input.data), options.tokenStandard ?? "UNKNOWN");
   const valueWei = safeWei(input.value) ?? 0n;
   let score = 8;
 
@@ -128,13 +132,31 @@ export function localRiskAnalysis(input: RiskInput): RiskResult {
       score += 34;
     }
   }
-  if (decodedAction.action === "NFT Operator Approval") {
-    reasons.push(decodedAction.approved ? "NFT operator approval enables control of all assets" : "NFT operator approval is being revoked");
-    const operatorSignal = signal("operator-approval", decodedAction.approved ? "NFT operator permission" : "NFT operator revocation", decodedAction.operator ? `Operator: ${decodedAction.operator}` : "An operator address is encoded.", "DECODER", decodedAction.approved ? "critical" : "advisory");
+  if (decodedAction.action === "Approval-like permission call") {
+    reasons.push("approve(address,uint256) has unresolved ERC20/ERC721 semantics");
+    advisorySignals.push(signal("ambiguous-approval", "Ambiguous approval-like call", "The uint256 may be an ERC20 allowance or an ERC721 token ID; token standard is not confirmed.", "DECODER", "advisory"));
+    score += 12;
+  }
+  if (decodedAction.action === "ERC721 Token Approval") {
+    reasons.push("ERC721 token approval grants permission over one token ID");
+    advisorySignals.push(signal("erc721-token-approval", "ERC721 token approval", decodedAction.tokenId ? `Token ID: ${decodedAction.tokenId}` : "A token ID is encoded.", "DECODER", "advisory"));
+    score += 14;
+  }
+  if (decodedAction.action === "Contract-wide operator permission") {
+    reasons.push(decodedAction.approved ? "Contract-wide NFT or multi-token operator permission enables control of all managed assets" : "Contract-wide operator permission is being revoked");
+    const operatorSignal = signal("operator-approval", decodedAction.approved ? "Contract-wide operator permission" : "Contract-wide operator revocation", decodedAction.operator ? `Operator: ${decodedAction.operator}` : "An operator address is encoded.", "DECODER", decodedAction.approved ? "critical" : "advisory");
     if (decodedAction.approved) { criticalSignals.push(operatorSignal); score += 35; }
     else advisorySignals.push(operatorSignal);
   }
-  if (decodedAction.action === "ERC20 Transfer" || decodedAction.action === "ERC20 Transfer From") {
+  if (decodedAction.action === "TransferFrom-like asset transfer") {
+    reasons.push("transferFrom(address,address,uint256) has unresolved ERC20/ERC721 semantics");
+    advisorySignals.push(signal("ambiguous-transfer-from", "Ambiguous transferFrom call", "The uint256 may be fungible-token units or an ERC721 token ID.", "DECODER", "advisory"));
+    score += 10;
+  }
+  if (decodedAction.action === "ERC721 Token Transfer") {
+    advisorySignals.push(signal("erc721-transfer", "ERC721 token transfer", decodedAction.tokenId ? `Token ID: ${decodedAction.tokenId}` : "A token ID is encoded.", "DECODER", "advisory"));
+  }
+  if (decodedAction.action === "ERC20 Transfer") {
     advisorySignals.push(signal("token-transfer", "Token transfer", decodedAction.amount ? `Token amount: ${decodedAction.amount}` : "An ERC20 transfer amount is encoded.", "DECODER", "advisory"));
   }
   if (input.data === "0x") {

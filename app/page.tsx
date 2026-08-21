@@ -25,6 +25,7 @@ type AnalysisResult = RiskResult & {
   analysisConfidence: AnalysisConfidence;
   analysisVerdict: AnalysisVerdict;
   executionStatus: ExecutionStatus;
+  confidenceReasons: string[];
   contractIntelligence: ContractIntelligence;
   consequences: TransactionConsequence[];
   intentComparison: IntentComparison;
@@ -49,6 +50,8 @@ function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
     && analysisConfidences.has(String(candidate.analysisConfidence))
     && analysisVerdicts.has(String(candidate.analysisVerdict))
     && executionStatuses.has(String(candidate.executionStatus))
+    && Array.isArray(candidate.confidenceReasons)
+    && candidate.confidenceReasons.every((reason) => typeof reason === "string")
     && validSignals(candidate.criticalSignals)
     && validSignals(candidate.advisorySignals)
     && Boolean(candidate.contractIntelligence)
@@ -296,8 +299,8 @@ export default function Home() {
       <div className="panel-heading"><div><span className="eyebrow">60-Second Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => setJudgeModeOpen(false)}>Close</button></div>
       <div className="judge-steps">
         <article><b>01</b><span>Safe Transfer</span><strong>Expected: LOW</strong><p>Baseline deterministic analysis plus optional AI enrichment.</p><button className="secondary" onClick={() => loadJudgePreset(0)}>Load</button></article>
-        <article><b>02</b><span>Unlimited Approval</span><strong>Expected: HIGH</strong><p>Decoded approve(), visible spender, and Unlimited amount.</p><button className="secondary" onClick={() => loadJudgePreset(1)}>Load</button></article>
-        <article><b>03</b><span>Suspicious Airdrop</span><strong>Expected: HIGH + MISMATCH</strong><p>Claim intent contradicts decoded unlimited permission; the safety floor remains deterministic.</p><button className="secondary" onClick={() => loadJudgePreset(2)}>Load</button></article>
+        <article><b>02</b><span>Ambiguous Approval</span><strong>Expected: UNDETERMINED</strong><p>The shared approve() selector stays ambiguous unless token-standard evidence resolves it.</p><button className="secondary" onClick={() => loadJudgePreset(1)}>Load</button></article>
+        <article><b>03</b><span>Suspicious Airdrop</span><strong>Expected: HIGH + MISMATCH</strong><p>Claim intent contradicts an approval-like permission call; deterministic evidence is not weakened by AI.</p><button className="secondary" onClick={() => loadJudgePreset(2)}>Load</button></article>
         <article><b>04</b><span>Verified X Layer Evidence</span><strong>Receipt: Confirmed</strong><p>Real user-signed RiskRegistry receipt on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View Receipt</button></article>
       </div>
       <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ User-controlled signing</span><span>✓ Verified on-chain receipt</span></div>
@@ -324,6 +327,7 @@ export default function Home() {
             <div><span>Verdict</span><strong>{activeResult.analysisVerdict}</strong></div>
             <div><span>Execution Status</span><strong>{activeResult.executionStatus}</strong></div>
           </section>
+          <ul className="confidence-reasons">{activeResult.confidenceReasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
           <section className="fusion-card">
             <div className="card-title"><div><span className="eyebrow">Transparent decision logic</span><h3>Risk Fusion</h3></div><span className="formula">max(floor, AI)</span></div>
             <div className="fusion-grid"><div><span>Deterministic Floor</span><strong>{activeResult.deterministicScore}</strong></div><div><span>AI Assessment</span><strong>{typeof activeResult.aiScore === "number" ? activeResult.aiScore : "Unavailable"}</strong></div><div><span>Final Risk</span><strong>{activeResult.finalScore}</strong></div></div>
@@ -337,7 +341,7 @@ export default function Home() {
             <div className="card-title"><div><span className="eyebrow">Pre-sign reasoning</span><h3>Intent vs Reality</h3></div><span className="intent-status">{activeResult.intentComparison.status}</span></div>
             <div className="intent-grid"><span>Your Intent</span><strong>{activeResult.intentComparison.userIntent}</strong><span>Observed Transaction</span><strong>{activeResult.intentComparison.observedTransaction}</strong><span>Why</span><strong>{activeResult.intentComparison.why}</strong><span>Normalization</span><strong>{activeResult.intentComparison.normalizationSource.replace("_", " ")} · {activeResult.intentComparison.confidence}</strong></div>
           </section>}
-          {decoded && <section className="decoded-card"><h3>{decoded.action}</h3><div className="decoded-grid"><span>Method</span><strong>{decoded.method}</strong>{decoded.spender && <><span>Spender</span><strong>{decoded.spender}</strong></>}{decoded.recipient && <><span>Recipient</span><strong>{decoded.recipient}</strong></>}{decoded.from && <><span>From</span><strong>{decoded.from}</strong></>}{decoded.operator && <><span>Operator</span><strong>{decoded.operator}</strong></>}{decoded.amount && <><span>Amount</span><strong>{decoded.isUnlimited ? "Unlimited" : decoded.amount}</strong></>}{typeof decoded.approved === "boolean" && <><span>Approved</span><strong>{decoded.approved ? "Yes" : "No"}</strong></>}</div>{decoded.riskHint && <p>{decoded.riskHint}</p>}</section>}
+          {decoded && <section className="decoded-card"><h3>{decoded.action}</h3><div className="decoded-grid"><span>Method</span><strong>{decoded.method}</strong>{decoded.assetStandard && <><span>Standard</span><strong>{decoded.assetStandard === "UNKNOWN" ? "UNDETERMINED" : decoded.assetStandard}</strong></>}{decoded.operatorOrSpender && <><span>Operator / Spender</span><strong>{decoded.operatorOrSpender}</strong></>}{decoded.spender && <><span>Spender</span><strong>{decoded.spender}</strong></>}{decoded.recipient && <><span>Recipient</span><strong>{decoded.recipient}</strong></>}{decoded.from && <><span>From</span><strong>{decoded.from}</strong></>}{decoded.operator && <><span>Operator</span><strong>{decoded.operator}</strong></>}{decoded.tokenId && <><span>Token ID</span><strong>{decoded.tokenId}</strong></>}{decoded.uint256Value && !decoded.tokenId && <><span>uint256 Value</span><strong>{decoded.uint256Value}</strong></>}{decoded.amount && <><span>Amount</span><strong>{decoded.isUnlimited ? "Unlimited" : decoded.amount}</strong></>}{typeof decoded.approved === "boolean" && <><span>Approved</span><strong>{decoded.approved ? "Yes" : "No"}</strong></>}</div>{decoded.riskHint && <p>{decoded.riskHint}</p>}</section>}
           <section className="intelligence-card">
             <div className="card-title"><div><span className="eyebrow">X Layer RPC</span><h3>On-chain Intelligence</h3></div><span className={`rpc-status rpc-${intelligence?.rpcStatus.toLowerCase() ?? "unavailable"}`}>{intelligence?.rpcStatus ?? "UNAVAILABLE"}</span></div>
             <div className="decoded-grid">
@@ -346,6 +350,8 @@ export default function Home() {
               <span>Code</span><strong>{intelligence?.codePresent === true ? `Present · ${intelligence.codeSizeBytes?.toLocaleString() ?? "?"} bytes` : intelligence?.codePresent === false ? "Not present" : "Unavailable"}</strong>
               <span>EIP-1967 Proxy</span><strong>{intelligence?.proxyDetected === true ? "Implementation detected" : intelligence?.proxyDetected === false ? "Not detected" : "Unavailable"}</strong>
               {intelligence?.implementationAddress && <><span>Implementation</span><strong>{intelligence.implementationAddress}</strong></>}
+              <span>Token Standard</span><strong>{intelligence?.tokenStandard === "UNKNOWN" ? "Unresolved" : intelligence?.tokenStandard ?? "Unresolved"}</strong>
+              <span>Standard Evidence</span><strong>{intelligence?.tokenStandardSource === "ERC165" ? "ON-CHAIN / ERC165" : "Unavailable"}</strong>
               <span>Preflight</span><strong>{activeResult.executionStatus === "SUCCEEDED" ? "Call succeeded" : activeResult.executionStatus === "REVERTED" ? "Current-state call reverted" : "Unavailable"}</strong>
               {intelligence?.revertReason && <><span>Revert Reason</span><strong>{intelligence.revertReason}</strong></>}
               <span>Estimated Gas</span><strong>{intelligence?.estimatedGas ? BigInt(intelligence.estimatedGas).toLocaleString() : "Unavailable"}</strong>

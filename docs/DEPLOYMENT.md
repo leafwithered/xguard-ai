@@ -37,6 +37,8 @@ The `v3-competition` candidate is Preview-only. It orders analysis as determinis
 
 The public client can verify Hybrid versus Local mode, but it cannot prove the identity of the server-configured upstream AI provider. Deployment documentation therefore remains provider-neutral unless deployment-side evidence is explicitly audited; no API secret is exposed for that verification.
 
+V3.1 additionally performs bounded ERC165 checks for ERC721 and ERC1155 on smart-contract targets. Only a positive interface result establishes that standard; negative or unavailable results remain `UNKNOWN` and never imply ERC20. The Preview response includes deterministic confidence reasons and phase timings for latency audit. These changes remain Preview-only until separately approved.
+
 ## Verified deployment
 
 - Network: X Layer Testnet

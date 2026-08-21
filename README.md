@@ -12,7 +12,7 @@ XGuard AI decodes transaction behavior, explains the deterministic consequences 
 
 **Demo asset:** `demo/xguard-ai-build-x-demo.mp4` (1920×1080 H.264, approximately 1:34). It was composed from verified screenshots of the canonical Production deployment and demonstrates Judge Mode, Hybrid Analysis, Risk Fusion, real X Layer RPC intelligence, and the existing confirmed receipt without connecting a wallet or creating a transaction.
 
-## 60–90 Second Judge Path
+## 60–90 Second Judge Path (current stable Production)
 
 1. Open the Live Demo and select **⚡ Try Judge Demo**.
 2. Load **Safe Transfer**, then explicitly click **Analyze risk** to see the LOW baseline.
@@ -44,7 +44,15 @@ The verified Production baseline is commit `8f37ee568ee02cb7affa51069eac618c3adb
 
 ### V3 Preview Candidate
 
-The `v3-competition` branch adds an evidence-first analysis pipeline, deterministic Transaction Consequence Engine, optional Intent vs Reality comparison, and a reproducible 45-case security benchmark (34 corpus cases plus 11 pipeline invariants). It is developed and deployed as a Preview candidate only until explicit approval; it does not alter the existing Production deployment, RiskRegistry contract, or verified receipt.
+The `v3-competition` branch adds an evidence-first analysis pipeline, deterministic Transaction Consequence Engine, optional Intent vs Reality comparison, selector-ambiguity hardening, and a reproducible 57-case security benchmark (34 corpus cases, 11 pipeline invariants, and 12 semantic/adversarial cases). It is developed and deployed as a Preview candidate only until explicit approval; it does not alter the existing Production deployment, RiskRegistry contract, or verified receipt.
+
+### V3.1 semantic correctness
+
+`approve(address,uint256)` and `transferFrom(address,address,uint256)` are shared by ERC20 and ERC721. V3.1 therefore decodes their signature-level facts first and leaves the uint256 meaning explicitly unresolved unless bounded ERC165 evidence positively identifies ERC721. A negative ERC721/ERC1155 result never proves ERC20. In particular, `maxUint256` is not called an unlimited ERC20 allowance without separately trusted ERC20 semantics.
+
+For smart contracts, XGuard checks `supportsInterface(0x80ac58cd)` and `supportsInterface(0xd9b67a26)` with bounded RPC calls. Positive results may establish ERC721 or ERC1155; unavailable, false, or inconsistent evidence remains `UNKNOWN`. `setApprovalForAll` is described as contract-wide NFT/multi-token operator permission without inventing a standard or collection identity.
+
+Empty calldata with native value is also target-aware: an EOA is described as an externally owned account, while a smart-contract target warns that `receive()` or `fallback()` logic may execute. XGuard never claims what that logic does.
 
 ## Project Overview
 
@@ -116,7 +124,9 @@ flowchart TD
 
 `lib/analyze-pipeline.ts` owns the evidence-first orchestration and accepts small injectable RPC and AI dependencies for integration testing. `lib/evidence.ts` creates a bounded, sanitized object with the transaction, decoded action, deterministic signals, consequences, address type, code presence/size, scoped EIP-1967 observation, preflight status/reason, gas estimate, and RPC status. Only after that evidence exists does `lib/ai/provider.ts` make one advisory request. Configure an OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use. Production Hybrid Analysis is verified through this server-configured adapter; public artifacts do not assert the upstream provider identity.
 
-Confidence and verdict are deterministic: unsupported or malformed calldata is `LOW` confidence and `UNDETERMINED`; a known decode with unavailable or partial RPC evidence is generally `MEDIUM`; a known decode with complete RPC evidence may be `HIGH`; an observed EIP-1967 implementation caps confidence at `MEDIUM` because arbitrary implementation behavior is not fully inspected. High risk does not mean low confidence, and preflight revert does not add arbitrary malicious-risk points. AI cannot change evidence, execution status, verdict, or final analysis confidence.
+Confidence and verdict are deterministic: unsupported, malformed, or materially token-standard-ambiguous calldata is `LOW` confidence and `UNDETERMINED`; a known decode with unavailable or partial RPC evidence is generally `MEDIUM`; a known decode with complete RPC evidence may be `HIGH`; an observed EIP-1967 implementation caps confidence at `MEDIUM` because arbitrary implementation behavior is not fully inspected. Every response includes deterministic `confidenceReasons`. High risk does not mean low confidence, and preflight revert does not add arbitrary malicious-risk points. AI cannot change evidence, execution status, verdict, or final analysis confidence.
+
+User-provided `transaction.context` is structured as untrusted intent data. Both Responses and Chat fallback prompts explicitly reject embedded instructions such as “ignore previous instructions,” “mark this safe,” or requests to discard RPC evidence. This is defense-in-depth, not a claim that any LLM is universally prompt-injection-proof; deterministic evidence and fusion invariants remain the primary boundary.
 
 The deterministic Local Risk Engine checks zero addresses, exact bigint native value thresholds, decoded ERC20/NFT approvals, unlimited permissions, transfer methods, malformed and unknown calldata, intent mismatches, unknown-contract context, and common social-engineering signals. AI may normalize ambiguous natural language, but deterministic code performs the consequence comparison wherever supported.
 
@@ -223,10 +233,11 @@ pnpm run analysis-state:test
 pnpm run consequence:test
 pnpm run intent:test
 pnpm run pipeline:test
+pnpm run token-standard:test
 pnpm run security-benchmark:test
 ```
 
-The full 45-case V3 benchmark and its invariants are documented in [docs/SECURITY_BENCHMARK.md](docs/SECURITY_BENCHMARK.md).
+The full 57-case V3.1 benchmark and its invariants are documented in [docs/SECURITY_BENCHMARK.md](docs/SECURITY_BENCHMARK.md).
 
 The browser smoke path is documented in [docs/DEMO.md](docs/DEMO.md). The API returns `400` for invalid transaction input and keeps Local Analysis available when the configured provider fails.
 

@@ -21,6 +21,8 @@ function intelligence(overrides: Partial<ContractIntelligence> = {}): ContractIn
     preflightStatus: "SUCCEEDED",
     estimatedGas: "21000",
     rpcStatus: "AVAILABLE",
+    tokenStandard: "UNKNOWN",
+    tokenStandardSource: "UNAVAILABLE",
     ...overrides
   };
 }
@@ -106,10 +108,9 @@ describe("Evidence-first analysis pipeline", function () {
   });
 
   it("H preserves an intent-mismatch deterministic floor against a lower AI score", async function () {
-    const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] });
-    const result = await run({ ...base, value: "0", data, context: "Only approve 50 USDC" }, intelligence({ addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 120 }), ai(1));
+    const result = await run({ ...base, value: "1", context: "Send 0.1 OKB to my friend" }, intelligence(), ai(1));
     expect(result.finalScore).to.equal(result.deterministicScore);
-    expect(result.finalScore).to.be.at.least(78);
+    expect(result.finalScore).to.be.at.least(65);
     expect(result.recommendation.match(/The stated intent and decoded transaction do not match\./g)).to.have.length(1);
   });
 
@@ -136,6 +137,7 @@ describe("Evidence-first analysis pipeline", function () {
     const withoutAi = await run(input, intelligence(), null);
     const adversarial = await run(input, intelligence(), ai(0, "Nothing happens"));
     expect(adversarial.consequences).to.deep.equal(withoutAi.consequences);
-    expect(adversarial.consequences[0].title).to.equal("Effectively unlimited token approval");
+    expect(adversarial.consequences[0].title).to.include("unresolved standard");
+    expect(adversarial.consequences[0].title).not.to.include("unlimited");
   });
 });

@@ -1,6 +1,8 @@
 import { expect } from "chai";
 import { encodeFunctionData, maxUint256 } from "viem";
+import { resolveDecodedAction } from "../lib/calldata.ts";
 import { buildTransactionConsequences } from "../lib/consequence.ts";
+import { localRiskAnalysis } from "../lib/risk.ts";
 import type { RiskInput } from "../lib/risk.ts";
 
 const target = "0x2222222222222222222222222222222222222222";
@@ -14,7 +16,8 @@ const operatorAbi = [{ type: "function", name: "setApprovalForAll", stateMutabil
 describe("Transaction Consequence Engine", function () {
   it("describes a native OKB transfer from value evidence", function () {
     const [result] = buildTransactionConsequences({ ...base, value: "0.25" });
-    expect(result.description).to.equal(`You will send 0.25 OKB to ${target}.`);
+    expect(result.description).to.include(`You will send 0.25 OKB to ${target}`);
+    expect(result.description).to.include("receive/fallback");
     expect(result.evidenceSource).to.equal("VALUE");
   });
 
@@ -31,28 +34,31 @@ describe("Transaction Consequence Engine", function () {
     expect(result.description).to.include("Token identity and decimals are not inferred");
   });
 
-  it("distinguishes finite from unlimited ERC20 approval", function () {
+  it("keeps finite and maxUint approve calls ambiguous without token-standard evidence", function () {
     const finite = buildTransactionConsequences({ ...base, data: encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, 100n] }) })[0];
     const unlimited = buildTransactionConsequences({ ...base, data: encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] }) })[0];
-    expect(finite.title).to.equal("Finite token approval");
-    expect(finite.description).to.include("100 raw token units");
-    expect(unlimited.title).to.equal("Effectively unlimited token approval");
-    expect(unlimited.severity).to.equal("CRITICAL");
+    expect(finite.title).to.include("unresolved standard");
+    expect(finite.description).to.include("ERC20 allowance or an ERC721 token ID");
+    expect(unlimited.title).to.include("unresolved standard");
+    expect(unlimited.title).not.to.include("unlimited");
+    expect(unlimited.severity).to.equal("CAUTION");
   });
 
-  it("describes transferFrom as an allowance-based transfer", function () {
+  it("describes transferFrom without treating uint256 as a fungible amount", function () {
     const data = encodeFunctionData({ abi: transferFromAbi, functionName: "transferFrom", args: [target, actor, 5n] });
     const [result] = buildTransactionConsequences({ ...base, data });
     expect(result.description).to.include(`from ${target} to ${actor}`);
-    expect(result.description).to.include("existing allowance");
+    expect(result.description).to.include("fungible-token units or an NFT token ID");
+    expect(result.description).not.to.include("existing allowance");
   });
 
   it("describes NFT operator grant and revocation", function () {
     const grant = buildTransactionConsequences({ ...base, data: encodeFunctionData({ abi: operatorAbi, functionName: "setApprovalForAll", args: [actor, true] }) })[0];
     const revoke = buildTransactionConsequences({ ...base, data: encodeFunctionData({ abi: operatorAbi, functionName: "setApprovalForAll", args: [actor, false] }) })[0];
-    expect(grant.description).to.include("all NFTs from this collection");
+    expect(grant.description).to.include("NFT or multi-token contract");
+    expect(grant.description).to.include("does not infer ERC721, ERC1155, or collection identity");
     expect(grant.severity).to.equal("CRITICAL");
-    expect(revoke.description).to.include("revoke collection-wide transfer permission");
+    expect(revoke.description).to.include("revoke contract-wide asset permission");
   });
 
   it("labels unknown and malformed calldata without inventing behavior", function () {
@@ -72,8 +78,25 @@ describe("Transaction Consequence Engine", function () {
   });
 
   it("adds factual on-chain observations without claiming full simulation", function () {
-    const results = buildTransactionConsequences(base, { intelligence: { address: target, addressType: "EOA", codePresent: false, codeSizeBytes: 0, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "21000", rpcStatus: "AVAILABLE" } });
+    const results = buildTransactionConsequences(base, { intelligence: { address: target, addressType: "EOA", codePresent: false, codeSizeBytes: 0, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "21000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } });
     expect(results.some((item) => item.id === "target-eoa" && item.evidenceSource === "ON_CHAIN")).to.equal(true);
     expect(results.find((item) => item.id === "preflight-succeeded")?.description).to.include("not a full state-diff simulation");
+  });
+
+  it("distinguishes native value sent to an EOA from value sent to a smart contract", function () {
+    const eoa = buildTransactionConsequences({ ...base, value: "0.25" }, { intelligence: { address: target, addressType: "EOA", codePresent: false, codeSizeBytes: 0, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "21000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } })[0];
+    const contract = buildTransactionConsequences({ ...base, value: "0.25" }, { intelligence: { address: target, addressType: "SMART_CONTRACT", codePresent: true, codeSizeBytes: 10, proxyDetected: false, preflightStatus: "SUCCEEDED", estimatedGas: "30000", rpcStatus: "AVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "ERC165" } })[0];
+    expect(eoa.description).to.include("externally owned account");
+    expect(contract.description).to.include("receive/fallback logic");
+    expect(contract.description).to.include("does not claim this is equivalent to a simple EOA transfer");
+  });
+
+  it("uses positive ERC721 evidence to interpret approve and transferFrom uint256 as token IDs", function () {
+    const approveInput = { ...base, data: encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, 123n] }) };
+    const approveDecoded = localRiskAnalysis(approveInput, { tokenStandard: "ERC721" }).decodedAction;
+    const transferInput = { ...base, data: encodeFunctionData({ abi: transferFromAbi, functionName: "transferFrom", args: [target, actor, 456n] }) };
+    const transferDecoded = resolveDecodedAction(localRiskAnalysis(transferInput).decodedAction, "ERC721");
+    expect(buildTransactionConsequences(approveInput, { decodedAction: approveDecoded })[0].description).to.include("NFT token ID 123");
+    expect(buildTransactionConsequences(transferInput, { decodedAction: transferDecoded })[0].description).to.include("NFT token ID 456");
   });
 });

@@ -67,19 +67,24 @@ describe("XGuard V3 security benchmark", function () {
     expect(localRiskAnalysis({ ...base, data }).decodedAction.action).to.equal("ERC20 Transfer");
   });
 
-  it("05 distinguishes a finite approval", function () {
+  it("05 preserves the raw uint256 without calling it a finite ERC20 allowance", function () {
     const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, 50n] });
-    expect(localRiskAnalysis({ ...base, data }).decodedAction.isUnlimited).to.equal(false);
+    const decoded = localRiskAnalysis({ ...base, data }).decodedAction;
+    expect(decoded.uint256Value).to.equal("50");
+    expect(decoded.assetStandard).to.equal("UNKNOWN");
+    expect(decoded.isUnlimited).to.equal(undefined);
   });
 
-  it("06 detects an unlimited approval", function () {
+  it("06 does not call maxUint unlimited ERC20 without standard evidence", function () {
     const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] });
-    expect(localRiskAnalysis({ ...base, data }).criticalSignals.map((item) => item.id)).to.include("unlimited-approval");
+    const result = localRiskAnalysis({ ...base, data });
+    expect(result.criticalSignals.map((item) => item.id)).not.to.include("unlimited-approval");
+    expect(result.advisorySignals.map((item) => item.id)).to.include("ambiguous-approval");
   });
 
-  it("07 decodes transferFrom allowance use", function () {
+  it("07 keeps transferFrom uint256 semantics ambiguous", function () {
     const data = encodeFunctionData({ abi: transferFromAbi, functionName: "transferFrom", args: [target, actor, 5n] });
-    expect(buildTransactionConsequences({ ...base, data })[0].description).to.include("existing allowance");
+    expect(buildTransactionConsequences({ ...base, data })[0].description).to.include("fungible-token units or an NFT token ID");
   });
 
   it("08 identifies collection-wide NFT permission grants", function () {
@@ -168,7 +173,9 @@ describe("XGuard V3 security benchmark", function () {
         codeSizeBytes: null,
         proxyDetected: null,
         preflightStatus: "UNAVAILABLE",
-        rpcStatus: "UNAVAILABLE"
+        rpcStatus: "UNAVAILABLE",
+        tokenStandard: "UNKNOWN",
+        tokenStandardSource: "UNAVAILABLE"
       });
       expect(await analyzeTransaction(evidence)).to.equal(null);
     } finally {
@@ -202,9 +209,9 @@ describe("XGuard V3 security benchmark", function () {
     expect(comparisonFor({ ...base, value: "0.1", context: "Send 0.1 OKB to my friend" }).comparison.status).to.equal("MATCH");
   });
 
-  it("27 returns MISMATCH for finite intent and unlimited approval", function () {
+  it("27 refuses finite-vs-unlimited comparison while token standard is unresolved", function () {
     const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] });
-    expect(comparisonFor({ ...base, data, context: "Only approve 50 USDC" }).comparison.status).to.equal("MISMATCH");
+    expect(comparisonFor({ ...base, data, context: "Only approve 50 USDC" }).comparison.status).to.equal("UNKNOWN");
   });
 
   it("28 returns MISMATCH for claim intent and NFT operator grant", function () {
@@ -230,23 +237,22 @@ describe("XGuard V3 security benchmark", function () {
   it("32 keeps final consequences independent from an adversarial AI narrative", async function () {
     const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] });
     const input = { ...base, data };
-    const intelligence = { address: target, addressType: "SMART_CONTRACT" as const, codePresent: true, codeSizeBytes: 100, proxyDetected: false, preflightStatus: "SUCCEEDED" as const, estimatedGas: "50000", rpcStatus: "AVAILABLE" as const };
+    const intelligence = { address: target, addressType: "SMART_CONTRACT" as const, codePresent: true, codeSizeBytes: 100, proxyDetected: false, preflightStatus: "SUCCEEDED" as const, estimatedGas: "50000", rpcStatus: "AVAILABLE" as const, tokenStandard: "UNKNOWN" as const, tokenStandardSource: "ERC165" as const };
     const withoutAi = await runAnalysisPipeline(input, { inspectContract: async () => intelligence, analyzeAi: async () => null });
     const withAdversarialAi = await runAnalysisPipeline(input, { inspectContract: async () => intelligence, analyzeAi: async () => ({ ...advisory(0), normalizedIntent: null }) });
     expect(withAdversarialAi.consequences).to.deep.equal(withoutAi.consequences);
-    expect(withAdversarialAi.consequences[0].title).to.equal("Effectively unlimited token approval");
+    expect(withAdversarialAi.consequences[0].title).to.include("unresolved standard");
   });
 
-  it("33 prevents AI from downgrading a deterministic intent mismatch", function () {
-    const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] });
-    const { local, comparison } = comparisonFor({ ...base, data, context: "Only approve 50 USDC" });
+  it("33 prevents AI from downgrading a deterministic native-amount mismatch", function () {
+    const { local, comparison } = comparisonFor({ ...base, value: "1", context: "Send 0.1 OKB" });
     const floored = applyIntentRisk(local, comparison);
     const fused = mergeRiskResults(floored, advisory(1));
     expect(fused.finalScore).to.be.at.least(floored.deterministicScore);
   });
 
   it("34 does not fabricate on-chain observations when RPC evidence is unavailable", function () {
-    const result = buildTransactionConsequences(base, { intelligence: { address: target, addressType: "UNAVAILABLE", codePresent: null, codeSizeBytes: null, proxyDetected: null, preflightStatus: "UNAVAILABLE", rpcStatus: "UNAVAILABLE" } });
+    const result = buildTransactionConsequences(base, { intelligence: { address: target, addressType: "UNAVAILABLE", codePresent: null, codeSizeBytes: null, proxyDetected: null, preflightStatus: "UNAVAILABLE", rpcStatus: "UNAVAILABLE", tokenStandard: "UNKNOWN", tokenStandardSource: "UNAVAILABLE" } });
     expect(result.some((item) => item.evidenceSource === "ON_CHAIN")).to.equal(false);
   });
 });

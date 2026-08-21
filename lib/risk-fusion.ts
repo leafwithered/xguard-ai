@@ -50,7 +50,9 @@ export function mergeRiskResults(localResult: RiskResult, aiResult: AdvisoryRisk
     reasons: uniqueText([...localResult.reasons, ...aiResult.reasons]),
     recommendation: recommendationParts.join(" "),
     advisorySignals,
-    aiExplanation: aiResult.summary,
+    aiExplanation: aiResult.score < localResult.deterministicScore
+      ? `AI advisory score ${aiResult.score} did not exceed the deterministic safety floor ${localResult.deterministicScore}; deterministic evidence remains controlling.`
+      : aiResult.summary,
     mode: "HYBRID",
     providerProtocol: aiResult.providerProtocol
   };

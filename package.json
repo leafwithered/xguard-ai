@@ -19,7 +19,8 @@
     "consequence:test": "hardhat test test/consequence.ts",
     "intent:test": "hardhat test test/intent.ts",
     "pipeline:test": "hardhat test test/analyze-pipeline.ts",
-    "security-benchmark:test": "hardhat test test/security-benchmark.ts test/analyze-pipeline.ts",
+    "token-standard:test": "hardhat test test/token-standard.ts",
+    "security-benchmark:test": "hardhat test test/security-benchmark.ts test/analyze-pipeline.ts test/semantic-hardening.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

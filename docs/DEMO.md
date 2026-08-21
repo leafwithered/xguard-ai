@@ -1,5 +1,7 @@
 # XGuard AI Judge Demo
 
+> Historical Production evidence: this script and the unchanged public video describe the stable Production capture made before V3.1 selector-ambiguity hardening. The `v3-competition` Preview no longer treats `approve(address,uint256)` or `transferFrom(address,address,uint256)` as definitively ERC20 without supporting standard evidence. No media was regenerated during V3.1.
+
 **Production:** https://xguard-ai-six.vercel.app
 
 The main judge path takes 75–90 seconds, requires no wallet connection, and creates no transaction. XGuard AI is an explainable pre-sign security layer for X Layer: real RPC context and deterministic rules establish the safety floor, provider-neutral AI adds explanation, and AI cannot lower known risk.

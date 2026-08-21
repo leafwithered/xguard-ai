@@ -12,6 +12,8 @@ export type ContractIntelligence = {
   revertReason?: string;
   estimatedGas?: string;
   rpcStatus: "AVAILABLE" | "PARTIAL" | "UNAVAILABLE";
+  tokenStandard: "ERC721" | "ERC1155" | "UNKNOWN";
+  tokenStandardSource: "ERC165" | "UNAVAILABLE";
 };
 
 export type IntelligenceInput = {
@@ -36,6 +38,11 @@ export type IntelligenceOptions = {
 
 const defaultRpcUrl = "https://testrpc.xlayer.tech/terigon";
 const implementationSlot = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+const supportsInterfaceSelector = "0x01ffc9a7";
+const erc721Interface = "0x80ac58cd";
+const erc1155Interface = "0xd9b67a26";
+const erc165Interface = "0x01ffc9a7";
+const invalidInterface = "0xffffffff";
 
 class RpcError extends Error {
   readonly data?: unknown;
@@ -125,6 +132,36 @@ function implementationFromSlot(value: unknown): Address | undefined {
   }
 }
 
+function supportsInterfaceData(interfaceId: string): Hex {
+  return `${supportsInterfaceSelector}${interfaceId.slice(2).padEnd(64, "0")}` as Hex;
+}
+
+function rpcBoolean(value: unknown): boolean | null {
+  if (!isHex(value) || value.length !== 66) return null;
+  try {
+    const decoded = BigInt(value);
+    if (decoded === 0n) return false;
+    if (decoded === 1n) return true;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function detectTokenStandard(address: string, rpcUrl: string, signal: AbortSignal, fetchImpl: FetchLike) {
+  const call = (interfaceId: string) => rpcCall("eth_call", [{ to: address, data: supportsInterfaceData(interfaceId) }, "latest"], rpcUrl, signal, fetchImpl);
+  const [erc165, invalid, erc721, erc1155] = await Promise.allSettled([call(erc165Interface), call(invalidInterface), call(erc721Interface), call(erc1155Interface)]);
+  const supports165 = erc165.status === "fulfilled" ? rpcBoolean(erc165.value) : null;
+  const supportsInvalid = invalid.status === "fulfilled" ? rpcBoolean(invalid.value) : null;
+  const supports721 = erc721.status === "fulfilled" ? rpcBoolean(erc721.value) : null;
+  const supports1155 = erc1155.status === "fulfilled" ? rpcBoolean(erc1155.value) : null;
+  if (supports165 !== true || supportsInvalid !== false) return { tokenStandard: "UNKNOWN" as const, tokenStandardSource: "UNAVAILABLE" as const };
+  if (supports721 === true) return { tokenStandard: "ERC721" as const, tokenStandardSource: "ERC165" as const };
+  if (supports1155 === true) return { tokenStandard: "ERC1155" as const, tokenStandardSource: "ERC165" as const };
+  if (supports721 !== null && supports1155 !== null) return { tokenStandard: "UNKNOWN" as const, tokenStandardSource: "ERC165" as const };
+  return { tokenStandard: "UNKNOWN" as const, tokenStandardSource: "UNAVAILABLE" as const };
+}
+
 export async function inspectContract(input: IntelligenceInput, options: IntelligenceOptions = {}): Promise<ContractIntelligence> {
   const rpcUrl = options.rpcUrl ?? process.env.XLAYER_RPC_URL ?? defaultRpcUrl;
   const timeoutMs = options.timeoutMs ?? 4_500;
@@ -138,7 +175,9 @@ export async function inspectContract(input: IntelligenceInput, options: Intelli
     codeSizeBytes: null,
     proxyDetected: null,
     preflightStatus: "UNAVAILABLE",
-    rpcStatus: "UNAVAILABLE"
+    rpcStatus: "UNAVAILABLE",
+    tokenStandard: "UNKNOWN",
+    tokenStandardSource: "UNAVAILABLE"
   };
 
   try {
@@ -165,6 +204,14 @@ export async function inspectContract(input: IntelligenceInput, options: Intelli
           if (implementation) base.implementationAddress = implementation;
         } catch {
           base.proxyDetected = null;
+        }
+        try {
+          const standard = await detectTokenStandard(input.to, rpcUrl, controller.signal, fetchImpl);
+          base.tokenStandard = standard.tokenStandard;
+          base.tokenStandardSource = standard.tokenStandardSource;
+        } catch {
+          base.tokenStandard = "UNKNOWN";
+          base.tokenStandardSource = "UNAVAILABLE";
         }
       }
     }

@@ -28,6 +28,17 @@ export type IntentComparison = {
   normalizationSource: "DETERMINISTIC" | "AI_ASSISTED" | "NONE";
   confidence: IntentConfidence;
   deterministicMismatch: boolean;
+  mismatchType: IntentMismatchType | null;
+};
+
+export type IntentMismatchType = "CLAIM_PERMISSION" | "APPROVAL_SCOPE" | "NATIVE_AMOUNT" | "ACTION" | "REVOKE_PERMISSION";
+
+export const intentMismatchPolicy: Record<IntentMismatchType, { floor: number; rationale: string }> = {
+  CLAIM_PERMISSION: { floor: 78, rationale: "A claim intent that grants or exercises asset permission is a critical semantic contradiction." },
+  APPROVAL_SCOPE: { floor: 78, rationale: "A finite allowance intent contradicted by a confirmed unlimited ERC20 allowance materially expands authority." },
+  NATIVE_AMOUNT: { floor: 65, rationale: "A known-decimal native amount mismatch changes the value the user would send." },
+  ACTION: { floor: 65, rationale: "A deterministic action mismatch requires the transaction to be stopped and reviewed." },
+  REVOKE_PERMISSION: { floor: 78, rationale: "A revocation intent contradicted by a permission grant reverses the user's safety goal." }
 };
 
 const amountPattern = /(?:^|\s)(\d+(?:\.\d{1,18})?)(?:\s|$)/;
@@ -92,10 +103,10 @@ export function isAiNormalizedIntent(value: unknown): value is AiNormalizedInten
 function actualAction(decoded: DecodedAction, input: RiskInput) {
   if (decoded.status === "unknown" || decoded.status === "malformed") return "UNKNOWN" as const;
   if (decoded.status === "empty") return /^0(?:\.0+)?$/.test(input.value.trim()) ? "EMPTY" as const : "NATIVE_TRANSFER" as const;
-  if (decoded.action === "ERC20 Approval") return "APPROVE" as const;
+  if (decoded.method === "approve(address,uint256)") return "APPROVE" as const;
   if (decoded.action === "ERC20 Transfer") return "TOKEN_TRANSFER" as const;
-  if (decoded.action === "ERC20 Transfer From") return "TRANSFER_FROM" as const;
-  if (decoded.action === "NFT Operator Approval") return decoded.approved ? "NFT_OPERATOR" as const : "REVOKE" as const;
+  if (decoded.method === "transferFrom(address,address,uint256)") return "TRANSFER_FROM" as const;
+  if (decoded.method === "setApprovalForAll(address,bool)") return decoded.approved ? "NFT_OPERATOR" as const : "REVOKE" as const;
   return "UNKNOWN" as const;
 }
 
@@ -109,7 +120,8 @@ function result(
   consequences: TransactionConsequence[],
   why: string,
   normalized: NormalizedIntent | null,
-  deterministicMismatch = false
+  deterministicMismatch = false,
+  mismatchType: IntentMismatchType | null = null
 ): IntentComparison {
   return {
     status,
@@ -118,7 +130,8 @@ function result(
     why,
     normalizationSource: normalized?.source === "DETERMINISTIC" ? "DETERMINISTIC" : normalized?.source === "AI" ? "AI_ASSISTED" : "NONE",
     confidence: normalized?.confidence ?? "LOW",
-    deterministicMismatch
+    deterministicMismatch,
+    mismatchType
   };
 }
 
@@ -146,15 +159,17 @@ export function compareIntentToReality(
 
   if (normalized.action === "CLAIM") {
     if (actual === "APPROVE" || actual === "NFT_OPERATOR" || actual === "TRANSFER_FROM") {
-      return result("MISMATCH", input, consequences, "The stated intent is to claim assets, but the transaction grants or exercises asset-transfer permission.", normalized, normalized.source === "DETERMINISTIC");
+      return result("MISMATCH", input, consequences, "The stated intent is to claim assets, but the transaction grants or exercises asset-transfer permission.", normalized, normalized.source === "DETERMINISTIC", "CLAIM_PERMISSION");
     }
     return result("UNKNOWN", input, consequences, "The current decoder cannot prove that this transaction performs the stated claim action.", normalized);
   }
 
   if (normalized.action === "APPROVE") {
-    if (actual !== "APPROVE") return result("MISMATCH", input, consequences, "The stated intent is token approval, but the decoded transaction performs a different action.", normalized, normalized.source === "DETERMINISTIC");
+    if (actual !== "APPROVE") return result("MISMATCH", input, consequences, "The stated intent is token approval, but the decoded transaction performs a different action.", normalized, normalized.source === "DETERMINISTIC", "ACTION");
+    if (decoded.assetStandard === "UNKNOWN") return result("UNKNOWN", input, consequences, "The call is approval-like, but the target standard is unresolved. XGuard cannot compare a human token allowance with a uint256 that may instead be an ERC721 token ID.", normalized);
+    if (decoded.assetStandard === "ERC721") return result("PARTIAL", input, consequences, "The target is positively identified as ERC721. The uint256 is a token ID, not a fungible-token allowance, so the stated human token amount is not compared with it.", normalized);
     if (normalized.scope === "FINITE" && decoded.isUnlimited) {
-      return result("MISMATCH", input, consequences, "The stated intent is a limited approval, but the transaction grants an effectively unlimited allowance.", normalized, normalized.source === "DETERMINISTIC");
+      return result("MISMATCH", input, consequences, "The stated intent is a limited approval, but confirmed ERC20 semantics show an effectively unlimited allowance.", normalized, normalized.source === "DETERMINISTIC", "APPROVAL_SCOPE");
     }
     if (normalized.scope === "UNLIMITED" && !decoded.isUnlimited) {
       return result("PARTIAL", input, consequences, "The approval action matches, but the decoded allowance is finite rather than the stated unlimited scope.", normalized);
@@ -163,15 +178,16 @@ export function compareIntentToReality(
   }
 
   if (normalized.action === "NATIVE_TRANSFER") {
-    if (actual !== "NATIVE_TRANSFER") return result("MISMATCH", input, consequences, "The stated intent is a native OKB transfer, but the transaction encodes a different action.", normalized, normalized.source === "DETERMINISTIC");
+    if (actual !== "NATIVE_TRANSFER") return result("MISMATCH", input, consequences, "The stated intent is a native OKB transfer, but the transaction encodes a different action.", normalized, normalized.source === "DETERMINISTIC", "ACTION");
     if (normalized.amount && !sameNativeAmount(normalized.amount, input.value)) {
-      return result("MISMATCH", input, consequences, `The stated amount is ${normalized.amount} OKB, but the transaction sends ${input.value} OKB.`, normalized, normalized.source === "DETERMINISTIC");
+      return result("MISMATCH", input, consequences, `The stated amount is ${normalized.amount} OKB, but the transaction sends ${input.value} OKB.`, normalized, normalized.source === "DETERMINISTIC", "NATIVE_AMOUNT");
     }
     return result("MATCH", input, consequences, "The native transfer action and stated amount match the encoded transaction value.", normalized);
   }
 
   if (normalized.action === "TOKEN_TRANSFER") {
-    if (actual !== "TOKEN_TRANSFER" && actual !== "TRANSFER_FROM") return result("MISMATCH", input, consequences, "The stated intent is a token transfer, but the decoded transaction performs a different action.", normalized, normalized.source === "DETERMINISTIC");
+    if (actual !== "TOKEN_TRANSFER" && actual !== "TRANSFER_FROM") return result("MISMATCH", input, consequences, "The stated intent is a token transfer, but the decoded transaction performs a different action.", normalized, normalized.source === "DETERMINISTIC", "ACTION");
+    if (actual === "TRANSFER_FROM" && decoded.assetStandard !== "ERC20") return result("UNKNOWN", input, consequences, "The transferFrom selector is shared by ERC20 and ERC721. Without confirmed ERC20 semantics, XGuard does not compare the human amount with the raw uint256 value.", normalized);
     if (normalized.amount) return result("PARTIAL", input, consequences, "The token transfer action matches, but token decimals are unavailable, so the human amount cannot be compared safely.", normalized);
     return result("MATCH", input, consequences, "The stated token-transfer action matches the decoded transaction action.", normalized);
   }
@@ -179,14 +195,14 @@ export function compareIntentToReality(
   if (normalized.action === "NFT_OPERATOR") {
     return actual === "NFT_OPERATOR"
       ? result("MATCH", input, consequences, "The stated collection-wide operator permission matches the decoded transaction.", normalized)
-      : result("MISMATCH", input, consequences, "The stated NFT operator action does not match the decoded transaction action.", normalized, normalized.source === "DETERMINISTIC");
+      : result("MISMATCH", input, consequences, "The stated NFT operator action does not match the decoded transaction action.", normalized, normalized.source === "DETERMINISTIC", "ACTION");
   }
 
   if (normalized.action === "REVOKE") {
     const erc20Revocation = actual === "APPROVE" && decoded.amount === "0";
     return actual === "REVOKE" || erc20Revocation
       ? result("MATCH", input, consequences, "The decoded transaction revokes the stated permission.", normalized)
-      : result("MISMATCH", input, consequences, "The stated intent is to revoke permission, but the decoded transaction does not revoke it.", normalized, normalized.source === "DETERMINISTIC");
+      : result("MISMATCH", input, consequences, "The stated intent is to revoke permission, but the decoded transaction does not revoke it.", normalized, normalized.source === "DETERMINISTIC", "REVOKE_PERMISSION");
   }
 
   if (normalized.action === "SWAP") {
@@ -210,7 +226,7 @@ function uniqueSignals(signals: RiskSignal[]) {
 export function applyIntentRisk(resultValue: RiskResult, comparison: IntentComparison): RiskResult {
   if (comparison.status !== "MISMATCH") return resultValue;
   const deterministic = comparison.deterministicMismatch;
-  const minimum = deterministic ? 78 : 65;
+  const minimum = deterministic && comparison.mismatchType ? intentMismatchPolicy[comparison.mismatchType].floor : 65;
   const deterministicScore = deterministic ? Math.max(resultValue.deterministicScore, minimum) : resultValue.deterministicScore;
   const finalScore = Math.max(resultValue.finalScore, deterministicScore, minimum);
   const intentSignal: RiskSignal = {

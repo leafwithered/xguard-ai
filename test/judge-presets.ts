@@ -13,18 +13,19 @@ describe("Judge demo preset regression", function () {
     expect(compareIntentToReality(judgePresets[0].input, result.decodedAction, consequences).status).to.equal("MATCH");
   });
 
-  it("keeps Unlimited Approval HIGH and human-readable", function () {
+  it("keeps the legacy Unlimited Approval preset explicitly ambiguous", function () {
     const result = localRiskAnalysis(judgePresets[1].input);
-    expect(result.level).to.equal("HIGH");
+    expect(result.level).to.equal("LOW");
     expect(result.decodedAction.method).to.equal("approve(address,uint256)");
-    expect(result.decodedAction.spender).to.be.a("string");
-    expect(result.decodedAction.isUnlimited).to.equal(true);
+    expect(result.decodedAction.operatorOrSpender).to.be.a("string");
+    expect(result.decodedAction.assetStandard).to.equal("UNKNOWN");
+    expect(result.criticalSignals.map((signal) => signal.id)).not.to.include("unlimited-approval");
   });
 
   it("keeps Suspicious Airdrop at the deterministic ceiling", function () {
     const result = localRiskAnalysis(judgePresets[2].input);
     expect(result.level).to.equal("HIGH");
     expect(result.deterministicScore).to.equal(100);
-    expect(result.criticalSignals.map((signal) => signal.id)).to.include("unlimited-approval");
+    expect(result.advisorySignals.map((signal) => signal.id)).to.include("ambiguous-approval");
   });
 });

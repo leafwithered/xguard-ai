@@ -17,7 +17,7 @@ describe("Risk Engine", function () {
     expect(validateRiskInput({ ...baseInput, data: "0x0" })).to.deep.equal(["Transaction data must be valid even-length hex beginning with 0x and under 10,000 characters"]);
   });
 
-  it("detects zero-address and unlimited approval signals", function () {
+  it("keeps maxUint approve ambiguous without unsupported ERC20 claims", function () {
     const result = localRiskAnalysis({
       ...baseInput,
       to: "0x0000000000000000000000000000000000000000",
@@ -27,7 +27,9 @@ describe("Risk Engine", function () {
     });
     expect(result.level).to.equal("HIGH");
     expect(result.score).to.equal(100);
-    expect(result.reasons.join(" ")).to.include("Unlimited ERC20 approval amount detected");
+    expect(result.reasons.join(" ")).to.include("unresolved ERC20/ERC721 semantics");
+    expect(result.criticalSignals.map((signal) => signal.id)).not.to.include("unlimited-approval");
+    expect(result.advisorySignals.map((signal) => signal.id)).to.include("ambiguous-approval");
   });
 
   it("keeps ordinary native transfers low risk", function () {

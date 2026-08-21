@@ -17,6 +17,7 @@ import { initialRecordState, isRecordPending, reduceRecordState } from "../lib/t
 import { buildRiskScorePresentation, isLiveOkxProviderEvidence } from "../lib/presentation";
 import { ANALYSIS_RECEIPT_INTEGRITY_NOTICE, ANALYSIS_RECEIPT_MAX_FILE_BYTES, isAnalysisReceipt, verifyAnalysisReceipt, type AnalysisReceipt, type AnalysisReceiptVerificationStatus } from "../lib/analysis-receipt";
 import { ANALYSIS_ATTESTATION_AUTHENTICITY_NOTICE, ATTESTED_ANALYSIS_MAX_FILE_BYTES, createAttestedAnalysisPackage, isAnalysisAttestation, isTrustedAttestationKey, verifyAttestedAnalysisPackage, type AnalysisAttestation, type AttestationKeyResponse, type AttestationVerificationStatus, type AttestedPackageVerification, type TrustedKeyResolution } from "../lib/analysis-attestation";
+import { addDiscoveredWallet, preferredWalletProvider, requestWalletConnection, switchConnectedWalletToXLayer, type DiscoveredWallet } from "../lib/wallet-lifecycle";
 import type { WalletProvider } from "../types/ethereum";
 
 const registryAddress = process.env.NEXT_PUBLIC_RISK_REGISTRY_ADDRESS as Address | undefined;
@@ -25,7 +26,6 @@ const demoUrl = "https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard
 const contractUrl = `${explorerBase}/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`;
 const verifiedTxUrl = `${explorerBase}/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`;
 const verifiedTxHash = "0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb";
-type WalletOption = { info: { uuid: string; name: string; icon: string }; provider: WalletProvider };
 type AnalysisResult = RiskResult & {
   analysisConfidence: AnalysisConfidence;
   analysisVerdict: AnalysisVerdict;
@@ -112,7 +112,8 @@ function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
 
 export default function Home() {
   const [walletProvider, setWalletProvider] = useState<WalletProvider | null>(null);
-  const [wallets, setWallets] = useState<WalletOption[]>([]);
+  const [wallets, setWallets] = useState<DiscoveredWallet[]>([]);
+  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
   const [address, setAddress] = useState<Address | "">("");
   const [chainId, setChainId] = useState<number | null>(null);
   const [from, setFrom] = useState("");
@@ -212,19 +213,16 @@ export default function Home() {
   }, [from, to, value, data, context, analysisNetwork, result, lastInput, reviewed]);
 
   useEffect(() => {
-    const discovered = new Map<string, WalletOption>();
+    const discovered = new Map<string, DiscoveredWallet>();
     const announce = (event: Event) => {
-      const detail = (event as CustomEvent<WalletOption>).detail;
+      const detail = (event as CustomEvent<DiscoveredWallet>).detail;
       if (!detail?.info?.uuid || !detail.provider) return;
-      discovered.set(detail.info.uuid, detail);
-      setWallets([...discovered.values()]);
-      if (!walletProvider && detail.info.name.toLowerCase().includes("okx")) setWalletProvider(detail.provider);
+      setWallets(addDiscoveredWallet(discovered, detail));
     };
     window.addEventListener("eip6963:announceProvider", announce);
     window.dispatchEvent(new Event("eip6963:requestProvider"));
-    if (!walletProvider && window.ethereum) setWalletProvider(window.ethereum);
     return () => window.removeEventListener("eip6963:announceProvider", announce);
-  }, [walletProvider]);
+  }, []);
 
   useEffect(() => {
     if (!walletProvider) return;
@@ -239,7 +237,6 @@ export default function Home() {
     walletProvider.on?.("accountsChanged", accountsChanged);
     walletProvider.on?.("chainChanged", chainChanged);
     walletProvider.on?.("disconnect", disconnected);
-    void refreshWallet(walletProvider);
     return () => {
       walletProvider.removeListener?.("accountsChanged", accountsChanged);
       walletProvider.removeListener?.("chainChanged", chainChanged);
@@ -247,22 +244,20 @@ export default function Home() {
     };
   }, [walletProvider]);
 
-  async function refreshWallet(provider: WalletProvider) {
-    const accounts = await provider.request({ method: "eth_accounts" }) as Address[];
-    const currentChain = await provider.request({ method: "eth_chainId" }) as string;
-    setAddress(accounts[0] ?? "");
-    if (accounts[0]) setFrom(accounts[0]);
-    setChainId(Number.parseInt(currentChain, 16));
+  function applyConnectedWalletState(state: { address: Address | ""; chainId: number | null }) {
+    setAddress(state.address);
+    setFrom(state.address);
+    setChainId(state.chainId);
   }
 
   async function connectWallet() {
     setMessage("");
-    if (!walletProvider) { setMessage("Install or open an EVM wallet such as OKX Wallet first."); return; }
+    const provider = preferredWalletProvider(wallets, selectedWalletId, window.ethereum);
+    if (!provider) { setMessage("Install or open an EVM wallet such as OKX Wallet first."); return; }
     try {
-      const accounts = await walletProvider.request({ method: "eth_requestAccounts" }) as Address[];
-      setAddress(accounts[0] ?? "");
-      setFrom(accounts[0] ?? "");
-      await refreshWallet(walletProvider);
+      const walletState = await requestWalletConnection(provider);
+      setWalletProvider(provider);
+      applyConnectedWalletState(walletState);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Wallet connection was cancelled or failed.");
     }
@@ -272,17 +267,8 @@ export default function Home() {
     setMessage("");
     if (!walletProvider) { setMessage("Connect an EVM wallet before switching networks."); return; }
     try {
-      await walletProvider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x7a0" }] });
-    } catch (error) {
-      try {
-        if ((error as { code?: number }).code !== 4902) throw error;
-        await walletProvider.request({ method: "wallet_addEthereumChain", params: [{ chainId: "0x7a0", chainName: "X Layer Testnet", nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 }, rpcUrls: [xLayerTestnet.rpcUrls.default.http[0]], blockExplorerUrls: [explorerBase] }] });
-      } catch (switchError) {
-        setMessage(switchError instanceof Error ? switchError.message : "Network switch was cancelled or failed.");
-        return;
-      }
-    }
-    try { await refreshWallet(walletProvider); } catch { setMessage("Unable to refresh wallet network."); }
+      applyConnectedWalletState(await switchConnectedWalletToXLayer(walletProvider, xLayerTestnet.rpcUrls.default.http[0], explorerBase));
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Network switch was cancelled or failed."); }
   }
 
   function applyPreset(input: RiskInput) {
@@ -477,7 +463,7 @@ export default function Home() {
         <label htmlFor="to">Recipient contract</label><input id="to" placeholder="0x..." value={to} onChange={(event) => setTo(event.target.value)} />
         <div className="row"><div><label htmlFor="value">Value (OKB)</label><input id="value" inputMode="decimal" value={value} onChange={(event) => setValue(event.target.value)} /></div><div><label htmlFor="data">Calldata</label><input id="data" value={data} onChange={(event) => setData(event.target.value)} /></div></div>
         <label htmlFor="context">What do you expect this transaction to do? (optional)</label><textarea id="context" maxLength={2000} placeholder="Example: I only want to claim an airdrop." value={context} onChange={(event) => setContext(event.target.value)} /><div className="field-note">Used for Intent vs Reality. Your words never replace decoded transaction facts.</div>
-        {wallets.length > 1 && <div className="wallet-options"><span>Detected wallets</span>{wallets.map((wallet) => <button key={wallet.info.uuid} onClick={() => setWalletProvider(wallet.provider)}>{wallet.info.name}</button>)}</div>}
+        {wallets.length > 1 && <div className="wallet-options"><span>Detected wallets</span>{wallets.map((wallet) => <button key={wallet.info.uuid} className={selectedWalletId === wallet.info.uuid ? "selected" : ""} onClick={() => setSelectedWalletId(wallet.info.uuid)}>{wallet.info.name}</button>)}</div>}
         <div className="actions"><button className="primary" onClick={analyze} disabled={analyzing || recordPending}>{analyzing ? "Analyzing RPC, simulation and AI…" : "Analyze risk"}</button><button className="secondary" onClick={connectWallet}>{address ? shortAddress(address) : "Connect wallet"}</button>{analysisNetwork === "XLAYER_TESTNET" && !isCorrectNetwork && <button className="secondary" onClick={switchToXLayer}>Switch wallet to X Layer Testnet</button>}</div>
         <div className="footer-note">AI is advisory. XGuard AI never signs or broadcasts automatically.</div>
       </div>

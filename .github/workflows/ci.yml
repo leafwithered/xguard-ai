@@ -39,3 +39,4 @@ jobs:
       - run: pnpm run presentation:test
       - run: pnpm run receipt:test
       - run: pnpm run attestation:test
+      - run: pnpm run wallet-lifecycle:test

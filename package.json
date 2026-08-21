@@ -25,6 +25,7 @@
     "presentation:test": "hardhat test test/presentation.ts",
     "receipt:test": "hardhat test test/analysis-receipt.ts",
     "attestation:test": "hardhat test test/analysis-attestation.ts",
+    "wallet-lifecycle:test": "hardhat test test/wallet-lifecycle.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

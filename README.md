@@ -18,7 +18,7 @@ The Policy Guard returns `ALLOW`, `WARN`, `REQUIRE_REVIEW`, or `BLOCK_RECOMMENDE
 
 The anchor records the exact existing V5 SHA-256 receipt digest without rehashing. It proves only that the configured contract recorded that digest in a confirmed Chain 196 transaction; receipt integrity, XGuard authorship, policy, and transaction safety remain separate claims.
 
-**Production:** [xguard-ai-six.vercel.app](https://xguard-ai-six.vercel.app) · **Source:** [github.com/leafwithered/xguard-ai](https://github.com/leafwithered/xguard-ai) · **Demo:** [xguard-ai-build-x-demo.mp4](https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4)
+**Production:** [xguard-ai-six.vercel.app](https://xguard-ai-six.vercel.app) · **GitHub:** [github.com/leafwithered/xguard-ai](https://github.com/leafwithered/xguard-ai) · **Final Demo:** [xguard-ai-build-x-final.mp4](https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-final.mp4)
 
 **X account:** [@AevrynHQ](https://x.com/AevrynHQ) · **Build X post:** [View post](https://x.com/AevrynHQ/status/2090382549205873099)
 
@@ -122,8 +122,8 @@ flowchart TD
 
 | Analysis network | Chain ID | RPC | OKX Transaction Simulation |
 | --- | ---: | --- | --- |
-| X Layer Testnet | `1952` | `https://testrpc.xlayer.tech/terigon` | Unsupported; never called |
-| X Layer Mainnet | `196` | `https://rpc.xlayer.tech` | V4 Preview, `chainIndex: "196"` |
+| X Layer Testnet | `1952` | Supported: `https://testrpc.xlayer.tech/terigon` with bounded preflight | Mainnet simulation not used |
+| X Layer Mainnet | `196` | Supported: `https://rpc.xlayer.tech` with bounded preflight | OKX OnchainOS read-only transaction simulation supported with `chainIndex: "196"` |
 
 RPC checks are isolated and timeout-bounded:
 
@@ -170,7 +170,7 @@ Open `http://localhost:3000`. Without AI or OKX credentials, deterministic Local
 | `XGUARD_ATTESTATION_KEY_ID` | Public bounded identifier for the deployment attestation key |
 | `NEXT_PUBLIC_RISK_REGISTRY_ADDRESS` | Public deployed Testnet registry address |
 
-`DEPLOYER_PRIVATE_KEY` is needed only for explicitly authorized contract deployment and must never be configured in the browser or committed. V4 does not use it.
+`DEPLOYER_PRIVATE_KEY` is needed only for explicitly authorized historical/developer contract deployment tooling and must never be configured in the browser or committed. The Production application does not use it. The current Mainnet Receipt Anchor is already deployed and publicly verifiable.
 
 ## Verification
 
@@ -207,9 +207,9 @@ V6 preserves the complete V5 corpus and its exact receipt fingerprints, then add
 - This prototype has a basic in-memory API rate limit and no availability SLA.
 - Receipt fingerprints provide content integrity only. Ed25519 attestations add deployment-key authenticity of the fingerprint, not provider authentication, transaction safety, finality, on-chain anchoring, or legal identity.
 
-## Historical evidence note
+## Demo history
 
-The unchanged public video captures the earlier stable Production Judge path, including the historical Unlimited Approval result `72 HIGH`. It is retained as stable Production evidence, not as the final competition Preview semantics. The competition candidate uses selector-hardened Ambiguous Approval instead.
+The final competition video is [`demo/xguard-ai-build-x-final.mp4`](demo/xguard-ai-build-x-final.mp4), an 88-second 1920×1080 H.264 capture of the canonical Production trust path. The earlier [`demo/xguard-ai-build-x-demo.mp4`](demo/xguard-ai-build-x-demo.mp4) remains unchanged as historical evidence; it is not the final competition demo.
 
 ## License
 

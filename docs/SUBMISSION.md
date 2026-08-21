@@ -1,74 +1,118 @@
-# Build X Series Submission
+# Build X Series — Final Submission
 
-- Project Name: `XGuard AI`
-- Short Description: `Explainable pre-sign security for X Layer with deterministic safety rules, real RPC intelligence, and provider-neutral AI enrichment.`
-- Website: `https://xguard-ai-six.vercel.app`
-- GitHub: `https://github.com/leafwithered/xguard-ai`
-- X Layer Network: `X Layer Testnet (Chain ID 1952)`
-- Contract Address: `0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`
-- Deployment Tx Hash: `0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c2358533c75b`
-- Explorer Link: `https://www.okx.com/web3/explorer/xlayer-test/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`
-- User Interaction Tx Hash: `0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
-- User Interaction Receipt: success (`0x1`)
-- User Interaction Event: `RiskAssessmentRecorded`, risk score `12`
-- User Interaction Explorer: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
-- Demo Instructions: `docs/DEMO.md`
-- Demo Video: `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4` (updated Final Judge Upgrade walkthrough; 1920×1080 H.264, approximately 1:34, captured from Production)
-- Project X Account: `https://x.com/AevrynHQ`
-- X Post mentioning @XLayerOfficial: `https://x.com/AevrynHQ/status/2090382549205873099`
-- Contact Email: `Provided in official submission`
-- Telegram: `@hierarchleaf`
+- **Project Name:** `XGuard AI`
+- **Short Description:** `Verifiable pre-sign security and policy infrastructure for X Layer.`
+- **Production:** https://xguard-ai-six.vercel.app
+- **GitHub:** https://github.com/leafwithered/xguard-ai
+- **Final Demo:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-final.mp4
+- **Project X Account:** https://x.com/AevrynHQ
+- **Build X Post:** https://x.com/AevrynHQ/status/2090382549205873099
+- **Application Logic Baseline:** `dfa1d3396e08454f941ada09f219e6b4853fa8c4`
+- **Contact Email:** Provided in the official submission
+- **Telegram:** `@hierarchleaf`
 
-## Final Checks
+## Project summary
 
-- [x] Public app is reachable and Real AI Analysis has been smoke-tested.
+XGuard helps users and wallet/dApp integrations understand what an EVM transaction will do before signing. It keeps deterministic facts, bounded provider evidence, AI advisory, receipt integrity, deployment-key authenticity, policy action, and on-chain anchoring as separate claims.
+
+`Transaction → Evidence → Receipt Integrity → Deployment-key Authenticity → Policy Action → Mainnet Receipt Anchor`
+
+Final public capabilities:
+
+- Deterministic transaction decoding and explainable known-risk rules
+- X Layer RPC intelligence and bounded `eth_call` / `eth_estimateGas` preflight evidence
+- OKX OnchainOS read-only transaction simulation on X Layer Mainnet
+- Intent vs Reality comparison
+- Evidence-grounded AI Advisory that cannot lower deterministic known risk or control policy
+- Versioned Analysis Receipt with schema `1.0.0`
+- `xguard-c14n-v1` canonicalization and SHA-256 receipt integrity
+- Ed25519 deployment-key attestation of the exact receipt fingerprint
+- Deterministic Policy Guard actions: `ALLOW`, `WARN`, `REQUIRE_REVIEW`, and `BLOCK_RECOMMENDED`
+- X Layer Mainnet Receipt Anchor for an exact `bytes32` receipt digest
+- Read-only Published Mainnet Proof verification
+
+## Public chain evidence
+
+The two public evidence paths use the same hexadecimal address on different chains. They are different contracts with different purposes and must always be identified by network and chain ID.
+
+### A. Historical Testnet Evidence
+
+- **Network:** X Layer Testnet
+- **Chain ID:** `1952`
+- **Contract:** `RiskRegistry`
+- **Address:** [`0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`](https://www.okx.com/web3/explorer/xlayer-test/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5)
+- **Historical Deployment Tx:** [`0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c2358533c75b`](https://www.okx.com/web3/explorer/xlayer-test/tx/0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c2358533c75b)
+- **Historical Interaction Tx:** [`0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`](https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb)
+- **Interaction Result:** Receipt success; `RiskAssessmentRecorded` emitted with risk score `12`
+
+This historical path records that a user explicitly reviewed an assessment. It does not execute the analyzed transaction and is not the Mainnet Receipt Anchor.
+
+### B. Current Mainnet Receipt Anchor
+
+- **Network:** X Layer Mainnet
+- **Chain ID:** `196`
+- **Contract:** `XGuardReceiptAnchor`
+- **Address:** [`0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`](https://www.okx.com/web3/explorer/xlayer/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5)
+- **Deployment Tx:** [`0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb`](https://www.okx.com/web3/explorer/xlayer/tx/0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb)
+- **First Receipt Anchor Tx:** [`0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347`](https://www.okx.com/web3/explorer/xlayer/tx/0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347)
+- **Published Receipt Digest:** `0xef6cf319eb689233180f465d331969c91a9c5c07d893047294bdda5de0da0eab`
+- **Read-only Verification:** `anchored(bytes32) = true`
+
+The Mainnet anchor proves only that this exact digest was recorded by the configured contract in a confirmed Chain `196` transaction. It does not prove transaction safety, provider truth, authorship, ownership, execution, or legal identity.
+
+## Final competition demo
+
+- **Repository Path:** `demo/xguard-ai-build-x-final.mp4`
+- **Public URL:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-final.mp4
+- **Captured From:** Canonical Production at https://xguard-ai-six.vercel.app
+- **Duration:** Approximately 88 seconds
+- **Resolution:** `1920x1080`
+- **Codec / Frame Rate:** H.264 at 30 fps
+- **Narration:** None
+- **Captions:** English
+
+The demo story is:
+
+1. XGuard positioning
+2. Suspicious Airdrop
+3. Deterministic `78 HIGH`
+4. Intent `MISMATCH`
+5. `BLOCK_RECOMMENDED`
+6. X Layer RPC evidence
+7. OKX Mainnet evidence
+8. Analysis Receipt
+9. `INTEGRITY VERIFIED`
+10. Ed25519 Attestation
+11. `ATTESTATION VERIFIED`
+12. Deterministic Policy Guard
+13. Published X Layer Mainnet Proof
+14. `anchored(bytes32) = true`
+15. Evidence → Integrity → Authenticity → Policy → Anchor
+
+The historical `demo/xguard-ai-build-x-demo.mp4` is preserved unchanged and is not the final competition demo.
+
+## Claim boundaries
+
+- **Receipt Integrity** means the receipt content is consistent with its canonical SHA-256 fingerprint.
+- **Ed25519 Attestation** means the deployment key signed that exact receipt fingerprint.
+- **Policy Guard** is a deterministic integration recommendation; AI Advisory never controls it.
+- **Mainnet Anchor** means the exact digest was recorded on X Layer Mainnet Chain `196`.
+- Empty OKX risk entries mean only that no entries were returned; they do not prove safety.
+- RPC preflight and OKX simulation are bounded current-state evidence, not a full trace, state-diff, or smart-contract audit.
+- No layer guarantees transaction safety.
+
+## Final checks
+
+- [x] Canonical Production is public.
 - [x] GitHub repository is public.
-- [x] `RiskRegistry` is deployed to X Layer Testnet.
-- [x] Contract address and deployment transaction are verified in the explorer.
-- [x] A real user-signed `recordAssessment` transaction is confirmed with a successful receipt and emitted event.
-- [x] Project has an independent X account and its public profile URL is verified.
-- [x] Project X post is publicly accessible and its thread includes `@XLayerOfficial`.
-- [x] Final Judge Upgrade core application baseline `409aa73c211a6b350af757d130c3f41ac8cfe962` is deployed to the canonical Production URL and smoke-tested with Safe, Unlimited Approval, and Suspicious Airdrop presets.
-- [x] Provider-backed Hybrid Analysis is verified in Production through the provider-neutral adapter; provider configuration and secrets are not exposed to the browser or repository.
-- [x] Official submission was completed by the project owner.
+- [x] The application baseline passed 362 tests and the Production release gates.
+- [x] Receipt integrity and Ed25519 attestation verification are independently demonstrated.
+- [x] Deterministic Policy Guard behavior is demonstrated.
+- [x] Live OKX Mainnet evidence is labeled as evidence, not a safety verdict.
+- [x] Historical Testnet `1952` evidence and current Mainnet `196` evidence are disambiguated.
+- [x] The Published Mainnet Proof is independently readable without wallet interaction.
+- [x] The final demo uses no wallet connection, signature, broadcast, or new blockchain transaction.
 
-## Current readiness
+## Deployment tooling note
 
-- Local MVP, Final Judge Upgrade presets, configurable AI adapter, deterministic Local Risk Engine floor, wallet/network UI, contract tests, and browser QA are complete.
-- `RiskRegistry` is verified on X Layer Testnet; the real address, transaction hash, and explorer link are recorded above.
-- A real user-signed `recordAssessment` interaction is confirmed on Chain ID `1952`; its receipt and `RiskAssessmentRecorded` event are publicly verifiable above.
-- Website, GitHub, Production Hybrid Analysis, X account/post, contact details, public chain evidence, current hero screenshot, and Final Judge Upgrade demo video are ready. The project owner has already completed the official submission.
-- Resubmission is not required solely because Git commit SHAs, Preview URLs, or transient Vercel deployment IDs change while the canonical public URLs remain stable. Edit or resubmit only if a canonical submitted link is incorrect or the organizer explicitly requests an update.
-
-## V4 Preview candidate (not Production)
-
-The `codex/v4-okx-simulation` branch adds X Layer Mainnet (`196`) OKX OnchainOS Transaction Simulation as read-only evidence while keeping Testnet (`1952`) on the existing RPC/preflight path. Four sanitized real Preview samples returned `HTTP 200`, business code `0`, and `AVAILABLE`; median simulation latency was `376 ms` and the slowest sample was `492 ms`. A public historical token approval fixture is available in Judge Mode, but nothing analyzes, connects, signs, or broadcasts automatically. V4 remains unmerged and does not change the submitted Production URL, contract, receipt, or public media path.
-
-## V3 stable semantics inherited by V4
-
-V3 Stable adds an evidence-first pipeline and independently reports deterministic known-risk severity, Analysis Confidence, Analysis Verdict, and current-state Execution Status. V4 keeps these invariants and now labels the fused result `Final Risk Score`, so an AI-raised result is never misrepresented as deterministic known risk.
-
-V3.1 removes ERC20/ERC721 selector overclaims: `approve` and `transferFrom` remain standard-ambiguous unless positive ERC165 evidence establishes ERC721, and negative ERC165 evidence never establishes ERC20. Hostile transaction context is explicitly treated as untrusted data. These are Preview candidate facts, not claims about the unchanged submitted Production deployment.
-
-The current V4 Judge story is Safe Transfer → Ambiguous Approval → Suspicious Airdrop → Live OKX Mainnet Simulation → existing verified X Layer receipt. The stable semantic expectations are `8 LOW`, deterministic `20 LOW / LOW confidence / UNDETERMINED`, and deterministic `78 HIGH / MISMATCH` respectively.
-
-## Final submission fields
-
-- Project Name: `XGuard AI`
-- Short Description: `Explainable pre-sign security for X Layer with deterministic safety rules, real RPC intelligence, and provider-neutral AI enrichment.`
-- Long Description: `XGuard AI is an explainable pre-sign security layer that decodes EVM transaction intent, inspects real X Layer bytecode and the EIP-1967 implementation slot, and performs bounded eth_call plus eth_estimateGas preflight checks—not full state-diff simulation. It fuses RULE, DECODER, ON-CHAIN, and AI evidence into a transparent 0–100 result. Final Risk is the maximum of the deterministic safety floor and the AI assessment, so AI cannot weaken known signals. RPC or AI failure never disables Local Analysis. Users retain final control and may optionally record a compact RiskRegistry receipt on X Layer Testnet after explicit review.`
-- Website URL: `https://xguard-ai-six.vercel.app`
-- GitHub URL: `https://github.com/leafwithered/xguard-ai`
-- X Layer Network: `X Layer Testnet`
-- Chain ID: `1952`
-- Contract Address: `0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`
-- Contract Explorer URL: `https://www.okx.com/web3/explorer/xlayer-test/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`
-- Deployment Transaction: `0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c2358533c75b`
-- Verified User Transaction: `0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
-- User Transaction Explorer URL: `https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`
-- Demo Instructions: `docs/DEMO.md`
-- Demo Video URL: `https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4`
-- Project X Account: `https://x.com/AevrynHQ`
-- X Post URL: `https://x.com/AevrynHQ/status/2090382549205873099`
-- Contact Email: `Provided in official submission`
-- Telegram: `@hierarchleaf`
+Repository deployment scripts are historical/developer tooling and are not part of current Production execution. The Mainnet `XGuardReceiptAnchor` is already deployed through an explicit human wallet flow and is publicly verifiable at the links above.

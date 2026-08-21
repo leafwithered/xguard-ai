@@ -1,167 +1,75 @@
-# XGuard AI — Final Judge Demo
+# XGuard AI — Final Build X Demo
 
-**Competition Preview:** assigned after Phase B Preview deployment
+> **Verifiable pre-sign security and policy infrastructure for X Layer.**
 
-**Stable Production:** https://xguard-ai-six.vercel.app
+- **Canonical Production:** https://xguard-ai-six.vercel.app
+- **Repository Path:** `demo/xguard-ai-build-x-final.mp4`
+- **Public Video:** https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-final.mp4
+- **Duration:** Approximately 88 seconds
+- **Resolution:** `1920x1080`
+- **Codec / Frame Rate:** H.264 at 30 fps
+- **Narration:** None
+- **Captions:** English
+- **Capture Source:** Canonical Production only
 
-The Judge path requires no wallet connection and creates no transaction. Judge Mode only loads inputs or navigates to evidence; every analysis, export, file selection, and verification is explicit. The XGuard deployment-key signature is not a user wallet signature, and AI Advisory does not control the deterministic policy action.
+The historical `demo/xguard-ai-build-x-demo.mp4` remains unchanged. It is retained as historical evidence and is not the final competition demo.
 
-## Script
+## Final demo story
 
-### 0:00–0:10 — Product promise
+`Transaction → Evidence → Receipt Integrity → Deployment-key Authenticity → Policy Action → Mainnet Receipt Anchor`
 
-Open the competition Preview and say:
+| Time | Production evidence shown |
+| --- | --- |
+| `0:00–0:07` | XGuard positioning: verifiable pre-sign security and policy infrastructure for X Layer |
+| `0:07–0:12` | 60-Second Judge Path and explicit no-wallet workflow |
+| `0:12–0:20` | Suspicious Airdrop, deterministic `78 HIGH`, and contract-wide operator permission |
+| `0:20–0:27` | Intent vs Reality: claim intent conflicts with calldata, producing `MISMATCH` |
+| `0:27–0:34` | Deterministic Policy Guard: `BLOCK_RECOMMENDED`; AI Advisory does not control policy |
+| `0:34–0:41` | X Layer RPC evidence on X Layer Mainnet, Chain `196` |
+| `0:41–0:50` | OKX OnchainOS `LIVE PROVIDER EVIDENCE` and `AVAILABLE` read-only Mainnet simulation |
+| `0:50–0:57` | Versioned Analysis Receipt and canonical SHA-256 fingerprint |
+| `0:57–1:03` | Receipt verification: `INTEGRITY VERIFIED` |
+| `1:03–1:12` | Ed25519 deployment attestation with `INTEGRITY VERIFIED` and `ATTESTATION VERIFIED` |
+| `1:12–1:18` | Published X Layer Mainnet Receipt Anchor proof ready for read-only verification |
+| `1:18–1:28` | `PUBLISHED MAINNET PROOF CONFIRMED` and `anchored(bytes32) = true` |
 
-> XGuard is verifiable pre-sign security and policy infrastructure for X Layer. It combines deterministic decoding, X Layer RPC, Intent vs Reality, optional OKX simulation, and evidence-grounded AI without treating any provider as a safety oracle.
+Closing sequence: **Evidence → Integrity → Authenticity → Policy → Anchor.**
 
-Open **⚡ Try Judge Demo**.
+## Demonstrated security boundaries
 
-After each analysis, use Judge step **08 Policy Guard** to reveal the `PRE-SIGN POLICY` card. Expected actions are Safe Transfer `ALLOW`, Ambiguous Approval `REQUIRE REVIEW`, and Suspicious Airdrop `BLOCK_RECOMMENDED`.
+- Deterministic transaction decoding and X Layer RPC evidence remain inspectable separately from AI Advisory.
+- The user’s stated intent never replaces decoded transaction facts.
+- AI Advisory can raise final risk but cannot lower deterministic known risk or control policy state.
+- OKX OnchainOS output is additional provider evidence, never a safety oracle.
+- Empty OKX risk entries do not prove a transaction is safe.
+- Receipt Integrity proves content consistency with the canonical SHA-256 fingerprint, not authorship or safety.
+- Ed25519 Attestation proves deployment-key authenticity of that exact receipt fingerprint, not transaction safety or provider truth.
+- Policy Guard is a deterministic integration recommendation.
+- Mainnet anchoring proves that the exact digest was recorded on Chain `196`; it does not prove safety, provider truth, execution, ownership, or legal identity.
+- X Layer RPC preflight and OKX simulation are bounded current-state evidence, not a full trace, state-diff, or smart-contract audit.
 
-Use Judge step **09 X Layer Mainnet Anchor** to reveal the always-available Published Mainnet Proof. Without running an analysis or connecting a wallet, select **Verify Published Mainnet Proof** and show `anchored(bytes32) = true` for the published digest on Chain `196`. Then distinguish this historical published proof from the separate Current Receipt Anchor card created by a fresh analysis. Judge navigation and published-proof verification perform no wallet call.
+## Mainnet proof shown
 
-### 0:10–0:22 — Safe Transfer
+- **Network:** X Layer Mainnet
+- **Chain ID:** `196`
+- **Contract:** `XGuardReceiptAnchor`
+- **Anchor Contract:** [`0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`](https://www.okx.com/web3/explorer/xlayer/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5)
+- **Deployment Tx:** [`0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb`](https://www.okx.com/web3/explorer/xlayer/tx/0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb)
+- **First Anchor Tx:** [`0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347`](https://www.okx.com/web3/explorer/xlayer/tx/0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347)
+- **Published Receipt Digest:** `0xef6cf319eb689233180f465d331969c91a9c5c07d893047294bdda5de0da0eab`
+- **Read-only Result:** `anchored(bytes32) = true`
 
-Load **Safe Transfer**, click **Analyze risk**, and show:
+## Historical Testnet evidence
 
-- Final `8 LOW`
-- Deterministic Known Risk `8 LOW`
-- Hybrid Analysis
-- consequence and RPC evidence
+- **Network:** X Layer Testnet
+- **Chain ID:** `1952`
+- **Contract:** `RiskRegistry`
+- **Address:** [`0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`](https://www.okx.com/web3/explorer/xlayer-test/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5)
+- **Historical Deployment Tx:** [`0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c2358533c75b`](https://www.okx.com/web3/explorer/xlayer-test/tx/0xf4169572833b69bb7a5cb234d092f7ab1b27e15d2520e6544591c2358533c75b)
+- **Historical Interaction Tx:** [`0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb`](https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb)
 
-Say: “Even the low baseline is inspectable; low is not a guarantee.”
+The historical Testnet `RiskRegistry` and current Mainnet `XGuardReceiptAnchor` happen to share the same hexadecimal address on different chains. They are separate contracts and separate evidence paths.
 
-### 0:22–0:38 — Ambiguous Approval
+## Recording safety
 
-Load **Ambiguous Approval**, click **Analyze risk**, and show:
-
-- `approve(address,uint256)`
-- standard `UNDETERMINED`
-- deterministic `20 LOW`
-- `LOW` confidence and `UNDETERMINED` verdict
-- separate AI Advisory and Final Risk fields
-
-Say: “Readable calldata is not always sufficient evidence. XGuard refuses to call this an unlimited ERC20 approval without token-standard proof.”
-
-### 0:38–0:53 — Suspicious Airdrop
-
-Load **Suspicious Airdrop**, click **Analyze risk**, and show:
-
-- `setApprovalForAll(true)`
-- claim intent versus contract-wide permission
-- deterministic `78 HIGH` floor
-- `MISMATCH`
-
-Say: “The intent says claim; the transaction grants broad operator permission. AI cannot lower that deterministic floor.”
-
-### 0:53–1:12 — Live OKX Mainnet Simulation
-
-In Judge Mode, load **Live OKX Mainnet Simulation**, then explicitly click **Analyze risk**. Show:
-
-- X Layer Mainnet · Chain `196`
-- provider `OKX OnchainOS`
-- chainIndex `196`
-- Live Provider Evidence badge only after `AVAILABLE / HTTP 200 / code 0`
-- intention `Token Approval`
-- observed timestamp, provider latency, gas, and no failure reason
-
-Say: “This is a real, read-only simulation of a public historical fixture. Provider evidence is additional consequence evidence—not a safety verdict.”
-
-### 1:12–1:24 — Analysis Receipt
-
-Show Analysis ID, schema `1.0.0`, four provenance sources, and the `sha256:` fingerprint. Select **Export JSON**, then **Verify Current**.
-
-Say: “The API now returns a portable, versioned evidence receipt. The same canonicalizer generates and verifies its fingerprint.”
-
-### 1:24–1:38 — Integrity boundary
-
-Import the original exported JSON and show `INTEGRITY VERIFIED`. In a local copy, change one assessment value without updating the fingerprint, then import it and show `INTEGRITY CHECK FAILED`.
-
-Say: “Integrity detects content changes. It does not prove safety or XGuard authorship.”
-
-### 1:38–1:55 — Signed Analysis Attestation
-
-Show algorithm `Ed25519`, key ID, public-key fingerprint, signed receipt fingerprint, and signing time. Select **Export Attested Package**, then **Verify Current Package**. Show both:
-
-- `RECEIPT INTEGRITY — INTEGRITY VERIFIED`
-- `XGUARD ATTESTATION — ATTESTATION VERIFIED`
-
-Say: “V5 proves that content matches its fingerprint. V6 proves that this exact fingerprint was signed by the trusted key configured for this XGuard deployment.”
-
-For the decisive security demonstration, modify a security-relevant receipt field in a package, recompute a valid V5 fingerprint, retain the original attestation, and verify again. Show:
-
-- `INTEGRITY VERIFIED`
-- `ATTESTATION CHECK FAILED`
-
-Say: “Recomputing an internally valid fingerprint is not enough to forge XGuard deployment-key authenticity. This still does not prove transaction safety, provider truth, finality, or on-chain anchoring.”
-
-### 1:52–2:00 — Policy and Mainnet anchor
-
-Show the deterministic Policy Guard decision, then select Judge step **09** and verify the real anchored receipt.
-
-Say: “Policy is the deterministic integration recommendation. The Mainnet anchor separately proves that this exact V5 receipt digest was recorded through the configured contract on Chain 196. Neither claim means the analyzed transaction is safe.”
-
-## Reproducible inputs
-
-### Ambiguous Approval
-
-```text
-0x095ea7b30000000000000000000000001234567890123456789012345678901234567890ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
-```
-
-Expected: `approve(address,uint256)`, standard `UNDETERMINED`, deterministic `20 LOW`, LOW confidence, `UNDETERMINED`, with no definitive ERC20 Unlimited claim.
-
-### Suspicious Airdrop
-
-```text
-0xa22cb46500000000000000000000000012345678901234567890123456789012345678900000000000000000000000000000000000000000000000000000000000000001
-```
-
-Target: `0x08a25a794639a6cA03b0A7C655B2c36d82fF144a` · Value: `0 OKB` · Context: `I only want to claim an airdrop.`
-
-### Public Mainnet simulation fixture
-
-Source transaction: https://www.okx.com/web3/explorer/xlayer/tx/0xe7314b7a3b53ee7520198a3fa65126b8a840a822c71b40c60eae0f1e54ed5448
-
-The preset copies only public `from`, `to`, value, and calldata from this confirmed transaction. It does not claim ownership of the address, connect a wallet, sign, replay, or broadcast it.
-
-## Existing verified receipt
-
-- Network: X Layer Testnet (`1952`)
-- Contract: https://www.okx.com/web3/explorer/xlayer-test/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5
-- User transaction: https://www.okx.com/web3/explorer/xlayer-test/tx/0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb
-- Receipt: success; `RiskAssessmentRecorded` score `12`
-
-This is historical Testnet `1952` evidence and is separate from the Mainnet anchor.
-
-## Live Mainnet anchor proof
-
-- Network: X Layer Mainnet (`196`)
-- Contract: https://www.okx.com/web3/explorer/xlayer/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5
-- Deployment transaction: https://www.okx.com/web3/explorer/xlayer/tx/0x435ffbb932a66462bd846851535b594dbc3fad6b13f64d3ba9f17023a8fd73cb
-- First anchor transaction: https://www.okx.com/web3/explorer/xlayer/tx/0xd2c244178a313c1367ce60ed679661cce4740fd27e62e7722b8eadd995b54347
-- Receipt digest: `0xef6cf319eb689233180f465d331969c91a9c5c07d893047294bdda5de0da0eab`
-- Read-only verification: `anchored(bytes32) = true`
-
-## QA checklist
-
-- Safe: `8 LOW`
-- Ambiguous: deterministic `20 LOW`, LOW confidence, `UNDETERMINED`
-- Suspicious: deterministic `78 HIGH`, `MISMATCH`
-- Policy: Safe `ALLOW`, Ambiguous `REQUIRE_REVIEW`, Suspicious `BLOCK_RECOMMENDED`
-- Policy reason codes are stable and AI-independent; `ALLOW` is never labeled safe
-- Mainnet Anchor: configured contract on Chain `196`; the real proof returns `anchored(bytes32) = true`
-- AI-raised final score is never labeled deterministic known risk
-- Live badge never appears for Testnet, mock, unavailable, error, non-200, or non-zero business-code evidence
-- EIP-1967 wording is scoped; it does not exclude every proxy type
-- Editing any input or network invalidates the previous analysis
-- Exported JSON contains schema, provenance, and fingerprint but no original free-text context or provider authentication metadata
-- Original receipt verifies; an undigested change fails
-- Original attested package shows integrity and attestation verified
-- Tampered receipt with a recomputed V5 fingerprint keeps integrity valid but fails attestation
-- Uploaded package keys are never trusted; verification resolves the deployment key endpoint
-- Missing attestation configuration does not change risk, confidence, verdict, execution, or receipt output
-- Receipt integrity, attestation, policy, and Mainnet anchoring remain separate claims
-- No connection, signature, broadcast, deployment, or new chain transaction
-
-The existing public MP4 remains the historical stable Production capture. It is not evidence of the final competition Preview trust path.
+The final demo used zero wallet connections, wallet RPC requests, user signatures, broadcasts, contract deployments, or new blockchain transactions. Published Mainnet Proof verification is read-only. No secret values appear in the recording.

@@ -1,16 +1,18 @@
 import { createServer } from "node:http";
 import { expect } from "chai";
-import { encodeFunctionData, maxUint256 } from "viem";
+import { encodeFunctionData, maxUint256, type Address } from "viem";
 import { analyzeTransaction } from "../lib/ai/provider.ts";
+import { runAnalysisPipeline } from "../lib/analyze-pipeline.ts";
 import { currentAnalysisResult, invalidateStaleAnalysis } from "../lib/analysis-state.ts";
 import { inspectContract } from "../lib/chain/intelligence.ts";
 import { buildTransactionConsequences } from "../lib/consequence.ts";
+import { buildAnalysisEvidence } from "../lib/evidence.ts";
 import { applyIntentRisk, compareIntentToReality } from "../lib/intent.ts";
 import { mergeRiskResults } from "../lib/risk-fusion.ts";
 import { localRiskAnalysis, type AdvisoryRiskResult, type RiskInput, type RiskResult } from "../lib/risk.ts";
 
-const target = "0x2222222222222222222222222222222222222222";
-const actor = "0x1234567890123456789012345678901234567890";
+const target = "0x2222222222222222222222222222222222222222" as Address;
+const actor = "0x1234567890123456789012345678901234567890" as Address;
 const zero = "0x0000000000000000000000000000000000000000";
 const base: RiskInput = { from: "", to: target, value: "0", data: "0x", context: "" };
 const approveAbi = [{ type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ name: "", type: "bool" }] }] as const;
@@ -158,7 +160,17 @@ describe("XGuard V3 security benchmark", function () {
       process.env.AI_API_KEY = "fixture-key-not-a-secret";
       process.env.AI_BASE_URL = `http://127.0.0.1:${address.port}`;
       process.env.AI_MODEL = "fixture-model";
-      expect(await analyzeTransaction(base, localRiskAnalysis(base))).to.equal(null);
+      const local = localRiskAnalysis(base);
+      const evidence = buildAnalysisEvidence(base, local, buildTransactionConsequences(base), {
+        address: target,
+        addressType: "UNAVAILABLE",
+        codePresent: null,
+        codeSizeBytes: null,
+        proxyDetected: null,
+        preflightStatus: "UNAVAILABLE",
+        rpcStatus: "UNAVAILABLE"
+      });
+      expect(await analyzeTransaction(evidence)).to.equal(null);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
       if (previous.key === undefined) delete process.env.AI_API_KEY; else process.env.AI_API_KEY = previous.key;
@@ -215,10 +227,14 @@ describe("XGuard V3 security benchmark", function () {
     expect(buildTransactionConsequences({ ...base, data })[0].description).to.include("Token identity and decimals are not inferred");
   });
 
-  it("32 produces identical deterministic consequences regardless of AI availability", function () {
+  it("32 keeps final consequences independent from an adversarial AI narrative", async function () {
     const data = encodeFunctionData({ abi: approveAbi, functionName: "approve", args: [actor, maxUint256] });
     const input = { ...base, data };
-    expect(buildTransactionConsequences(input)).to.deep.equal(buildTransactionConsequences(input));
+    const intelligence = { address: target, addressType: "SMART_CONTRACT" as const, codePresent: true, codeSizeBytes: 100, proxyDetected: false, preflightStatus: "SUCCEEDED" as const, estimatedGas: "50000", rpcStatus: "AVAILABLE" as const };
+    const withoutAi = await runAnalysisPipeline(input, { inspectContract: async () => intelligence, analyzeAi: async () => null });
+    const withAdversarialAi = await runAnalysisPipeline(input, { inspectContract: async () => intelligence, analyzeAi: async () => ({ ...advisory(0), normalizedIntent: null }) });
+    expect(withAdversarialAi.consequences).to.deep.equal(withoutAi.consequences);
+    expect(withAdversarialAi.consequences[0].title).to.equal("Effectively unlimited token approval");
   });
 
   it("33 prevents AI from downgrading a deterministic intent mismatch", function () {

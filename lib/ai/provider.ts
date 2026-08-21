@@ -1,7 +1,7 @@
 import OpenAI from "openai";
-import type { TransactionConsequence } from "../consequence.ts";
+import type { AnalysisEvidence } from "../evidence.ts";
 import { isAiNormalizedIntent, type AiNormalizedIntent } from "../intent.ts";
-import type { AdvisoryRiskResult, RiskInput, RiskResult } from "../risk";
+import type { AdvisoryRiskResult, RiskResult } from "../risk";
 
 export type AiAdvisoryRiskResult = AdvisoryRiskResult & {
   normalizedIntent: AiNormalizedIntent | null;
@@ -77,11 +77,11 @@ function extractResponsesText(response: { output_text?: unknown; output?: unknow
   return "";
 }
 
-export async function analyzeTransaction(input: RiskInput, deterministicSignals: RiskResult, deterministicConsequences: TransactionConsequence[] = []) {
+export async function analyzeTransaction(evidence: AnalysisEvidence) {
   const config = getProviderConfig();
   if (!config) return null;
   const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL, timeout: 30000, maxRetries: 0 });
-  const payload = JSON.stringify({ transaction: input, deterministicSignals, deterministicConsequences });
+  const payload = JSON.stringify({ evidence });
   try {
     const response = await fetch(`${config.baseURL}/responses`, {
       method: "POST",
@@ -89,7 +89,7 @@ export async function analyzeTransaction(input: RiskInput, deterministicSignals:
       body: JSON.stringify({
         model: config.model,
         input: [
-          { role: "system", content: "You are a cautious EVM transaction risk reviewer. Return only the requested risk JSON. Treat risk output as advisory. Also normalize only the user's explicitly stated context into normalizedIntent. Return null when intent is absent or ambiguous. Never infer user intent from transaction calldata, deterministic signals, or consequences." },
+          { role: "system", content: "You are a cautious EVM transaction risk reviewer. Return only the requested risk JSON. The supplied evidence is factual and immutable: never invent or change decode, bytecode, EIP-1967, RPC, preflight, gas, or consequence facts. Risk output is advisory and cannot lower deterministic safety rules. Normalize only the user's explicitly stated context into normalizedIntent. Return null when intent is absent or ambiguous. Never infer user intent from transaction facts." },
           { role: "user", content: payload }
         ],
         text: { format: { type: "json_schema", name: "risk_assessment", strict: true, schema: riskSchema } }
@@ -109,7 +109,7 @@ export async function analyzeTransaction(input: RiskInput, deterministicSignals:
       temperature: 0.1,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: "You are a cautious EVM transaction risk reviewer. Return only JSON with score (integer 0-100), level (LOW|MEDIUM|HIGH), summary, reasons (string array), recommendation, and normalizedIntent. normalizedIntent is null when user context is absent or ambiguous; otherwise it contains action, scope, amount, asset, recipient, and confidence. Normalize only the user's stated context and never infer intent from transaction data. Treat risk output as advisory." },
+        { role: "system", content: "You are a cautious EVM transaction risk reviewer. Return only JSON with score (integer 0-100), level (LOW|MEDIUM|HIGH), summary, reasons (string array), recommendation, and normalizedIntent. The supplied evidence is factual and immutable: never invent or change decode, bytecode, EIP-1967, RPC, preflight, gas, or consequence facts. normalizedIntent is null when user context is absent or ambiguous; otherwise it contains action, scope, amount, asset, recipient, and confidence. Normalize only the user's stated context and never infer intent from transaction facts. Treat risk output as advisory." },
         { role: "user", content: payload }
       ]
     });

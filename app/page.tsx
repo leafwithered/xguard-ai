@@ -7,6 +7,7 @@ import type { RiskInput, RiskResult } from "../lib/risk";
 import type { ContractIntelligence } from "../lib/chain/intelligence";
 import type { TransactionConsequence } from "../lib/consequence";
 import type { IntentComparison } from "../lib/intent";
+import type { AnalysisConfidence, AnalysisVerdict, ExecutionStatus } from "../lib/evidence";
 import type { XLayerTransaction } from "../lib/chain/transaction-analyzer";
 import { judgePresets as presets } from "../lib/presets";
 import { currentAnalysisResult, invalidateStaleAnalysis } from "../lib/analysis-state";
@@ -21,6 +22,9 @@ const verifiedTxUrl = `${explorerBase}/tx/0x1492bc179e98fe5fe79add3528f8f1f26990
 const verifiedTxHash = "0x1492bc179e98fe5fe79add3528f8f1f26990ab37e189a98d4c4a052d6fd11bcb";
 type WalletOption = { info: { uuid: string; name: string; icon: string }; provider: WalletProvider };
 type AnalysisResult = RiskResult & {
+  analysisConfidence: AnalysisConfidence;
+  analysisVerdict: AnalysisVerdict;
+  executionStatus: ExecutionStatus;
   contractIntelligence: ContractIntelligence;
   consequences: TransactionConsequence[];
   intentComparison: IntentComparison;
@@ -30,6 +34,9 @@ const shortAddress = (value: string) => value ? `${value.slice(0, 6)}…${value.
 const signalSources = new Set(["RULE", "DECODER", "ON-CHAIN", "AI"]);
 const consequenceSources = new Set(["DECODER", "VALUE", "ON_CHAIN"]);
 const intentStatuses = new Set(["MATCH", "PARTIAL", "MISMATCH", "UNKNOWN"]);
+const analysisConfidences = new Set(["HIGH", "MEDIUM", "LOW"]);
+const analysisVerdicts = new Set(["ASSESSED", "UNDETERMINED"]);
+const executionStatuses = new Set(["SUCCEEDED", "REVERTED", "UNAVAILABLE"]);
 
 function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
   if (!value || typeof value !== "object") return false;
@@ -39,6 +46,9 @@ function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
   const validIntent = Boolean(candidate.intentComparison && intentStatuses.has(String(candidate.intentComparison.status)));
   return typeof candidate.finalScore === "number"
     && typeof candidate.deterministicScore === "number"
+    && analysisConfidences.has(String(candidate.analysisConfidence))
+    && analysisVerdicts.has(String(candidate.analysisVerdict))
+    && executionStatuses.has(String(candidate.executionStatus))
     && validSignals(candidate.criticalSignals)
     && validSignals(candidate.advisorySignals)
     && Boolean(candidate.contractIntelligence)
@@ -307,8 +317,13 @@ export default function Home() {
       <div className="panel result-panel" aria-busy={analyzing}>
         <h2>2. Review risk</h2>
         {activeResult ? <>
-          <div className="score-wrap"><div className={`score score-${activeResult.level.toLowerCase()}`}>{activeResult.finalScore}</div><div className="score-copy"><span>Final Risk Score</span><strong>{activeResult.level} RISK</strong><small>Local floor {activeResult.deterministicScore}{typeof activeResult.aiScore === "number" ? ` · AI ${activeResult.aiScore}` : ""}</small></div></div>
+          <div className="score-wrap"><div className={`score score-${activeResult.level.toLowerCase()} ${activeResult.analysisVerdict === "UNDETERMINED" ? "score-undetermined" : ""}`}>{activeResult.finalScore}</div><div className="score-copy"><span>Known Risk Score</span><strong>{activeResult.level} KNOWN RISK</strong><small>Deterministic heuristic severity · Local floor {activeResult.deterministicScore}{typeof activeResult.aiScore === "number" ? ` · AI ${activeResult.aiScore}` : ""}</small></div></div>
           <div className="analysis-mode">{modeLabel}</div>
+          <section className={`assessment-dimensions verdict-${activeResult.analysisVerdict.toLowerCase()}`}>
+            <div><span>Analysis Confidence</span><strong>{activeResult.analysisConfidence}</strong></div>
+            <div><span>Verdict</span><strong>{activeResult.analysisVerdict}</strong></div>
+            <div><span>Execution Status</span><strong>{activeResult.executionStatus}</strong></div>
+          </section>
           <section className="fusion-card">
             <div className="card-title"><div><span className="eyebrow">Transparent decision logic</span><h3>Risk Fusion</h3></div><span className="formula">max(floor, AI)</span></div>
             <div className="fusion-grid"><div><span>Deterministic Floor</span><strong>{activeResult.deterministicScore}</strong></div><div><span>AI Assessment</span><strong>{typeof activeResult.aiScore === "number" ? activeResult.aiScore : "Unavailable"}</strong></div><div><span>Final Risk</span><strong>{activeResult.finalScore}</strong></div></div>
@@ -331,7 +346,7 @@ export default function Home() {
               <span>Code</span><strong>{intelligence?.codePresent === true ? `Present · ${intelligence.codeSizeBytes?.toLocaleString() ?? "?"} bytes` : intelligence?.codePresent === false ? "Not present" : "Unavailable"}</strong>
               <span>EIP-1967 Proxy</span><strong>{intelligence?.proxyDetected === true ? "Implementation detected" : intelligence?.proxyDetected === false ? "Not detected" : "Unavailable"}</strong>
               {intelligence?.implementationAddress && <><span>Implementation</span><strong>{intelligence.implementationAddress}</strong></>}
-              <span>Preflight</span><strong>{intelligence?.preflightStatus === "SUCCEEDED" ? "Call succeeded" : intelligence?.preflightStatus === "REVERTED" ? "Reverted" : "Unavailable"}</strong>
+              <span>Preflight</span><strong>{activeResult.executionStatus === "SUCCEEDED" ? "Call succeeded" : activeResult.executionStatus === "REVERTED" ? "Current-state call reverted" : "Unavailable"}</strong>
               {intelligence?.revertReason && <><span>Revert Reason</span><strong>{intelligence.revertReason}</strong></>}
               <span>Estimated Gas</span><strong>{intelligence?.estimatedGas ? BigInt(intelligence.estimatedGas).toLocaleString() : "Unavailable"}</strong>
             </div>

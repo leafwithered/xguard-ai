@@ -44,7 +44,7 @@ The verified Production baseline is commit `8f37ee568ee02cb7affa51069eac618c3adb
 
 ### V3 Preview Candidate
 
-The `v3-competition` branch adds a deterministic Transaction Consequence Engine, optional Intent vs Reality comparison, and a reproducible 34-case security benchmark. It is developed and deployed as a Preview candidate only until explicit approval; it does not alter the existing Production deployment, RiskRegistry contract, or verified receipt.
+The `v3-competition` branch adds an evidence-first analysis pipeline, deterministic Transaction Consequence Engine, optional Intent vs Reality comparison, and a reproducible 45-case security benchmark (34 corpus cases plus 11 pipeline invariants). It is developed and deployed as a Preview candidate only until explicit approval; it does not alter the existing Production deployment, RiskRegistry contract, or verified receipt.
 
 ## Project Overview
 
@@ -54,7 +54,7 @@ The application supports wallet connection, X Layer Testnet detection and switch
 
 - Hybrid Analysis returns structured risk analysis through an OpenAI-compatible Responses API without allowing AI to weaken deterministic signals.
 - Local Analysis keeps the product usable when the configured AI provider is unavailable or returns invalid output.
-- Every report includes a `0–100` Risk Score, plain-language reasons, and a recommendation.
+- Every V3 report separates known-risk severity, analysis confidence, verdict, and current execution status, with plain-language reasons and a recommendation.
 - Calldata decoding exposes approval spenders, transfer recipients, token amounts, unlimited approvals, and NFT operator permissions.
 - Demo presets make Safe Transfer, Unlimited Approval, and Suspicious Airdrop paths reproducible without auto-analyzing or signing.
 - Recording is optional and only starts after explicit user review and wallet confirmation.
@@ -68,7 +68,9 @@ Wallet confirmation screens expose raw addresses, values, and calldata that many
 
 ## Solution
 
-XGuard AI converts transaction fields into a `0–100` risk score, a `LOW / MEDIUM / HIGH` level, concise reasons, and an actionable recommendation. The app never signs automatically; users retain final control.
+XGuard AI converts transaction fields into a `0–100` heuristic severity score, a `LOW / MEDIUM / HIGH` known-risk level, concise reasons, and an actionable recommendation. V3 separately reports `Analysis Confidence`, `Verdict`, and `Execution Status`, so a low score for unsupported behavior cannot look like confirmed safety. The app never signs automatically; users retain final control.
+
+The score is a deterministic heuristic severity score. It is not a probability of maliciousness, a statistically calibrated fraud probability, an audit result, or a safety guarantee; for example, `72` does not mean “72% malicious.”
 
 The hybrid design combines a deterministic Risk Engine with a configurable OpenAI-compatible explanation layer. Production Hybrid Analysis is verified, while the public repository remains neutral about the server-configured upstream provider. If that provider is unavailable, Local Analysis remains fully demoable.
 
@@ -77,39 +79,44 @@ The hybrid design combines a deterministic Risk Engine with a configurable OpenA
 1. Connect an EVM wallet.
 2. Detect or switch to X Layer Testnet (`1952`).
 3. Enter `from`, `to`, value, calldata, and an optional plain-language expectation.
-4. Decode supported calldata and generate deterministic, provenance-labeled transaction consequences.
-5. Compare optional stated intent with decoded reality. Deterministic mismatch may raise the safety floor.
-6. Inspect the target through real X Layer RPC calls and run bounded `eth_call` / `eth_estimateGas` preflight checks—not a full state-diff simulation.
-7. Run the deterministic Local Risk Engine and merge optional AI enrichment above its safety floor.
-8. Review consequences, Intent vs Reality, score, source-labeled signals, intelligence, reasons, and recommendation before signing.
-9. Optionally confirm explicitly and record the assessment hash and score through `RiskRegistry`.
+4. Decode supported calldata and run the deterministic Local Risk Engine.
+5. Inspect the target through real X Layer RPC calls and run bounded `eth_call` / `eth_estimateGas` preflight checks—not a full state-diff simulation.
+6. Build sanitized, normalized evidence containing decoded behavior, deterministic signals, consequences, contract facts, and execution facts.
+7. Derive confidence, verdict, and execution state deterministically, then call the optional AI adapter once with that evidence.
+8. Compare optional stated intent with decoded reality, enforce deterministic mismatch floors, and fuse AI advisory risk without allowing it to lower the floor.
+9. Review consequences, Intent vs Reality, known-risk severity, confidence, execution, source-labeled signals, intelligence, reasons, and recommendation before signing.
+10. Optionally confirm explicitly and record the assessment hash and score through `RiskRegistry`.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
     U[User Transaction] --> D[Transaction Decoder]
-    D --> C[Deterministic Consequences]
-    I[Optional User Intent] --> N[Intent Normalization]
-    C --> M[Intent vs Reality]
-    N --> M
-    D --> O[On-chain Contract Intelligence]
+    D --> L[Deterministic Risk Engine]
+    L --> O[On-chain Contract Intelligence]
     O --> P[Transaction Preflight]
-    P --> L[Deterministic Risk Engine]
-    M --> L
-    L --> S[Security Floor]
-    L --> A[AI Enrichment]
+    P --> C[Deterministic Consequences]
+    C --> E[Normalized Evidence]
+    E --> V[Confidence / Verdict / Execution]
+    E --> A[One AI Advisory Call]
+    I[Optional User Intent] --> M[Intent vs Reality]
+    A --> M
+    C --> M
+    M --> S[Deterministic Safety Floor]
     S --> F[Risk Fusion]
     A --> F
     A -. unavailable or invalid .-> S
-    F --> R[Final Risk and Explanation]
+    V --> R[Final Evidence Report]
+    F --> R
     R --> Q[User Decision]
     Q --> O[Optional X Layer Receipt]
 ```
 
 ## AI Risk Engine
 
-`lib/ai/provider.ts` isolates provider-specific behavior. Configure an OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use. Production Hybrid Analysis is verified through this server-configured adapter; public artifacts do not assert the upstream provider identity.
+`lib/analyze-pipeline.ts` owns the evidence-first orchestration and accepts small injectable RPC and AI dependencies for integration testing. `lib/evidence.ts` creates a bounded, sanitized object with the transaction, decoded action, deterministic signals, consequences, address type, code presence/size, scoped EIP-1967 observation, preflight status/reason, gas estimate, and RPC status. Only after that evidence exists does `lib/ai/provider.ts` make one advisory request. Configure an OpenAI-compatible provider using `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The adapter attempts `/v1/responses` first and then `/v1/chat/completions`. Output is validated before use. Production Hybrid Analysis is verified through this server-configured adapter; public artifacts do not assert the upstream provider identity.
+
+Confidence and verdict are deterministic: unsupported or malformed calldata is `LOW` confidence and `UNDETERMINED`; a known decode with unavailable or partial RPC evidence is generally `MEDIUM`; a known decode with complete RPC evidence may be `HIGH`; an observed EIP-1967 implementation caps confidence at `MEDIUM` because arbitrary implementation behavior is not fully inspected. High risk does not mean low confidence, and preflight revert does not add arbitrary malicious-risk points. AI cannot change evidence, execution status, verdict, or final analysis confidence.
 
 The deterministic Local Risk Engine checks zero addresses, exact bigint native value thresholds, decoded ERC20/NFT approvals, unlimited permissions, transfer methods, malformed and unknown calldata, intent mismatches, unknown-contract context, and common social-engineering signals. AI may normalize ambiguous natural language, but deterministic code performs the consequence comparison wherever supported.
 
@@ -215,10 +222,11 @@ pnpm run judge:test
 pnpm run analysis-state:test
 pnpm run consequence:test
 pnpm run intent:test
+pnpm run pipeline:test
 pnpm run security-benchmark:test
 ```
 
-The full 34-case V3 corpus and its invariants are documented in [docs/SECURITY_BENCHMARK.md](docs/SECURITY_BENCHMARK.md).
+The full 45-case V3 benchmark and its invariants are documented in [docs/SECURITY_BENCHMARK.md](docs/SECURITY_BENCHMARK.md).
 
 The browser smoke path is documented in [docs/DEMO.md](docs/DEMO.md). The API returns `400` for invalid transaction input and keeps Local Analysis available when the configured provider fails.
 

@@ -40,6 +40,10 @@
 - Website, GitHub, Production Hybrid Analysis, X account/post, contact details, public chain evidence, current hero screenshot, and Final Judge Upgrade demo video are ready. The project owner has already completed the official submission.
 - Resubmission is not required solely because Git commit SHAs, Preview URLs, or transient Vercel deployment IDs change while the canonical public URLs remain stable. Edit or resubmit only if a canonical submitted link is incorrect or the organizer explicitly requests an update.
 
+## V3 Preview candidate (not Production)
+
+The `v3-competition` branch adds an evidence-first pipeline and independently reports known-risk severity, deterministic Analysis Confidence, Analysis Verdict, and current-state Execution Status. AI receives sanitized RPC/preflight facts before its one advisory call and cannot change factual evidence, confidence, verdict, execution status, or lower the deterministic safety floor. Unsupported or malformed calldata remains `LOW` confidence and `UNDETERMINED`; a LOW heuristic score is never presented as confirmation of safety. This candidate does not change the submitted Production URL, deployed RiskRegistry, or verified user transaction unless separately approved and merged.
+
 ## Final submission fields
 
 - Project Name: `XGuard AI`

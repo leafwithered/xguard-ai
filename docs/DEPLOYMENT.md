@@ -31,6 +31,12 @@
 - Provider identity: intentionally not asserted by public artifacts; `AI_BASE_URL` and `AI_MODEL` remain server-side deployment configuration
 - Local Analysis remains the failure-isolated fallback
 
+### V3 Preview evidence architecture
+
+The `v3-competition` candidate is Preview-only. It orders analysis as deterministic decode/risk → RPC intelligence/preflight → consequences → normalized evidence → deterministic confidence/verdict/execution → one optional AI advisory call → intent comparison and safety fusion. Unknown or malformed calldata is always `LOW` confidence and `UNDETERMINED`, even when its heuristic risk score is LOW. Production remains on the stable baseline until a separate merge approval.
+
+The public client can verify Hybrid versus Local mode, but it cannot prove the identity of the server-configured upstream AI provider. Deployment documentation therefore remains provider-neutral unless deployment-side evidence is explicitly audited; no API secret is exposed for that verification.
+
 ## Verified deployment
 
 - Network: X Layer Testnet

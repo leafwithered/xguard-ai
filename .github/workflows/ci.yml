@@ -32,4 +32,5 @@ jobs:
       - run: pnpm run analysis-state:test
       - run: pnpm run consequence:test
       - run: pnpm run intent:test
+      - run: pnpm run pipeline:test
       - run: pnpm run security-benchmark:test

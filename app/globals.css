@@ -82,11 +82,17 @@ textarea { min-height: 110px; resize: vertical; }
 .score { flex: 0 0 106px; width: 106px; height: 106px; border-radius: 50%; display: grid; place-items: center; border: 8px solid var(--accent); font-size: 34px; font-weight: 800; }
 .score-medium { border-color: var(--warning); }
 .score-high { border-color: var(--danger); }
+.score-undetermined { border-color: var(--warning); box-shadow: 0 0 0 3px rgba(249,198,107,.1); }
 .score-copy span, .score-copy strong, .score-copy small { display: block; }
 .score-copy span { color: var(--muted); font-size: 12px; }
 .score-copy strong { font-size: 20px; margin: 5px 0; }
 .score-copy small { color: var(--muted); }
 .analysis-mode { display: inline-block; border: 1px solid rgba(119,242,194,.3); border-radius: 999px; padding: 6px 10px; color: var(--accent); font-size: 12px; }
+.assessment-dimensions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.assessment-dimensions > div { display: grid; gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(8,11,18,.45); }
+.assessment-dimensions span { color: var(--muted); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+.assessment-dimensions strong { font-size: 12px; word-break: break-word; }
+.assessment-dimensions.verdict-undetermined { border-left: 3px solid var(--warning); padding-left: 8px; }
 .decoded-card, .intelligence-card, .fusion-card, .consequence-card, .intent-card, .explanation, .record-card { margin-top: 18px; background: var(--panel-soft); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
 .decoded-card h3, .intelligence-card h3, .fusion-card h3, .consequence-card h3, .intent-card h3, .signal-section h3, .explanation h3 { margin: 0 0 10px; font-size: 14px; }
 .decoded-grid { display: grid; grid-template-columns: 96px minmax(0,1fr); gap: 8px 12px; font-size: 12px; }
@@ -176,7 +182,7 @@ textarea { min-height: 110px; resize: vertical; }
   .panel-heading > button { width: 100%; }
   .presets, .row, .why-xlayer, .tx-search, .judge-steps { grid-template-columns: 1fr; }
   .capability-strip { grid-template-columns: repeat(2, 1fr); }
-  .fusion-grid { grid-template-columns: 1fr; }
+  .fusion-grid, .assessment-dimensions { grid-template-columns: 1fr; }
   .presets button { min-height: 0; }
   .score { width: 88px; height: 88px; flex-basis: 88px; }
   .record-card > div:first-child { display: grid; }

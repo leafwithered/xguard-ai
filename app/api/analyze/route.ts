@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { analyzeTransaction } from "../../../lib/ai/provider";
-import { localRiskAnalysis, validateRiskInput, type RiskInput } from "../../../lib/risk";
-import { mergeRiskResults } from "../../../lib/risk-fusion";
+import { runAnalysisPipeline } from "../../../lib/analyze-pipeline";
+import { validateRiskInput, type RiskInput } from "../../../lib/risk";
 import { consumeAnalyzeRateLimit } from "../../../lib/api-rate-limit";
-import { inspectContract, signalsFromIntelligence } from "../../../lib/chain/intelligence";
-import { buildTransactionConsequences } from "../../../lib/consequence";
-import { applyIntentRisk, compareIntentToReality } from "../../../lib/intent";
 
 export async function POST(request: Request) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -24,23 +20,5 @@ export async function POST(request: Request) {
   }
   const errors = validateRiskInput(input);
   if (errors.length) return NextResponse.json({ error: errors.join(". "), code: "INVALID_INPUT" }, { status: 400 });
-  const localResult = localRiskAnalysis(input);
-  const preliminaryConsequences = buildTransactionConsequences(input, { decodedAction: localResult.decodedAction });
-  const preliminaryIntentComparison = compareIntentToReality(input, localResult.decodedAction, preliminaryConsequences);
-  const deterministicFallback = applyIntentRisk(localResult, preliminaryIntentComparison);
-  const [aiResult, contractIntelligence] = await Promise.all([
-    analyzeTransaction(input, deterministicFallback, preliminaryConsequences),
-    inspectContract(input)
-  ]);
-  const consequences = buildTransactionConsequences(input, { decodedAction: deterministicFallback.decodedAction, intelligence: contractIntelligence });
-  const intentComparison = compareIntentToReality(input, deterministicFallback.decodedAction, consequences, aiResult?.normalizedIntent);
-  const fusedRisk = aiResult ? mergeRiskResults(deterministicFallback, aiResult) : deterministicFallback;
-  const riskResult = applyIntentRisk(fusedRisk, intentComparison);
-  return NextResponse.json({
-    ...riskResult,
-    advisorySignals: [...riskResult.advisorySignals, ...signalsFromIntelligence(contractIntelligence)],
-    consequences,
-    intentComparison,
-    contractIntelligence
-  });
+  return NextResponse.json(await runAnalysisPipeline(input));
 }

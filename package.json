@@ -18,7 +18,8 @@
     "analysis-state:test": "hardhat test test/analysis-state.ts",
     "consequence:test": "hardhat test test/consequence.ts",
     "intent:test": "hardhat test test/intent.ts",
-    "security-benchmark:test": "hardhat test test/security-benchmark.ts",
+    "pipeline:test": "hardhat test test/analyze-pipeline.ts",
+    "security-benchmark:test": "hardhat test test/security-benchmark.ts test/analyze-pipeline.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

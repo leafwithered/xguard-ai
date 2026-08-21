@@ -1,6 +1,8 @@
 # XGuard V3 Security Benchmark
 
-This benchmark is a deterministic, reproducible corpus for XGuard's pre-sign security invariants. It contains **34 meaningful cases** across transaction decoding, permission consequences, X Layer RPC isolation, AI failure handling, stale-state protection, risk fusion, and Intent vs Reality.
+This benchmark is a deterministic, reproducible corpus for XGuard's pre-sign security invariants. It contains **45 meaningful cases**: 34 focused corpus cases plus 11 integration cases through the real analysis pipeline. It covers transaction decoding, permission consequences, X Layer RPC isolation, evidence ordering, AI failure handling, stale-state protection, risk fusion, confidence, execution, verdict, and Intent vs Reality.
+
+The `0–100` Risk Score is a deterministic heuristic severity score. It is not a probability of maliciousness, a statistically calibrated fraud probability, an audit result, or a safety guarantee. No precision, recall, false-positive, or false-negative claim is made without a trustworthy labeled dataset.
 
 ## Run it
 
@@ -14,6 +16,7 @@ Run the focused V3 suites separately:
 ```bash
 pnpm run consequence:test
 pnpm run intent:test
+pnpm run pipeline:test
 ```
 
 ## Corpus
@@ -55,6 +58,22 @@ pnpm run intent:test
 | 33 | Intent mismatch safety floor | AI cannot downgrade deterministic mismatch |
 | 34 | Missing on-chain evidence | RPC observations are not fabricated |
 
+## Evidence-first pipeline integration cases
+
+| Case | Security scenario | Final analysis invariant |
+| --- | --- | --- |
+| A | Unknown selector + AI LOW + RPC available | LOW heuristic risk may remain, but confidence is LOW and verdict is UNDETERMINED |
+| B | Malformed known calldata + AI LOW | Confidence is LOW, verdict is UNDETERMINED, and arguments are not guessed |
+| C | Safe native transfer + successful RPC | LOW known risk, HIGH confidence, ASSESSED, execution SUCCEEDED |
+| D | Known safe transaction + RPC unavailable | Local Analysis works, confidence is reduced, execution is UNAVAILABLE |
+| E | Local LOW + preflight revert | Execution is REVERTED without an arbitrary malicious-risk increase or success wording |
+| F | EIP-1967 implementation observed | Scoped proxy fact is shown, score is unchanged solely for proxy architecture, confidence is capped |
+| G | AI evidence payload | AI receives address type, code facts, preflight, gas/RPC state, and on-chain consequences |
+| H | AI below deterministic floor | The deterministic risk floor is preserved |
+| I | AI unavailable | Confidence, verdict, execution, and deterministic report remain available |
+| J | Unknown behavior + confident benign AI | AI cannot promote confidence or verdict |
+| K | Adversarial AI consequence narrative | Final consequences remain byte-for-byte independent of AI availability/output |
+
 ## Security invariants
 
 - **PASS:** AI cannot reduce deterministic risk.
@@ -66,5 +85,9 @@ pnpm run intent:test
 - **PASS:** deterministic consequences do not depend on AI.
 - **PASS:** intent analysis cannot lower deterministic risk.
 - **PASS:** deterministic intent mismatch cannot be downgraded by AI.
+- **PASS:** AI receives normalized on-chain and preflight evidence before advisory analysis.
+- **PASS:** unknown/malformed behavior cannot be presented as confidently safe.
+- **PASS:** risk, confidence, execution, and verdict remain independent dimensions.
+- **PASS:** a preflight revert or EIP-1967 observation does not add arbitrary malicious-risk points.
 
 The corpus uses local fixtures only. It does not connect a wallet, request a signature, broadcast a transaction, deploy a contract, or require a live AI/RPC credential.

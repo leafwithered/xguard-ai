@@ -1,6 +1,6 @@
 # XGuard V4 — OKX Transaction Simulation Evidence
 
-Status: **pre-credential Preview candidate** on `codex/v4-okx-simulation`.
+Status: **live-verified Preview candidate** on `codex/v4-okx-simulation`; not merged and not Production.
 
 V4 treats the official OKX OnchainOS Transaction Simulation API as an additional factual, read-only evidence source. It does not replace XGuard's deterministic decoder, local rules, X Layer RPC intelligence, bounded preflight, intent comparison, or deterministic safety floor.
 
@@ -73,9 +73,38 @@ Errors are sanitized. Provider response bodies, secrets, passphrases, and auth s
 
 No real OKX API call, wallet interaction, signature, broadcast, contract deployment, or chain mutation is performed in Phase A.
 
-## Credential handoff gate
+## Live Preview verification
 
-After the Phase A Preview and CI pass, only these server-side values are needed:
+One real read-only request was completed through the protected Vercel Preview after the project owner configured Preview-scoped credentials. No wallet was connected, no transaction was signed or broadcast, and no chain state was changed.
+
+| Evidence | Observed value |
+| --- | --- |
+| UTC request timestamp | `2026-08-21T08:55:53.390Z` |
+| Deployment | `dpl_4j6zppThr9tcGaF4sB2pEwSWJF6k` |
+| Preview URL | `https://xguard-ai-git-codex-v4-okx-simulation-leafwithereds-projects.vercel.app` |
+| Analysis network | `XLAYER_MAINNET` |
+| Chain ID / chainIndex | `196` / `"196"` |
+| Provider | `OKX_ONCHAINOS` |
+| Provider HTTP / business code | `200` / `"0"` |
+| Simulation status | `AVAILABLE` |
+| Intention | `Send Token` |
+| Asset changes | `0` |
+| Gas used | returned |
+| Failure reason | none |
+| Risk entries | `0` — not interpreted as proof of safety |
+| Evidence consistency | `CONSISTENT` |
+| Final analysis | `8 LOW`, `HYBRID` |
+| RPC / Simulation / AI / total | `291 ms` / `394 ms` / `5,232 ms` / `5,643 ms` |
+| End-to-end CLI wall time | `12,524 ms` including CLI startup and protected Preview access |
+| Runtime response | `/api/analyze` returned `200`; no error or `5xx` log entry |
+
+Live latency sample count is `1`. Simulation median and slowest observed are therefore both `394 ms`; no p95 is claimed from a single sample.
+
+Only sanitized status and timing fields are recorded. No credential value, authentication header, signature, raw secret, or private response metadata was written to Git, logs, or documentation.
+
+## Credential handoff gate — completed for Preview
+
+The project owner configured these server-side variable names in Preview:
 
 - `OKX_API_KEY`
 - `OKX_SECRET_KEY`
@@ -85,7 +114,7 @@ Local placement: `.env.local`.
 
 Vercel placement: **Project → Settings → Environment Variables → Preview**. Do not add them to Production during the Preview verification stage.
 
-The real read-only verification must not begin until the project owner confirms exactly: `V4 PREVIEW CREDENTIALS CONFIGURED`.
+The project owner supplied the required confirmation, and the real read-only verification above passed. Credentials remain Preview-scoped; Production is unchanged.
 
 ## Official references
 

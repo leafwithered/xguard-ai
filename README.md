@@ -23,7 +23,7 @@ The `codex/v4-okx-simulation` branch extends the frozen V3 evidence architecture
 - An empty OKX risk list means only **“No OKX simulation risk entries were returned.”** It is not proof of safety.
 - Missing credentials, authentication errors, rate limits, timeouts, malformed responses, and provider errors remain visible but non-fatal; deterministic/RPC/AI-or-Local analysis continues.
 
-This V4 code is a **Preview candidate only** until a real read-only API verification and separate release approval are complete. It does not alter the existing RiskRegistry, verified receipt, canonical Production URL, or Production environment.
+This V4 code is a **Preview candidate only**. A real read-only Mainnet API verification has passed on the protected Preview, but a separate release review and explicit merge approval are still required. It does not alter the existing RiskRegistry, verified receipt, canonical Production URL, or Production environment.
 
 See [docs/V4_OKX_SIMULATION.md](docs/V4_OKX_SIMULATION.md) for the evidence schema, trust boundaries, failure matrix, and credential handoff gate.
 
@@ -179,7 +179,7 @@ RPC failure never blocks deterministic analysis. Unavailable results are labeled
 
 For an explicitly selected X Layer Mainnet analysis, the server signs one bounded `POST /api/v6/dex/pre-transaction/simulate` request using the exact raw JSON body sent on the wire. `txAmount` is converted from human OKB to 18-decimal base units, and calldata is sent unchanged. The UI preserves provider-returned intention, asset changes and raw signed values, gas used, failure reason, and risk entries. A simulation failure means the transaction may fail under the simulated state; it is not automatically labeled malicious.
 
-Credentials are server-side only. The browser bundle, API response, logs, fixtures, and repository never receive keys, passphrases, or authentication signatures. Phase A intentionally performs no real OKX request; real verification is gated on Preview-only credential configuration.
+Credentials are server-side only. The browser bundle, API response, logs, fixtures, and repository never receive keys, passphrases, or authentication signatures. Phase A performed no real request; Phase B subsequently verified one read-only Mainnet simulation through the protected Preview and recorded only sanitized evidence in [docs/V4_OKX_SIMULATION.md](docs/V4_OKX_SIMULATION.md).
 
 ## Smart Contract
 

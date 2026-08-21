@@ -7,6 +7,14 @@ POST /api/analyze
 Content-Type: application/json
 ```
 
+## V7 Policy Guard
+
+Every successful analysis includes an adjacent `policyDecision` object with policy ID `xguard-pre-sign-policy-v1`, version `1.0.0`, a deterministic decision, stable reason codes, normalized input facts, and `aiInfluencedDecision: false`.
+
+Use [`../sdk/xguard.ts`](../sdk/xguard.ts) for typed API access and strict policy validation. [`../examples/wallet-integration.ts`](../examples/wallet-integration.ts) demonstrates `ALLOW`, `WARN`, `REQUIRE_REVIEW`, and `BLOCK_RECOMMENDED` handling while keeping signature request explicit and user-controlled.
+
+The policy does not change Analysis Receipt schema `1.0.0` or V6 Ed25519 attestation semantics. `ALLOW` means only that the configured deterministic policy does not require additional review from the available normalized evidence; it does not mean safe. See [Policy Engine](POLICY_ENGINE.md).
+
 ## Request
 
 ```ts
@@ -42,6 +50,7 @@ curl -X POST https://xguard-ai-six.vercel.app/api/analyze \
 - `analysisReceipt`: schema-versioned normalized evidence with assessment, provenance, and a reproducible SHA-256 fingerprint.
 - `analysisAttestation`: optional Ed25519 deployment-key signature over the exact V5 receipt fingerprint and attestation metadata; `null` when signing is unavailable.
 - `attestationAvailability`: `AVAILABLE`, `UNAVAILABLE`, or `INVALID_CONFIG`; it never changes analysis semantics.
+- `policyDecision`: V7 deterministic wallet/dApp integration recommendation, separate from the receipt and attestation.
 
 ## Analysis Receipt
 

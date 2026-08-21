@@ -27,6 +27,7 @@
     "attestation:test": "hardhat test test/analysis-attestation.ts",
     "wallet-lifecycle:test": "hardhat test test/wallet-lifecycle.ts",
     "judge-mode-ui:test": "hardhat test test/judge-mode-ui.ts",
+    "policy:test": "hardhat test test/policy-engine.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

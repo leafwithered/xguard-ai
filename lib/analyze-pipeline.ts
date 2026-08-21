@@ -7,6 +7,8 @@ import { signalsFromSimulation, simulateTransaction, type SimulationEvidence } f
 import { localRiskAnalysis, type RiskInput, type RiskResult, type RiskSignal } from "./risk.ts";
 import { mergeRiskResults } from "./risk-fusion.ts";
 import { createAnalysisReceipt, type AnalysisReceipt } from "./analysis-receipt.ts";
+import { evaluatePreSignPolicy, type PolicyDecision } from "./policy-engine.ts";
+import { normalizeAnalysisNetwork } from "./network.ts";
 
 export type AnalysisPipelineResult = RiskResult & {
   analysisConfidence: AnalysisConfidence;
@@ -20,6 +22,7 @@ export type AnalysisPipelineResult = RiskResult & {
   simulationEvidence: SimulationEvidence;
   evidenceConsistency: EvidenceConsistency;
   analysisReceipt: AnalysisReceipt;
+  policyDecision: PolicyDecision;
 };
 
 export type AnalysisPipelineDependencies = {
@@ -121,5 +124,16 @@ export async function runAnalysisPipeline(input: RiskInput, dependencies: Analys
 
   const analysisResult = { ...riskResult, ...dimensions, analysisTimings: { rpcMs, simulationMs, aiMs, totalMs: Date.now() - startedAt }, consequences, intentComparison, contractIntelligence: intelligence, simulationEvidence: simulation, evidenceConsistency };
   const analysisReceipt = await createAnalysisReceipt(input, analysisResult);
-  return { ...analysisResult, analysisReceipt };
+  const policyDecision = evaluatePreSignPolicy({
+    deterministicScore: analysisResult.deterministicScore,
+    analysisConfidence: analysisResult.analysisConfidence,
+    analysisVerdict: analysisResult.analysisVerdict,
+    executionStatus: analysisResult.executionStatus,
+    intentStatus: analysisResult.intentComparison.status,
+    userIntentPresent: analysisResult.intentComparison.userIntent.trim().length > 0,
+    evidenceConsistency: analysisResult.evidenceConsistency.status,
+    simulationStatus: analysisResult.simulationEvidence.status,
+    analysisNetwork: normalizeAnalysisNetwork(input.analysisNetwork)
+  });
+  return { ...analysisResult, analysisReceipt, policyDecision };
 }

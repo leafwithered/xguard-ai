@@ -2,7 +2,11 @@
 
 > **Know what a transaction does before you sign.**
 
-XGuard AI is explainable, verifiable pre-sign security infrastructure for X Layer. It combines deterministic transaction decoding, consequence analysis, X Layer contract intelligence, real OKX OnchainOS simulation evidence, Intent vs Reality comparison, bounded AI advisory, versioned Analysis Receipts with SHA-256 integrity, and Ed25519 deployment-key authenticity. No provider or attestation is treated as a safety oracle, and nothing connects, signs, or broadcasts automatically.
+XGuard AI is explainable, verifiable pre-sign security infrastructure for X Layer. V7 adds deterministic wallet/dApp policy action to the existing evidence, receipt integrity, and deployment-key authenticity layers:
+
+`Evidence → Integrity → Authenticity → Policy Action`
+
+The Policy Guard returns `ALLOW`, `WARN`, `REQUIRE_REVIEW`, or `BLOCK_RECOMMENDED`. AI Advisory never controls policy state, `ALLOW` is not a guarantee of safety, and nothing connects, signs, or broadcasts automatically.
 
 **Production:** [xguard-ai-six.vercel.app](https://xguard-ai-six.vercel.app) · **Source:** [github.com/leafwithered/xguard-ai](https://github.com/leafwithered/xguard-ai) · **Demo:** [xguard-ai-build-x-demo.mp4](https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4)
 
@@ -20,12 +24,13 @@ XGuard AI is explainable, verifiable pre-sign security infrastructure for X Laye
 6. **Verify Receipt** — verify the current receipt or import a JSON receipt locally; tampering fails the integrity check.
 7. **Signed Analysis Attestation** — verify that the exact receipt fingerprint was signed by the Ed25519 key configured for this deployment.
 8. **Existing X Layer receipt** — a real, user-signed RiskRegistry receipt is verifiable on X Layer Testnet (`1952`).
+9. **Policy Guard** — inspect a deterministic integration recommendation and stable reason codes; AI does not control the decision.
 
 Judge Mode only loads examples and navigates. The user must explicitly select **Analyze risk**. It never connects a wallet, signs, records, or broadcasts.
 
-## V6 Preview status
+## V7 Preview status
 
-`codex/v6-signed-attestation` is a Preview-only candidate based exactly on the approved V5 checkpoint. It has not been merged into `main` and does not change the canonical V4.1 Production deployment.
+`codex/v7-policy-engine` is a Preview-only candidate based exactly on the human-QA-passed V6 checkpoint. It has not been merged into `main` and does not change the canonical V4.1 Production deployment.
 
 - Testnet `1952` retains the V3 RPC/preflight path and never calls the Mainnet simulator.
 - Mainnet `196` adds optional OKX OnchainOS simulation with `chainIndex: "196"`.
@@ -38,8 +43,10 @@ Judge Mode only loads examples and navigates. The user must explicitly select **
 - Standalone V5 receipt export is unchanged. A separate Attested Analysis Package binds the receipt fingerprint to the deployment key.
 - Attested package verification resolves the deployment's trusted public key and never trusts a key supplied by an uploaded package.
 - Export and verification are explicit actions. Verification does not call AI, OKX, RPC, a wallet, or a blockchain.
+- A separate adjacent `policyDecision` uses only normalized deterministic evidence and does not modify the V5 receipt or V6 attestation formats.
+- Use [`sdk/xguard.ts`](sdk/xguard.ts) and [`examples/wallet-integration.ts`](examples/wallet-integration.ts) for a compact, repository-local integration example.
 
-See the [Analysis Receipt specification](docs/ANALYSIS_RECEIPT_SPEC.md), [Signed Attestation specification](docs/ATTESTATION_SPEC.md), [integration guide](docs/INTEGRATION.md), [OpenAPI](docs/openapi.yaml), and [judge demo](docs/DEMO.md).
+See the [Policy Engine specification](docs/POLICY_ENGINE.md), [Analysis Receipt specification](docs/ANALYSIS_RECEIPT_SPEC.md), [Signed Attestation specification](docs/ATTESTATION_SPEC.md), [integration guide](docs/INTEGRATION.md), [OpenAPI](docs/openapi.yaml), and [judge demo](docs/DEMO.md).
 
 ## Evidence hierarchy
 

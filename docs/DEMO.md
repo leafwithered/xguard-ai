@@ -1,10 +1,10 @@
-# XGuard AI — V6 Judge Demo
+# XGuard AI — V7 Judge Demo
 
-**V6 Preview:** assigned after Preview deployment
+**V7 Preview:** assigned after Preview deployment
 
 **Stable Production:** https://xguard-ai-six.vercel.app
 
-The V6 path requires no wallet connection and creates no transaction. Judge Mode only loads inputs or navigates to evidence; every analysis, export, file selection, and verification is explicit. The XGuard deployment-key signature is not a user wallet signature.
+The V7 path requires no wallet connection and creates no transaction. Judge Mode only loads inputs or navigates to evidence; every analysis, export, file selection, and verification is explicit. The XGuard deployment-key signature is not a user wallet signature, and AI Advisory does not control the deterministic policy action.
 
 ## Script
 
@@ -15,6 +15,8 @@ Open the V6 Preview and say:
 > Know what a transaction does before you sign. XGuard combines deterministic decoding, X Layer RPC, Intent vs Reality, optional OKX simulation, and evidence-grounded AI without treating any provider as a safety oracle.
 
 Open **⚡ Try Judge Demo**.
+
+After each analysis, use Judge step **09 Policy Guard** to reveal the `PRE-SIGN POLICY` card. Expected actions are Safe Transfer `ALLOW`, Ambiguous Approval `REQUIRE REVIEW`, and Suspicious Airdrop `BLOCK RECOMMENDED`.
 
 ### 0:10–0:22 — Safe Transfer
 
@@ -133,6 +135,8 @@ The preset copies only public `from`, `to`, value, and calldata from this confir
 - Safe: `8 LOW`
 - Ambiguous: deterministic `20 LOW`, LOW confidence, `UNDETERMINED`
 - Suspicious: deterministic `78 HIGH`, `MISMATCH`
+- Policy: Safe `ALLOW`, Ambiguous `REQUIRE_REVIEW`, Suspicious `BLOCK_RECOMMENDED`
+- Policy reason codes are stable and AI-independent; `ALLOW` is never labeled safe
 - AI-raised final score is never labeled deterministic known risk
 - Live badge never appears for Testnet, mock, unavailable, error, non-200, or non-zero business-code evidence
 - EIP-1967 wording is scoped; it does not exclude every proxy type

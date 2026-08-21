@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, enhancement-v2, final-judge-upgrade, final-polish, v3-competition, codex/v4-okx-simulation, codex/v5-analysis-receipts, codex/v6-signed-attestation]
+    branches: [main, enhancement-v2, final-judge-upgrade, final-polish, v3-competition, codex/v4-okx-simulation, codex/v5-analysis-receipts, codex/v6-signed-attestation, codex/v7-policy-engine]
   pull_request:
     branches: [main]
 
@@ -41,3 +41,4 @@ jobs:
       - run: pnpm run attestation:test
       - run: pnpm run wallet-lifecycle:test
       - run: pnpm run judge-mode-ui:test
+      - run: pnpm run policy:test

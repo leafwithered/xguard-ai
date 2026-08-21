@@ -18,6 +18,8 @@ Open **⚡ Try Judge Demo**.
 
 After each analysis, use Judge step **09 Policy Guard** to reveal the `PRE-SIGN POLICY` card. Expected actions are Safe Transfer `ALLOW`, Ambiguous Approval `REQUIRE REVIEW`, and Suspicious Airdrop `BLOCK RECOMMENDED`.
 
+Use Judge step **10 X Layer Mainnet Anchor** to reveal the deployment-pending Receipt Anchor card. Phase A must show `NOT CONFIGURED`, the exact V5 fingerprint-to-`bytes32` conversion, and a disabled Anchor Receipt action. Judge navigation performs no wallet call.
+
 ### 0:10–0:22 — Safe Transfer
 
 Load **Safe Transfer**, click **Analyze risk**, and show:
@@ -137,6 +139,7 @@ The preset copies only public `from`, `to`, value, and calldata from this confir
 - Suspicious: deterministic `78 HIGH`, `MISMATCH`
 - Policy: Safe `ALLOW`, Ambiguous `REQUIRE_REVIEW`, Suspicious `BLOCK_RECOMMENDED`
 - Policy reason codes are stable and AI-independent; `ALLOW` is never labeled safe
+- Mainnet Anchor: `NOT CONFIGURED` before human deployment; no automatic wallet, signing, or broadcasting
 - AI-raised final score is never labeled deterministic known risk
 - Live badge never appears for Testnet, mock, unavailable, error, non-200, or non-zero business-code evidence
 - EIP-1967 wording is scoped; it does not exclude every proxy type

@@ -28,6 +28,7 @@
     "wallet-lifecycle:test": "hardhat test test/wallet-lifecycle.ts",
     "judge-mode-ui:test": "hardhat test test/judge-mode-ui.ts",
     "policy:test": "hardhat test test/policy-engine.ts",
+    "anchor:test": "hardhat test test/receipt-anchor.ts test/anchor-client.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

@@ -6,6 +6,7 @@ import {
   readConnectedWalletState,
   requestWalletConnection,
   switchConnectedWalletToXLayer,
+  switchConnectedWalletToXLayerMainnet,
   type DiscoveredWallet
 } from "../lib/wallet-lifecycle.ts";
 import type { WalletProvider } from "../types/ethereum.ts";
@@ -84,6 +85,21 @@ describe("Explicit wallet lifecycle", function () {
     const { provider, calls } = mockProvider({ switchMissing: true });
     await switchConnectedWalletToXLayer(provider, "https://testrpc.xlayer.tech/terigon", "https://www.okx.com/web3/explorer/xlayer-test");
     expect(calls.map((call) => call.method)).to.deep.equal(["wallet_switchEthereumChain", "wallet_addEthereumChain", "eth_accounts", "eth_chainId"]);
+  });
+
+  it("switches to X Layer Mainnet only when explicitly invoked", async function () {
+    const { provider, calls } = mockProvider();
+    expect(calls).to.deep.equal([]);
+    await switchConnectedWalletToXLayerMainnet(provider, "https://rpc.xlayer.tech", "https://xlayerrpc.okx.com", "https://www.okx.com/web3/explorer/xlayer");
+    expect(calls.map((call) => call.method)).to.deep.equal(["wallet_switchEthereumChain", "eth_accounts", "eth_chainId"]);
+    expect(calls[0].params).to.deep.equal([{ chainId: "0xc4" }]);
+  });
+
+  it("adds exact X Layer Mainnet metadata only after an explicit missing-chain response", async function () {
+    const { provider, calls } = mockProvider({ switchMissing: true });
+    await switchConnectedWalletToXLayerMainnet(provider, "https://rpc.xlayer.tech", "https://xlayerrpc.okx.com", "https://www.okx.com/web3/explorer/xlayer");
+    expect(calls.map((call) => call.method)).to.deep.equal(["wallet_switchEthereumChain", "wallet_addEthereumChain", "eth_accounts", "eth_chainId"]);
+    expect(calls[1].params).to.deep.equal([{ chainId: "0xc4", chainName: "X Layer Mainnet", nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 }, rpcUrls: ["https://rpc.xlayer.tech", "https://xlayerrpc.okx.com"], blockExplorerUrls: ["https://www.okx.com/web3/explorer/xlayer"] }]);
   });
 
   it("wallet selection is passive until Connect wallet is invoked", function () {

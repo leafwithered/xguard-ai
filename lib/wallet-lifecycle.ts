@@ -44,3 +44,16 @@ export async function switchConnectedWalletToXLayer(provider: WalletProvider, rp
   }
   return readConnectedWalletState(provider);
 }
+
+export async function switchConnectedWalletToXLayerMainnet(provider: WalletProvider, primaryRpcUrl: string, fallbackRpcUrl: string, explorerUrl: string): Promise<ConnectedWalletState> {
+  try {
+    await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0xc4" }] });
+  } catch (error) {
+    if ((error as { code?: number }).code !== 4902) throw error;
+    await provider.request({
+      method: "wallet_addEthereumChain",
+      params: [{ chainId: "0xc4", chainName: "X Layer Mainnet", nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 }, rpcUrls: [primaryRpcUrl, fallbackRpcUrl], blockExplorerUrls: [explorerUrl] }]
+    });
+  }
+  return readConnectedWalletState(provider);
+}

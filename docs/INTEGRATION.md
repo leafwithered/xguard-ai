@@ -15,6 +15,12 @@ Use [`../sdk/xguard.ts`](../sdk/xguard.ts) for typed API access and strict polic
 
 The policy does not change Analysis Receipt schema `1.0.0` or V6 Ed25519 attestation semantics. `ALLOW` means only that the configured deterministic policy does not require additional review from the available normalized evidence; it does not mean safe. See [Policy Engine](POLICY_ENGINE.md).
 
+## X Layer Mainnet Receipt Anchor
+
+Phase A exposes an unconfigured, fail-closed anchor integration for Chain `196`. It converts the existing `sha256:<64 lowercase hex>` V5 fingerprint directly to the same digest as `bytes32`; it never applies a second hash. Read-only verification calls `anchored(digest)` through public RPC and requires no wallet.
+
+The future transaction flow keeps Connect Wallet, Switch to X Layer Mainnet, and Anchor Receipt as separate explicit actions. Eligibility requires a current Mainnet receipt plus verified V5 integrity and V6 attestation, but does not require V7 `ALLOW`. See [Mainnet Anchor](MAINNET_ANCHOR.md).
+
 ## Request
 
 ```ts

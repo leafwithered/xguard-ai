@@ -8,6 +8,8 @@ XGuard AI is explainable, verifiable pre-sign security infrastructure for X Laye
 
 The Policy Guard returns `ALLOW`, `WARN`, `REQUIRE_REVIEW`, or `BLOCK_RECOMMENDED`. AI Advisory never controls policy state, `ALLOW` is not a guarantee of safety, and nothing connects, signs, or broadcasts automatically.
 
+The post-V7 Phase A branch also prepares a minimal X Layer Mainnet Receipt Anchor. It commits the exact existing V5 SHA-256 receipt digest—without rehashing—only after explicit integrity, attestation, wallet, network, and transaction actions. No Mainnet contract is deployed in Phase A.
+
 **Production:** [xguard-ai-six.vercel.app](https://xguard-ai-six.vercel.app) · **Source:** [github.com/leafwithered/xguard-ai](https://github.com/leafwithered/xguard-ai) · **Demo:** [xguard-ai-build-x-demo.mp4](https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4)
 
 **X account:** [@AevrynHQ](https://x.com/AevrynHQ) · **Build X post:** [View post](https://x.com/AevrynHQ/status/2090382549205873099)
@@ -25,6 +27,7 @@ The Policy Guard returns `ALLOW`, `WARN`, `REQUIRE_REVIEW`, or `BLOCK_RECOMMENDE
 7. **Signed Analysis Attestation** — verify that the exact receipt fingerprint was signed by the Ed25519 key configured for this deployment.
 8. **Existing X Layer receipt** — a real, user-signed RiskRegistry receipt is verifiable on X Layer Testnet (`1952`).
 9. **Policy Guard** — inspect a deterministic integration recommendation and stable reason codes; AI does not control the decision.
+10. **X Layer Mainnet Anchor** — inspect the exact receipt digest and deployment-pending anchor state without triggering wallet interaction.
 
 Judge Mode only loads examples and navigates. The user must explicitly select **Analyze risk**. It never connects a wallet, signs, records, or broadcasts.
 
@@ -46,7 +49,7 @@ Judge Mode only loads examples and navigates. The user must explicitly select **
 - A separate adjacent `policyDecision` uses only normalized deterministic evidence and does not modify the V5 receipt or V6 attestation formats.
 - Use [`sdk/xguard.ts`](sdk/xguard.ts) and [`examples/wallet-integration.ts`](examples/wallet-integration.ts) for a compact, repository-local integration example.
 
-See the [Policy Engine specification](docs/POLICY_ENGINE.md), [Analysis Receipt specification](docs/ANALYSIS_RECEIPT_SPEC.md), [Signed Attestation specification](docs/ATTESTATION_SPEC.md), [integration guide](docs/INTEGRATION.md), [OpenAPI](docs/openapi.yaml), and [judge demo](docs/DEMO.md).
+See the [Mainnet Anchor specification](docs/MAINNET_ANCHOR.md), [human deployment guide](docs/MAINNET_ANCHOR_DEPLOY.md), [Policy Engine specification](docs/POLICY_ENGINE.md), [Analysis Receipt specification](docs/ANALYSIS_RECEIPT_SPEC.md), [Signed Attestation specification](docs/ATTESTATION_SPEC.md), [integration guide](docs/INTEGRATION.md), [OpenAPI](docs/openapi.yaml), and [judge demo](docs/DEMO.md).
 
 ## Evidence hierarchy
 

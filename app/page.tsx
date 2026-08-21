@@ -17,12 +17,14 @@ import { initialRecordState, isRecordPending, reduceRecordState } from "../lib/t
 import { buildRiskScorePresentation, isLiveOkxProviderEvidence } from "../lib/presentation";
 import { ANALYSIS_RECEIPT_INTEGRITY_NOTICE, ANALYSIS_RECEIPT_MAX_FILE_BYTES, isAnalysisReceipt, verifyAnalysisReceipt, type AnalysisReceipt, type AnalysisReceiptVerificationStatus } from "../lib/analysis-receipt";
 import { ANALYSIS_ATTESTATION_AUTHENTICITY_NOTICE, ATTESTED_ANALYSIS_MAX_FILE_BYTES, createAttestedAnalysisPackage, isAnalysisAttestation, isTrustedAttestationKey, verifyAttestedAnalysisPackage, type AnalysisAttestation, type AttestationKeyResponse, type AttestationVerificationStatus, type AttestedPackageVerification, type TrustedKeyResolution } from "../lib/analysis-attestation";
-import { addDiscoveredWallet, preferredWalletProvider, requestWalletConnection, switchConnectedWalletToXLayer, type DiscoveredWallet } from "../lib/wallet-lifecycle";
+import { addDiscoveredWallet, preferredWalletProvider, requestWalletConnection, switchConnectedWalletToXLayer, switchConnectedWalletToXLayerMainnet, type DiscoveredWallet } from "../lib/wallet-lifecycle";
 import { initialJudgeModeState, reduceJudgeMode } from "../lib/judge-mode";
 import { isPolicyDecision, type PolicyDecision, type PolicyDecisionState } from "../lib/policy-engine";
+import { X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, confirmReceiptAnchor, receiptFingerprintToBytes32, submitReceiptAnchor, verifyReceiptAnchor, type AnchorState } from "../lib/anchor";
 import type { WalletProvider } from "../types/ethereum";
 
 const registryAddress = process.env.NEXT_PUBLIC_RISK_REGISTRY_ADDRESS as Address | undefined;
+const anchorContractAddress = configuredAnchorAddress(process.env.NEXT_PUBLIC_XGUARD_MAINNET_ANCHOR_ADDRESS);
 const explorerBase = "https://www.okx.com/web3/explorer/xlayer-test";
 const demoUrl = "https://github.com/leafwithered/xguard-ai/blob/main/demo/xguard-ai-build-x-demo.mp4";
 const contractUrl = `${explorerBase}/address/0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`;
@@ -142,7 +144,10 @@ export default function Home() {
   const [attestedPackageVerification, setAttestedPackageVerification] = useState<AttestedPackageVerification | null>(null);
   const [currentAttestationStatus, setCurrentAttestationStatus] = useState<AttestationVerificationStatus | null>(null);
   const [attestedPackageDownloadUrl, setAttestedPackageDownloadUrl] = useState<string | null>(null);
-  const walletNetworkName = chainId === null ? "Wallet not connected" : chainId === 1952 ? "Wallet on X Layer Testnet" : `Wallet network · ${chainId}`;
+  const [anchorState, setAnchorState] = useState<AnchorState>(anchorContractAddress ? "NOT_ELIGIBLE" : "UNCONFIGURED");
+  const [anchorHash, setAnchorHash] = useState<`0x${string}` | null>(null);
+  const [anchorError, setAnchorError] = useState("");
+  const walletNetworkName = chainId === null ? "Wallet not connected" : chainId === 1952 ? "Wallet on X Layer Testnet" : chainId === 196 ? "Wallet on X Layer Mainnet" : `Wallet network · ${chainId}`;
   const analysisNetworkConfig = getAnalysisNetworkConfig(analysisNetwork);
   const networkName = analysisNetworkConfig.name;
   const isCorrectNetwork = chainId === 1952;
@@ -150,6 +155,17 @@ export default function Home() {
   const currentTransactionInput: RiskInput = { from, to, value, data, context, analysisNetwork };
   const activeResult = currentAnalysisResult({ result, lastInput, reviewed }, currentTransactionInput);
   const analysisHash = useMemo(() => lastInput && activeResult ? keccak256(toHex(JSON.stringify({ input: lastInput, result: activeResult }))) : null, [lastInput, activeResult]);
+  const currentReceiptDigest = useMemo(() => {
+    if (!activeResult?.analysisReceipt) return null;
+    try { return receiptFingerprintToBytes32(activeResult.analysisReceipt.integrity.fingerprint); } catch { return null; }
+  }, [activeResult?.analysisReceipt]);
+  const currentAnchorEligibility = useMemo(() => anchorEligibility({
+    contractAddress: anchorContractAddress,
+    receipt: activeResult?.analysisReceipt ?? null,
+    receiptIntegrity: receiptVerification,
+    attestation: activeResult?.analysisAttestation ?? null,
+    attestationStatus: currentAttestationStatus
+  }), [activeResult?.analysisReceipt, activeResult?.analysisAttestation, receiptVerification, currentAttestationStatus]);
 
   useEffect(() => {
     if (!activeResult?.analysisReceipt) {
@@ -211,6 +227,9 @@ export default function Home() {
     setReceiptVerification(null);
     setAttestedPackageVerification(null);
     setCurrentAttestationStatus(null);
+    setAnchorState(anchorContractAddress ? "NOT_ELIGIBLE" : "UNCONFIGURED");
+    setAnchorHash(null);
+    setAnchorError("");
     dispatchRecord({ type: "RESET" });
     window.sessionStorage.removeItem("xguard-session-result");
     setMessage(freshness.notice);
@@ -287,6 +306,18 @@ export default function Home() {
     } catch (error) { setMessage(error instanceof Error ? error.message : "Network switch was cancelled or failed."); }
   }
 
+  async function switchToXLayerMainnet() {
+    setAnchorError("");
+    if (!walletProvider) { setAnchorState("WALLET_NOT_CONNECTED"); return; }
+    try {
+      applyConnectedWalletState(await switchConnectedWalletToXLayerMainnet(walletProvider, X_LAYER_MAINNET_PRIMARY_RPC, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_EXPLORER));
+      setAnchorState(currentAnchorEligibility.state);
+    } catch (error) {
+      setAnchorState("FAILED");
+      setAnchorError(error instanceof Error ? error.message : "Mainnet network switch was cancelled or failed.");
+    }
+  }
+
   function applyPreset(input: RiskInput) {
     setFrom(address || input.from);
     setTo(input.to);
@@ -304,13 +335,16 @@ export default function Home() {
     setReceiptVerification(null);
     setAttestedPackageVerification(null);
     setCurrentAttestationStatus(null);
+    setAnchorState(anchorContractAddress ? "NOT_ELIGIBLE" : "UNCONFIGURED");
+    setAnchorHash(null);
+    setAnchorError("");
     dispatchRecord({ type: "RESET" });
     window.sessionStorage.removeItem("xguard-session-result");
     if (clearFields) { setTo(""); setValue("0"); setData("0x"); setContext(""); }
   }
 
   async function analyze() {
-    setMessage(""); setReceiptVerification(null); setAttestedPackageVerification(null); setCurrentAttestationStatus(null); setReviewed(false); dispatchRecord({ type: "RESET" });
+    setMessage(""); setReceiptVerification(null); setAttestedPackageVerification(null); setCurrentAttestationStatus(null); setAnchorState(anchorContractAddress ? "NOT_ELIGIBLE" : "UNCONFIGURED"); setAnchorHash(null); setAnchorError(""); setReviewed(false); dispatchRecord({ type: "RESET" });
     const input: RiskInput = { from, to, value, data, context, analysisNetwork };
     if (!isAddress(to)) { setMessage("Enter a valid recipient contract address."); return; }
     setAnalyzing(true);
@@ -392,6 +426,12 @@ export default function Home() {
     });
   }
 
+  function scrollToAnchor() {
+    window.requestAnimationFrame(() => {
+      document.getElementById("mainnet-receipt-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   async function copyReceiptFingerprint() {
     if (!activeResult?.analysisReceipt) return;
     try {
@@ -428,6 +468,34 @@ export default function Home() {
     setAttestedPackageVerification(verification);
   }
 
+  async function checkReceiptAnchor() {
+    if (!anchorContractAddress || !currentReceiptDigest) { setAnchorState("UNCONFIGURED"); return; }
+    setAnchorState("CHECKING");
+    setAnchorError("");
+    const verification = await verifyReceiptAnchor(anchorContractAddress, currentReceiptDigest);
+    if (verification === "CONFIRMED") setAnchorState("CONFIRMED");
+    else if (verification === "NOT_ANCHORED") setAnchorState("NOT_ANCHORED");
+    else { setAnchorState("FAILED"); setAnchorError("Anchor verification is unavailable. This is not a NOT ANCHORED result."); }
+  }
+
+  async function anchorCurrentReceipt() {
+    if (currentAnchorEligibility.state !== "READY" || !currentAnchorEligibility.digest || !anchorContractAddress) { setAnchorState(currentAnchorEligibility.state); return; }
+    if (!walletProvider || !address) { setAnchorState("WALLET_NOT_CONNECTED"); return; }
+    if (chainId !== 196) { setAnchorState("WRONG_NETWORK"); return; }
+    setAnchorError("");
+    setAnchorState("AWAITING_SIGNATURE");
+    try {
+      const hash = await submitReceiptAnchor({ contractAddress: anchorContractAddress, digest: currentAnchorEligibility.digest, provider: walletProvider, account: address, chainId });
+      setAnchorHash(hash);
+      setAnchorState("SUBMITTED");
+      setAnchorState("CONFIRMING");
+      setAnchorState(await confirmReceiptAnchor(anchorContractAddress, currentAnchorEligibility.digest, hash) ? "CONFIRMED" : "FAILED");
+    } catch (error) {
+      setAnchorState("FAILED");
+      setAnchorError(error instanceof Error ? error.message : "Anchor transaction failed.");
+    }
+  }
+
   async function verifyAttestedPackageFile(file: File | undefined) {
     if (!file) return;
     if (file.size > ATTESTED_ANALYSIS_MAX_FILE_BYTES) {
@@ -449,6 +517,7 @@ export default function Home() {
   const scorePresentation = activeResult ? buildRiskScorePresentation(activeResult) : null;
   const liveOkxEvidence = isLiveOkxProviderEvidence(simulation);
   const attestationStatus = activeResult?.analysisAttestation ? (currentAttestationStatus ?? "AVAILABLE") : "ATTESTATION UNAVAILABLE";
+  const anchorStatus = ["CHECKING", "WALLET_NOT_CONNECTED", "WRONG_NETWORK", "AWAITING_SIGNATURE", "SUBMITTED", "CONFIRMING", "CONFIRMED", "FAILED", "NOT_ANCHORED"].includes(anchorState) ? anchorState : currentAnchorEligibility.state;
   const policyAction: Record<PolicyDecisionState, string> = {
     ALLOW: "Continue to the normal explicit confirmation path.",
     WARN: "Show a visible warning before explicit user confirmation.",
@@ -466,7 +535,7 @@ export default function Home() {
       <div><div className="eyebrow">Evidence-grounded pre-sign intelligence</div><h1>Know what a transaction does before you sign.</h1><p className="lead">XGuard combines deterministic decoding, X Layer RPC facts, optional OKX Mainnet simulation, Intent vs Reality, and evidence-grounded AI—without treating any provider as a safety oracle.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeMode.open} aria-controls="judge-demo" onClick={openJudgeMode}>⚡ Try Judge Demo</button></div></div>
       <div className="hero-card"><h2>What happens if I sign this?</h2><div className="signal"><span>Analysis Network</span><strong>{networkName}</strong></div><div className="signal"><span>Wallet</span><strong>{walletNetworkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
-    <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Verifiable Receipts</span><span>Signed Attestations</span><span>Policy Guard</span></section>
+    <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Verifiable Receipts</span><span>Signed Attestations</span><span>Policy Guard</span><span>Mainnet Receipt Anchor</span></section>
     {judgeMode.open && <section className="judge-mode" id="judge-demo">
       <div className="panel-heading"><div><span className="eyebrow">Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => dispatchJudgeMode({ type: "CLOSE" })}>Close</button></div>
       <div className="judge-steps">
@@ -479,6 +548,7 @@ export default function Home() {
         <article><b>07</b><span>Signed Analysis Attestation</span><strong>Deployment-key authenticity</strong><p>Verify that the current receipt fingerprint was signed by this deployment&apos;s Ed25519 key.</p><button className="secondary" onClick={scrollToAttestation} disabled={!activeResult?.analysisAttestation}>Verify</button></article>
         <article><b>08</b><span>Existing X Layer Receipt</span><strong>On-chain: Confirmed</strong><p>Real user-signed RiskRegistry evidence on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View</button></article>
         <article><b>09</b><span>Policy Guard</span><strong>Deterministic integration action</strong><p>Safe → ALLOW · Ambiguous → REQUIRE REVIEW · Suspicious → BLOCK RECOMMENDED.</p><button className="secondary" onClick={scrollToPolicy} disabled={!activeResult?.policyDecision}>View</button></article>
+        <article><b>10</b><span>X Layer Mainnet Anchor</span><strong>On-chain receipt evidence</strong><p>{anchorContractAddress ? "Verify or explicitly anchor the current verified Mainnet receipt." : "Deployment pending · contract not configured."}</p><button className="secondary" onClick={scrollToAnchor} disabled={!activeResult}>View</button></article>
       </div>
       <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ Receipt integrity</span><span>✓ Deployment-key authenticity</span><span>✓ User-controlled wallet signing</span></div>
     </section>}
@@ -597,6 +667,14 @@ export default function Home() {
             <div className="receipt-actions"><a className="secondary link-button" href={attestedPackageDownloadUrl ?? undefined} download={activeResult.analysisAttestation ? `xguard-attested-analysis-${activeResult.analysisReceipt.analysisId}.json` : undefined} aria-disabled={!attestedPackageDownloadUrl}>Export Attested Package</a><button className="secondary" onClick={verifyCurrentAttestedPackage} disabled={!activeResult.analysisAttestation}>Verify Current Package</button><label className="secondary file-button">Verify Attested Package<input type="file" accept="application/json,.json" onChange={(event) => { void verifyAttestedPackageFile(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label></div>
             {attestedPackageVerification && <div className="attestation-results" role="status"><div className={attestedPackageVerification.receiptIntegrity === "INTEGRITY VERIFIED" ? "verification-pass" : "verification-fail"}><span>RECEIPT INTEGRITY</span><strong>{attestedPackageVerification.receiptIntegrity}</strong></div><div className={attestedPackageVerification.attestation === "ATTESTATION VERIFIED" ? "verification-pass" : "verification-fail"}><span>XGUARD ATTESTATION</span><strong>{attestedPackageVerification.attestation}</strong></div></div>}
             <p>{ANALYSIS_ATTESTATION_AUTHENTICITY_NOTICE}</p><small>Packages are limited to {ATTESTED_ANALYSIS_MAX_FILE_BYTES / 1024} KiB. Verification resolves only this deployment&apos;s trusted public key and never trusts an uploaded key.</small>
+          </section>
+          <section className={`anchor-card anchor-${anchorStatus.toLowerCase().replaceAll("_", "-")}`} id="mainnet-receipt-anchor">
+            <div className="card-title"><div><span className="eyebrow">X Layer Mainnet Anchor</span><h3>Receipt Anchor</h3></div><span className="anchor-badge">{anchorStatus.replaceAll("_", " ")}</span></div>
+            <div className="anchor-grid"><span>Network</span><strong>X Layer Mainnet · Chain 196</strong><span>Receipt Fingerprint</span><code>{activeResult.analysisReceipt.integrity.fingerprint}</code><span>On-chain bytes32 digest</span><code>{currentReceiptDigest ?? "INVALID RECEIPT DIGEST"}</code><span>Anchor Contract</span><strong>{anchorContractAddress ?? "NOT CONFIGURED"}</strong><span>Current Policy</span><strong>{activeResult.policyDecision.decision.replaceAll("_", " ")}</strong><span>Wallet / Network</span><strong>{walletNetworkName}</strong><span>Eligibility</span><strong>{currentAnchorEligibility.reason}</strong></div>
+            <div className="receipt-actions"><button className="secondary" onClick={checkReceiptAnchor} disabled={!anchorContractAddress || !currentReceiptDigest || anchorState === "CHECKING"}>Verify On-chain Anchor</button><button className="secondary" onClick={connectWallet}>{address ? shortAddress(address) : "Connect Wallet"}</button><button className="secondary" onClick={switchToXLayerMainnet} disabled={!walletProvider || chainId === 196}>Switch wallet to X Layer Mainnet</button><button className="primary" onClick={anchorCurrentReceipt} disabled={!anchorContractAddress || currentAnchorEligibility.state !== "READY" || !walletProvider || !address || chainId !== 196 || ["AWAITING_SIGNATURE", "SUBMITTED", "CONFIRMING", "CONFIRMED"].includes(anchorState)}>{anchorState === "AWAITING_SIGNATURE" ? "Check wallet…" : anchorState === "CONFIRMING" ? "Confirming…" : anchorState === "CONFIRMED" ? "Confirmed" : "Anchor Receipt"}</button></div>
+            {anchorHash && <div className="anchor-transaction">Anchor Transaction: <a href={`${X_LAYER_MAINNET_EXPLORER}/tx/${anchorHash}`} target="_blank" rel="noreferrer">{anchorHash}</a></div>}
+            {anchorError && <div className="status-message" role="status">{anchorError}</div>}
+            <p>X Layer anchoring proves that this exact Analysis Receipt digest was included in a confirmed transaction to the configured XGuard anchor contract. It does not prove that the analyzed transaction is safe. Receipt integrity and XGuard authorship are verified separately.</p><small>The anchor commits the V5 receipt digest only. It does not cryptographically incorporate or replace the V7 policy object.</small>
           </section>
           {activeResult.criticalSignals.length > 0 && <section className="signal-section"><h3>Critical Signals</h3><ul className="risk-list critical">{activeResult.criticalSignals.map((item) => <li key={item.id}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
           {activeResult.advisorySignals.length > 0 && <section className="signal-section"><h3>Advisory Signals</h3><ul className="risk-list">{activeResult.advisorySignals.map((item) => <li key={`${item.id}-${item.title}`}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}

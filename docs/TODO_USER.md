@@ -17,9 +17,8 @@
 
 1. Review the final submission fields in `docs/SUBMISSION.md` and click the official hackathon form’s final **Submit** button before the deadline. Contact email remains private and is provided only in the official form.
 
-## Recommended presentation refresh
+## Media status
 
-- Record a new 75–100 second Production demo using `docs/DEMO.md`. The existing MP4 is valid but predates Judge Mode and Contract Intelligence.
-- Capture a current Production hero screenshot after opening Judge Mode. The existing `docs/assets/xguard-v2-hero.png` predates the Final Judge Upgrade.
-
-These media refreshes require manual visual capture because the available browser automation runtime is not reliable. They require no wallet connection, signature, contract deployment, or new chain transaction.
+- Final Judge Upgrade demo: completed at `demo/xguard-ai-build-x-demo.mp4` from verified Production screenshots.
+- Current Production hero: completed at `docs/assets/xguard-v2-hero.png` with Judge Mode visible.
+- No manual media capture, wallet connection, signature, contract deployment, or new chain transaction remains required.

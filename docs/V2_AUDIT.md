@@ -7,7 +7,7 @@ Audit scope: `app`, `lib`, `contracts`, `test`, `scripts`, configuration, Vercel
 - Status: Final Judge Upgrade is merged to `main` at `409aa73c211a6b350af757d130c3f41ac8cfe962` and live at https://xguard-ai-six.vercel.app.
 - Provider: Production Hybrid Analysis is verified through the provider-neutral adapter. The exact upstream identity is controlled by server-side environment variables and is not asserted by the public repository or client response.
 - Public URLs, the deployed V1 `RiskRegistry`, and the verified user transaction are unchanged.
-- Demo video: `demo/xguard-ai-build-x-demo.mp4` is a valid 1920×1080 H.264 MP4 of approximately 2:56, but it predates the Final Judge Upgrade; a refreshed recording is recommended.
+- Demo video: `demo/xguard-ai-build-x-demo.mp4` is the updated Final Judge Upgrade walkthrough, generated from verified Production screenshots as a 1920×1080 H.264 MP4 of approximately 1:34. It contains no wallet interaction or new chain transaction.
 
 ## Production smoke matrix
 

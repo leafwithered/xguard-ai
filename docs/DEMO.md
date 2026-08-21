@@ -33,7 +33,7 @@ Load **Unlimited Approval**, select **Analyze risk**, and show:
 - decoded `approve(address,uint256)`
 - spender `0x1234567890123456789012345678901234567890`
 - `Amount: Unlimited`
-- source labels: `RULE / DECODER / ON-CHAIN / AI`
+- source labels on the current result: `DECODER / AI`
 
 Say: “Raw calldata becomes a human-readable permission request before signing.”
 
@@ -107,9 +107,9 @@ Wallet connection, Chain ID `1952` switching, review, and signing are optional p
 
 ## Current video status
 
-The public file `demo/xguard-ai-build-x-demo.mp4` is a valid 1920×1080 H.264 MP4 of approximately 2:56, but its screenshots predate the Final Judge Upgrade. It does not fully show Judge Mode, Explainable Risk Fusion, Contract Intelligence, Transaction Preflight, or all four source labels.
+The public file `demo/xguard-ai-build-x-demo.mp4` is the updated Final Judge Upgrade demo: a 1920×1080 H.264 MP4 of approximately 1:34. It uses only screenshots captured from the canonical Production deployment and shows Judge Mode, Safe Transfer, Unlimited Approval, Explainable Risk Fusion, real X Layer RPC intelligence, Suspicious Airdrop, and the existing confirmed receipt.
 
-A manual 75–100 second Production recording using the timed path above is recommended. Replace the existing file only after visually verifying that the recording contains no secret, wallet signature, personal information, fabricated RPC result, or fabricated AI response.
+The media was generated without a wallet connection, signature, deployment, or new chain transaction. Its risk scores, decoded approval, RPC results, and receipt fields are the unmodified values returned by Production during capture.
 
 ## Regression checklist
 

@@ -38,9 +38,9 @@ The anchor records the exact existing V5 SHA-256 receipt digest without rehashin
 
 Judge Mode only loads examples and navigates. The user must explicitly select **Analyze risk**. It never connects a wallet, signs, records, or broadcasts.
 
-## Competition candidate status
+## Competition build status
 
-`codex/mainnet-receipt-anchor` is the final competition candidate. It has not been merged into `main` and does not change the canonical V4.1 Production deployment.
+This is the final Build X competition build. Its receipt integrity, deployment-key attestation, deterministic policy, and X Layer Mainnet anchor remain separate verification layers.
 
 - Testnet `1952` retains the V3 RPC/preflight path and never calls the Mainnet simulator.
 - Mainnet `196` adds optional OKX OnchainOS simulation with `chainIndex: "196"`.
@@ -82,7 +82,7 @@ AI can explain evidence or raise final risk, but it cannot reduce deterministic 
 
 ## Why X Layer and OKX
 
-X Layer is where transaction intent, contract behavior, and user confirmation meet. XGuard uses X Layer RPC for chain-specific bytecode and bounded preflight evidence on both supported networks. The existing `RiskRegistry` creates a compact, public proof that a user reviewed an assessment on Testnet without executing the analyzed transaction.
+X Layer is where transaction intent, contract behavior, and user confirmation meet. XGuard uses X Layer RPC for chain-specific bytecode and bounded preflight evidence on both supported networks. The historical `RiskRegistry` on Testnet `1952` creates a compact public proof that a user reviewed an assessment without executing the analyzed transaction. The current `XGuardReceiptAnchor` on Mainnet `196` separately records the exact SHA-256 digest of a versioned Analysis Receipt.
 
 On X Layer Mainnet, OKX OnchainOS adds an independent read-only simulation view. That evidence improves consequence visibility but is deliberately bounded: provider evidence is not a safety verdict, and Testnet `1952` is never sent to the Mainnet-only simulation endpoint.
 

@@ -76,6 +76,10 @@ export async function verifyReceiptAnchor(contractAddress: Address | null, diges
   }
 }
 
+export function verifyPublishedMainnetProof(client: Pick<PublicClient, "readContract"> = createAnchorPublicClient()): Promise<AnchorVerificationState> {
+  return verifyReceiptAnchor(XGUARD_MAINNET_ANCHOR_ADDRESS, XGUARD_MAINNET_FIRST_ANCHORED_DIGEST, client);
+}
+
 export async function submitReceiptAnchor(input: { contractAddress: Address | null; digest: Hex; provider: EIP1193Provider | null; account: Address | ""; chainId: number | null }): Promise<Hash> {
   if (!input.contractAddress) throw new Error("Anchor contract is not configured");
   if (!input.provider || !input.account) throw new Error("Connect wallet explicitly before anchoring");

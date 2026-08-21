@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import type { Address, Hex, PublicClient } from "viem";
 import type { AnalysisReceipt } from "../lib/analysis-receipt.ts";
 import type { AnalysisAttestation } from "../lib/analysis-attestation.ts";
-import { XGUARD_MAINNET_ANCHOR_ADDRESS, XGUARD_MAINNET_ANCHOR_DEPLOYMENT_TRANSACTION, XGUARD_MAINNET_FIRST_ANCHORED_DIGEST, XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION, X_LAYER_MAINNET_CHAIN_ID, X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, knownAnchorTransactionForDigest, receiptFingerprintToBytes32, requireNonZeroReceiptDigest, submitReceiptAnchor, verifyReceiptAnchor } from "../lib/anchor.ts";
+import { XGUARD_MAINNET_ANCHOR_ADDRESS, XGUARD_MAINNET_ANCHOR_DEPLOYMENT_TRANSACTION, XGUARD_MAINNET_FIRST_ANCHORED_DIGEST, XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION, X_LAYER_MAINNET_CHAIN_ID, X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, knownAnchorTransactionForDigest, receiptFingerprintToBytes32, requireNonZeroReceiptDigest, submitReceiptAnchor, verifyPublishedMainnetProof, verifyReceiptAnchor } from "../lib/anchor.ts";
 import type { WalletProvider } from "../types/ethereum.ts";
 
 const knownFingerprint = "sha256:98aa567bd73427cefda86c9fd16e8b998bc95649aab3915a34fb862109e37114";
@@ -87,6 +87,19 @@ describe("Receipt anchor client and eligibility", function () {
     expect(knownAnchorTransactionForDigest(knownDigest)).to.equal(null);
   });
 
+  it("verifies the published proof with exactly the public contract and first anchored digest", async function () {
+    let request: Record<string, unknown> | null = null;
+    const client = { readContract: async (input: Record<string, unknown>) => { request = input; return true; } } as unknown as Pick<PublicClient, "readContract">;
+    expect(await verifyPublishedMainnetProof(client)).to.equal("CONFIRMED");
+    expect(request).to.deep.include({ address: XGUARD_MAINNET_ANCHOR_ADDRESS, functionName: "anchored" });
+    expect((request as { args?: unknown[] } | null)?.args).to.deep.equal([XGUARD_MAINNET_FIRST_ANCHORED_DIGEST]);
+  });
+
+  it("keeps published proof RPC failure distinct from NOT ANCHORED", async function () {
+    const client = { readContract: async () => { throw new Error("RPC unavailable"); } } as unknown as Pick<PublicClient, "readContract">;
+    expect(await verifyPublishedMainnetProof(client)).to.equal("UNAVAILABLE");
+  });
+
   it("uses null rather than a fake unconfigured address", function () {
     expect(configuredAnchorAddress(undefined)).to.equal(null);
     expect(configuredAnchorAddress("0x0000")).to.equal(null);
@@ -165,9 +178,29 @@ describe("Receipt anchor application safety", function () {
   });
 
   it("Judge Mode anchor navigation is UI-only", function () {
-    const handler = pageSource.slice(pageSource.indexOf("function scrollToAnchor"), pageSource.indexOf("async function copyReceiptFingerprint"));
-    expect(handler).to.include('document.getElementById("mainnet-receipt-anchor")?.scrollIntoView');
+    const handler = pageSource.slice(pageSource.indexOf("function scrollToPublishedProof"), pageSource.indexOf("async function copyReceiptFingerprint"));
+    expect(handler).to.include('document.getElementById("published-mainnet-proof")?.scrollIntoView');
     expect(handler).not.to.match(/wallet|fetch|request\s*\(|writeContract|sendTransaction/i);
+  });
+
+  it("verifies the published proof without a current receipt or wallet path", function () {
+    const handler = pageSource.slice(pageSource.indexOf("async function checkPublishedMainnetProof"), pageSource.indexOf("async function copyReceiptFingerprint"));
+    expect(handler).to.include("verifyPublishedMainnetProof()");
+    expect(handler).not.to.match(/activeResult|currentReceiptDigest|wallet|provider|request\s*\(|writeContract|sendTransaction/i);
+  });
+
+  it("keeps Judge step 09 available without activeResult", function () {
+    const step = pageSource.slice(pageSource.indexOf('<article><b>09</b>'), pageSource.indexOf('<div className="judge-checklist">'));
+    expect(step).to.include('onClick={scrollToPublishedProof}>View Mainnet Proof');
+    expect(step).not.to.match(/disabled=|activeResult|currentReceiptDigest/);
+  });
+
+  it("renders the published proof independently from the active analysis", function () {
+    const proof = pageSource.slice(pageSource.indexOf('<section className={`published-proof'), pageSource.indexOf('<section className="workspace">'));
+    expect(proof).to.include("XGUARD_MAINNET_ANCHOR_ADDRESS");
+    expect(proof).to.include("XGUARD_MAINNET_FIRST_ANCHORED_DIGEST");
+    expect(proof).to.include("XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION");
+    expect(proof).not.to.match(/activeResult|currentReceiptDigest|anchorCurrentReceipt/);
   });
 
   it("read-only verification does not use a wallet provider", function () {
@@ -216,6 +249,12 @@ describe("Receipt anchor application safety", function () {
     const source = readFileSync("lib/anchor.ts", "utf8");
     expect(source).to.include('receipt.status !== "success"');
     expect(source).to.include('verifyReceiptAnchor(contractAddress, digest, client) === "CONFIRMED"');
+  });
+
+  it("keeps current receipt verification bound to the current receipt digest", function () {
+    const handler = pageSource.slice(pageSource.indexOf("async function checkReceiptAnchor"), pageSource.indexOf("async function anchorCurrentReceipt"));
+    expect(handler).to.include("verifyReceiptAnchor(anchorContractAddress, currentReceiptDigest)");
+    expect(handler).not.to.include("XGUARD_MAINNET_FIRST_ANCHORED_DIGEST");
   });
 
   it("does not include policy in the anchored digest", function () {

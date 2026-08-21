@@ -20,7 +20,7 @@ import { ANALYSIS_ATTESTATION_AUTHENTICITY_NOTICE, ATTESTED_ANALYSIS_MAX_FILE_BY
 import { addDiscoveredWallet, preferredWalletProvider, requestWalletConnection, switchConnectedWalletToXLayer, switchConnectedWalletToXLayerMainnet, type DiscoveredWallet } from "../lib/wallet-lifecycle";
 import { initialJudgeModeState, reduceJudgeMode } from "../lib/judge-mode";
 import { isPolicyDecision, type PolicyDecision, type PolicyDecisionState } from "../lib/policy-engine";
-import { XGUARD_MAINNET_ANCHOR_ADDRESS, X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, confirmReceiptAnchor, knownAnchorTransactionForDigest, receiptFingerprintToBytes32, submitReceiptAnchor, verifyReceiptAnchor, type AnchorState } from "../lib/anchor";
+import { XGUARD_MAINNET_ANCHOR_ADDRESS, XGUARD_MAINNET_ANCHOR_DEPLOYMENT_TRANSACTION, XGUARD_MAINNET_FIRST_ANCHORED_DIGEST, XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION, X_LAYER_MAINNET_EXPLORER, X_LAYER_MAINNET_FALLBACK_RPC, X_LAYER_MAINNET_PRIMARY_RPC, anchorEligibility, configuredAnchorAddress, confirmReceiptAnchor, knownAnchorTransactionForDigest, receiptFingerprintToBytes32, submitReceiptAnchor, verifyPublishedMainnetProof, verifyReceiptAnchor, type AnchorState } from "../lib/anchor";
 import type { WalletProvider } from "../types/ethereum";
 
 const registryAddress = process.env.NEXT_PUBLIC_RISK_REGISTRY_ADDRESS as Address | undefined;
@@ -147,6 +147,7 @@ export default function Home() {
   const [anchorState, setAnchorState] = useState<AnchorState>(anchorContractAddress ? "NOT_ELIGIBLE" : "UNCONFIGURED");
   const [anchorHash, setAnchorHash] = useState<`0x${string}` | null>(null);
   const [anchorError, setAnchorError] = useState("");
+  const [publishedProofStatus, setPublishedProofStatus] = useState<"READY" | "CHECKING" | "CONFIRMED" | "NOT_ANCHORED" | "UNAVAILABLE">("READY");
   const walletNetworkName = chainId === null ? "Wallet not connected" : chainId === 1952 ? "Wallet on X Layer Testnet" : chainId === 196 ? "Wallet on X Layer Mainnet" : `Wallet network · ${chainId}`;
   const analysisNetworkConfig = getAnalysisNetworkConfig(analysisNetwork);
   const networkName = analysisNetworkConfig.name;
@@ -432,6 +433,15 @@ export default function Home() {
     });
   }
 
+  function scrollToPublishedProof() {
+    document.getElementById("published-mainnet-proof")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function checkPublishedMainnetProof() {
+    setPublishedProofStatus("CHECKING");
+    setPublishedProofStatus(await verifyPublishedMainnetProof());
+  }
+
   async function copyReceiptFingerprint() {
     if (!activeResult?.analysisReceipt) return;
     try {
@@ -521,6 +531,7 @@ export default function Home() {
   const liveOkxEvidence = isLiveOkxProviderEvidence(simulation);
   const attestationStatus = activeResult?.analysisAttestation ? (currentAttestationStatus ?? "AVAILABLE") : "ATTESTATION UNAVAILABLE";
   const anchorStatus = ["CHECKING", "WALLET_NOT_CONNECTED", "WRONG_NETWORK", "AWAITING_SIGNATURE", "SUBMITTED", "CONFIRMING", "CONFIRMED", "FAILED", "NOT_ANCHORED"].includes(anchorState) ? anchorState : currentAnchorEligibility.state;
+  const publishedProofLabel = publishedProofStatus === "READY" ? "READY TO VERIFY" : publishedProofStatus.replaceAll("_", " ");
   const policyAction: Record<PolicyDecisionState, string> = {
     ALLOW: "Continue to the normal explicit confirmation path.",
     WARN: "Show a visible warning before explicit user confirmation.",
@@ -550,10 +561,19 @@ export default function Home() {
         <article><b>06</b><span>Verify Receipt</span><strong>Local integrity check</strong><p>Verify the current receipt or import JSON without provider or AI calls.</p><button className="secondary" onClick={scrollToReceipt} disabled={!activeResult}>Verify</button></article>
         <article><b>07</b><span>Signed Analysis Attestation</span><strong>Deployment-key authenticity</strong><p>Verify that the current receipt fingerprint was signed by this deployment&apos;s Ed25519 key.</p><button className="secondary" onClick={scrollToAttestation} disabled={!activeResult?.analysisAttestation}>Verify</button></article>
         <article><b>08</b><span>Policy Guard</span><strong>Deterministic integration action</strong><p>Safe → ALLOW · Ambiguous → REQUIRE REVIEW · Suspicious → BLOCK RECOMMENDED.</p><button className="secondary" onClick={scrollToPolicy} disabled={!activeResult?.policyDecision}>View</button></article>
-        <article><b>09</b><span>X Layer Mainnet Anchor</span><strong>On-chain receipt evidence</strong><p>Configured on Chain 196 · the exact V5 SHA-256 receipt digest can be verified on-chain.</p><button className="secondary" onClick={scrollToAnchor} disabled={!activeResult}>View</button></article>
+        <article><b>09</b><span>X Layer Mainnet Anchor</span><strong>Published Mainnet proof</strong><p>Independently verify the historical published receipt digest on Chain 196 without an analysis or wallet.</p><button className="secondary" onClick={scrollToPublishedProof}>View Mainnet Proof</button></article>
       </div>
       <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ Receipt integrity</span><span>✓ Deployment-key authenticity</span><span>✓ User-controlled wallet signing</span></div>
     </section>}
+    <section className={`published-proof published-proof-${publishedProofStatus.toLowerCase().replaceAll("_", "-")}`} id="published-mainnet-proof">
+      <div className="card-title"><div><span className="eyebrow">Live Mainnet Proof</span><h2>Published X Layer Receipt Anchor</h2></div><span className="anchor-badge">{publishedProofLabel}</span></div>
+      {publishedProofStatus === "CONFIRMED" && <div className="anchor-confirmation" role="status"><strong>PUBLISHED MAINNET PROOF CONFIRMED</strong><span>anchored(bytes32) = true</span></div>}
+      <div className="anchor-grid"><span>Network</span><strong>X Layer Mainnet · Chain 196</strong><span>Anchor Contract</span><a href={`${X_LAYER_MAINNET_EXPLORER}/address/${XGUARD_MAINNET_ANCHOR_ADDRESS}`} target="_blank" rel="noreferrer">{XGUARD_MAINNET_ANCHOR_ADDRESS}</a><span>Deployment Transaction</span><a href={`${X_LAYER_MAINNET_EXPLORER}/tx/${XGUARD_MAINNET_ANCHOR_DEPLOYMENT_TRANSACTION}`} target="_blank" rel="noreferrer">{XGUARD_MAINNET_ANCHOR_DEPLOYMENT_TRANSACTION}</a><span>Published Anchor Transaction</span><a href={`${X_LAYER_MAINNET_EXPLORER}/tx/${XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION}`} target="_blank" rel="noreferrer">{XGUARD_MAINNET_FIRST_ANCHOR_TRANSACTION}</a><span>Published Receipt Digest</span><code>{XGUARD_MAINNET_FIRST_ANCHORED_DIGEST}</code></div>
+      <div className="receipt-actions"><button className="primary" onClick={checkPublishedMainnetProof} disabled={publishedProofStatus === "CHECKING"}>{publishedProofStatus === "CHECKING" ? "Verifying through public RPC…" : "Verify Published Mainnet Proof"}</button></div>
+      {publishedProofStatus === "NOT_ANCHORED" && <div className="verification-result verification-fail" role="status">NOT ANCHORED · anchored(bytes32) = false</div>}
+      {publishedProofStatus === "UNAVAILABLE" && <div className="verification-result verification-fail" role="status">UNAVAILABLE · verification unavailable. This is not a NOT ANCHORED result.</div>}
+      <p>This independently verifies that the configured XGuardReceiptAnchor contract records this exact published receipt digest on X Layer Mainnet.</p><small>This published historical proof is separate from the Current Receipt Anchor below. It does not prove transaction safety, provider truth, XGuard authorship, the V7 policy decision, analyzed transaction execution, ownership, or legal identity.</small>
+    </section>
     <section className="workspace">
       <div className="panel transaction-panel">
         <div className="panel-heading"><div><h2>1. Prepare transaction</h2><p>Start with a preset or inspect a transaction manually.</p></div><button className="text-button" onClick={() => clearAnalysis()}>Clear analysis</button></div>
@@ -698,6 +718,6 @@ export default function Home() {
         <div className="actions"><a className="secondary link-button" href={`${explorerBase}/tx/${transactionResult.hash}`} target="_blank" rel="noreferrer">Open Official Explorer</a><button className="primary" onClick={loadTransactionIntoAnalyzer} disabled={!transactionResult.analysisInput}>Load into Analyzer</button></div>
       </div>}
     </section>
-    <section className="why-xlayer"><div><span className="eyebrow">Why X Layer</span><h2>Compact, user-confirmed evidence.</h2></div><p>After review, users can record only an assessment hash and final score through RiskRegistry on X Layer Testnet (Chain ID 1952). The receipt is evidence of review—not a guarantee of safety and not transaction execution.</p></section>
+    <section className="why-xlayer"><div><span className="eyebrow">Why X Layer</span><h2>Verifiable evidence across both networks.</h2></div><p>The historical RiskRegistry on X Layer Testnet (Chain 1952) records a user-reviewed assessment hash and score. The current XGuardReceiptAnchor on X Layer Mainnet (Chain 196) records an exact Analysis Receipt SHA-256 digest. These are separate public proofs; neither proves transaction safety or execution.</p></section>
   </main>;
 }

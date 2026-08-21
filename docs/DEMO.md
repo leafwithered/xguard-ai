@@ -18,7 +18,7 @@ Open **⚡ Try Judge Demo**.
 
 After each analysis, use Judge step **08 Policy Guard** to reveal the `PRE-SIGN POLICY` card. Expected actions are Safe Transfer `ALLOW`, Ambiguous Approval `REQUIRE REVIEW`, and Suspicious Airdrop `BLOCK_RECOMMENDED`.
 
-Use Judge step **09 X Layer Mainnet Anchor** to reveal the configured Receipt Anchor card. Show Chain `196`, the real contract, the exact V5 fingerprint-to-`bytes32` conversion, and read-only confirmation for the real anchored receipt. Judge navigation performs no wallet call.
+Use Judge step **09 X Layer Mainnet Anchor** to reveal the always-available Published Mainnet Proof. Without running an analysis or connecting a wallet, select **Verify Published Mainnet Proof** and show `anchored(bytes32) = true` for the published digest on Chain `196`. Then distinguish this historical published proof from the separate Current Receipt Anchor card created by a fresh analysis. Judge navigation and published-proof verification perform no wallet call.
 
 ### 0:10–0:22 — Safe Transfer
 

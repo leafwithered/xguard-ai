@@ -1,10 +1,25 @@
-# User Actions Required — Final Judge Upgrade
+# Final Release Status
 
-The stable Production release has verified provider-backed Hybrid Analysis and remains unchanged while `final-judge-upgrade` is validated in an isolated Preview. The public client does not assert the identity of the server-configured upstream provider.
+## Stable Production
 
-1. **Preview wallet QA** — On the final Preview URL, connect OKX Wallet, approve only the network switch to X Layer Testnet if requested, confirm Chain ID `1952`, and disconnect. Do not sign or send a transaction.
-2. **Preview visual QA** — Verify Safe Transfer, Unlimited Approval, Suspicious Airdrop, Clear Analysis, Contract Intelligence, Preflight, Judge Mode, and Verified X Layer evidence. Report PASS/FAIL.
-3. **Production merge approval** — Only after the final report, explicitly say `批准合并 Production` if the Preview is acceptable. No merge or Production deployment happens without that approval.
-4. **Optional YouTube mirror** — The public GitHub MP4 remains the canonical demo; a YouTube Unlisted mirror is optional and requires the user's own account upload if desired.
+- Final Judge Upgrade: merged to `main`
+- Main commit: `409aa73c211a6b350af757d130c3f41ac8cfe962`
+- Production: https://xguard-ai-six.vercel.app
+- Production deployment: `dpl_KkyED1sN18hK4QXjzLZnuNYoeamC` (`Ready`)
+- Main CI: passed — https://github.com/leafwithered/xguard-ai/actions/runs/32436406395
+- Production smoke: Safe Transfer `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
+- Provider: Production Hybrid Analysis is verified through the server-configured, provider-neutral OpenAI-compatible adapter; public artifacts do not assert the upstream provider identity
+- Contract: existing V1 `RiskRegistry` remains unchanged at `0xf4505A4e8dEca4659b8A2054555788Ddc1f5AcE5`
+- New contract deployment for Final Judge Upgrade: none
+- New on-chain transaction for Final Judge Upgrade: none
 
-No wallet signature, contract deployment, mainnet action, or new on-chain transaction is required for this upgrade QA.
+## Required user action
+
+1. Review the final submission fields in `docs/SUBMISSION.md` and click the official hackathon form’s final **Submit** button before the deadline. Contact email remains private and is provided only in the official form.
+
+## Recommended presentation refresh
+
+- Record a new 75–100 second Production demo using `docs/DEMO.md`. The existing MP4 is valid but predates Judge Mode and Contract Intelligence.
+- Capture a current Production hero screenshot after opening Judge Mode. The existing `docs/assets/xguard-v2-hero.png` predates the Final Judge Upgrade.
+
+These media refreshes require manual visual capture because the available browser automation runtime is not reliable. They require no wallet connection, signature, contract deployment, or new chain transaction.

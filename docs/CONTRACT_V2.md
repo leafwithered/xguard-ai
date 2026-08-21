@@ -8,7 +8,7 @@ V1 stores `mapping(bytes32 => Assessment)`. Reusing an `analysisHash` overwrites
 
 ## Options
 
-| Option | Design | Gas | UX | Auditability | Compatibility |
+| Option | Design | Gas | UX | Historical integrity | Compatibility |
 | --- | --- | --- | --- | --- | --- |
 | A | Reject a duplicate hash | Lowest incremental storage | Simple, but retries and multi-user reviews can revert | Strong uniqueness | Smallest API change; behavior changes on duplicates |
 | B | Append-only assessment ID | One new record per write plus hash/index lookup | Clear receipt IDs and pagination | Strongest ordered history | New read API and event fields required |
@@ -16,7 +16,7 @@ V1 stores `mapping(bytes32 => Assessment)`. Reusing an `analysisHash` overwrites
 
 ## Recommendation
 
-Use **Option B** for a future audited V2: an incrementing `assessmentId`, append-only `mapping(uint256 => Assessment)`, and `mapping(bytes32 => uint256[])` for analysis history. This makes overwrites impossible and gives each receipt a stable identifier. The tradeoff is higher storage gas and a new interface.
+Use **Option B** for a future independently reviewed V2: an incrementing `assessmentId`, append-only `mapping(uint256 => Assessment)`, and `mapping(bytes32 => uint256[])` for analysis history. This makes overwrites impossible and gives each receipt a stable identifier. The tradeoff is higher storage gas and a new interface.
 
 Suggested properties:
 

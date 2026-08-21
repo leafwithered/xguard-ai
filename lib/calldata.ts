@@ -1,4 +1,4 @@
-import { decodeFunctionData, maxUint256, type Address, type Hex } from "viem";
+import { decodeFunctionData, type Address, type Hex } from "viem";
 
 export type DecodedAction = {
   status: "empty" | "decoded" | "unknown" | "malformed";
@@ -12,6 +12,10 @@ export type DecodedAction = {
   operator?: Address;
   approved?: boolean;
   riskHint?: string;
+  assetStandard?: "ERC20" | "ERC721" | "ERC1155" | "UNKNOWN";
+  operatorOrSpender?: Address;
+  uint256Value?: string;
+  tokenId?: string;
 };
 
 const approveAbi = [{
@@ -70,27 +74,26 @@ export function decodeCalldata(data: string): DecodedAction {
   try {
     if (selector === "0x095ea7b3") {
       const decoded = decodeFunctionData({ abi: approveAbi, data: normalized });
-      const [spender, amount] = decoded.args;
-      const isUnlimited = amount === maxUint256;
+      const [operatorOrSpender, uint256Value] = decoded.args;
       return {
         status: "decoded",
         method: "approve(address,uint256)",
-        action: "ERC20 Approval",
-        spender,
-        amount: amount.toString(),
-        isUnlimited,
-        riskHint: isUnlimited ? "Unlimited token spending permission" : "Token spending permission"
+        action: "Approval-like permission call",
+        operatorOrSpender,
+        uint256Value: uint256Value.toString(),
+        assetStandard: "UNKNOWN",
+        riskHint: "The selector is shared by ERC20 allowance approvals and ERC721 token approvals"
       };
     }
     if (selector === "0xa9059cbb") {
       const decoded = decodeFunctionData({ abi: transferAbi, data: normalized });
       const [recipient, amount] = decoded.args;
-      return { status: "decoded", method: "transfer(address,uint256)", action: "ERC20 Transfer", recipient, amount: amount.toString() };
+      return { status: "decoded", method: "transfer(address,uint256)", action: "ERC20 Transfer", recipient, amount: amount.toString(), assetStandard: "ERC20" };
     }
     if (selector === "0x23b872dd") {
       const decoded = decodeFunctionData({ abi: transferFromAbi, data: normalized });
-      const [from, recipient, amount] = decoded.args;
-      return { status: "decoded", method: "transferFrom(address,address,uint256)", action: "ERC20 Transfer From", from, recipient, amount: amount.toString() };
+      const [from, recipient, uint256Value] = decoded.args;
+      return { status: "decoded", method: "transferFrom(address,address,uint256)", action: "TransferFrom-like asset transfer", from, recipient, uint256Value: uint256Value.toString(), assetStandard: "UNKNOWN", riskHint: "The uint256 may be fungible-token units or an ERC721 token ID" };
     }
     if (selector === "0xa22cb465") {
       const decoded = decodeFunctionData({ abi: setApprovalForAllAbi, data: normalized });
@@ -98,10 +101,11 @@ export function decodeCalldata(data: string): DecodedAction {
       return {
         status: "decoded",
         method: "setApprovalForAll(address,bool)",
-        action: "NFT Operator Approval",
+        action: "Contract-wide operator permission",
         operator,
         approved,
-        riskHint: approved ? "Operator permission for all assets" : "Operator permission revocation"
+        assetStandard: "UNKNOWN",
+        riskHint: approved ? "NFT or multi-token operator permission for all assets managed by this contract" : "Contract-wide operator permission revocation"
       };
     }
   } catch {
@@ -109,4 +113,24 @@ export function decodeCalldata(data: string): DecodedAction {
   }
 
   return { status: "unknown", method: `Unknown Method (${selector})`, action: "Unknown contract interaction", riskHint: "Method is not recognized by the built-in decoder" };
+}
+
+export function resolveDecodedAction(decoded: DecodedAction, standard: "ERC721" | "ERC1155" | "UNKNOWN"): DecodedAction {
+  if (decoded.status !== "decoded") return decoded;
+  if (decoded.method === "approve(address,uint256)") {
+    if (standard === "ERC721") {
+      return { ...decoded, action: "ERC721 Token Approval", assetStandard: "ERC721", tokenId: decoded.uint256Value, riskHint: "ERC165 positively identified the target as ERC721" };
+    }
+    return { ...decoded, action: "Approval-like permission call", assetStandard: "UNKNOWN", spender: undefined, amount: undefined, isUnlimited: undefined, tokenId: undefined };
+  }
+  if (decoded.method === "transferFrom(address,address,uint256)") {
+    if (standard === "ERC721") {
+      return { ...decoded, action: "ERC721 Token Transfer", assetStandard: "ERC721", tokenId: decoded.uint256Value, amount: undefined, riskHint: "ERC165 positively identified the target as ERC721" };
+    }
+    return { ...decoded, action: "TransferFrom-like asset transfer", assetStandard: "UNKNOWN", amount: undefined, tokenId: undefined };
+  }
+  if (decoded.method === "setApprovalForAll(address,bool)") {
+    return { ...decoded, action: "Contract-wide operator permission", assetStandard: standard, riskHint: standard === "ERC721" ? "ERC721 contract-wide operator permission" : standard === "ERC1155" ? "ERC1155 contract-wide operator permission" : decoded.riskHint };
+  }
+  return decoded;
 }

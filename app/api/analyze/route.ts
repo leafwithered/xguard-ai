@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { analyzeTransaction } from "../../../lib/ai/provider";
-import { localRiskAnalysis, validateRiskInput, type RiskInput } from "../../../lib/risk";
-import { mergeRiskResults } from "../../../lib/risk-fusion";
+import { runAnalysisPipeline } from "../../../lib/analyze-pipeline";
+import { validateRiskInput, type RiskInput } from "../../../lib/risk";
 import { consumeAnalyzeRateLimit } from "../../../lib/api-rate-limit";
-import { inspectContract, signalsFromIntelligence } from "../../../lib/chain/intelligence";
 
 export async function POST(request: Request) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -22,11 +20,5 @@ export async function POST(request: Request) {
   }
   const errors = validateRiskInput(input);
   if (errors.length) return NextResponse.json({ error: errors.join(". "), code: "INVALID_INPUT" }, { status: 400 });
-  const fallback = localRiskAnalysis(input);
-  const [aiResult, contractIntelligence] = await Promise.all([
-    analyzeTransaction(input, fallback),
-    inspectContract(input)
-  ]);
-  const riskResult = aiResult ? mergeRiskResults(fallback, aiResult) : fallback;
-  return NextResponse.json({ ...riskResult, advisorySignals: [...riskResult.advisorySignals, ...signalsFromIntelligence(contractIntelligence)], contractIntelligence });
+  return NextResponse.json(await runAnalysisPipeline(input));
 }

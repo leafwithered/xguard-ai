@@ -7,15 +7,15 @@ const recipient = "0x2222222222222222222222222222222222222222";
 const owner = "0x3333333333333333333333333333333333333333";
 
 describe("Calldata decoder", function () {
-  it("decodes unlimited and limited approvals", function () {
+  it("decodes approve at signature level without assuming ERC20", function () {
     const abi = [{ type: "function", name: "approve", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ name: "", type: "bool" }] }] as const;
     const unlimited = decodeCalldata(encodeFunctionData({ abi, functionName: "approve", args: [spender, maxUint256] }));
     const limited = decodeCalldata(encodeFunctionData({ abi, functionName: "approve", args: [spender, 250n] }));
-    expect(unlimited.action).to.equal("ERC20 Approval");
-    expect(unlimited.spender).to.equal(spender);
-    expect(unlimited.isUnlimited).to.equal(true);
-    expect(limited.isUnlimited).to.equal(false);
-    expect(limited.amount).to.equal("250");
+    expect(unlimited.action).to.equal("Approval-like permission call");
+    expect(unlimited.operatorOrSpender).to.equal(spender);
+    expect(unlimited.assetStandard).to.equal("UNKNOWN");
+    expect(unlimited.isUnlimited).to.equal(undefined);
+    expect(limited.uint256Value).to.equal("250");
   });
 
   it("decodes transfer and transferFrom", function () {
@@ -27,7 +27,9 @@ describe("Calldata decoder", function () {
     expect(transfer.amount).to.equal("42");
     expect(transferFrom.from).to.equal(owner);
     expect(transferFrom.recipient).to.equal(recipient);
-    expect(transferFrom.amount).to.equal("99");
+    expect(transferFrom.action).to.equal("TransferFrom-like asset transfer");
+    expect(transferFrom.assetStandard).to.equal("UNKNOWN");
+    expect(transferFrom.uint256Value).to.equal("99");
   });
 
   it("decodes setApprovalForAll true and false", function () {
@@ -36,6 +38,8 @@ describe("Calldata decoder", function () {
     const disabled = decodeCalldata(encodeFunctionData({ abi, functionName: "setApprovalForAll", args: [spender, false] }));
     expect(enabled.operator).to.equal(spender);
     expect(enabled.approved).to.equal(true);
+    expect(enabled.action).to.equal("Contract-wide operator permission");
+    expect(enabled.assetStandard).to.equal("UNKNOWN");
     expect(disabled.approved).to.equal(false);
   });
 

@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: XGuard Analysis API
-  version: 5.0.0-preview
-  description: Explainable pre-sign analysis for X Layer with a versioned, integrity-verifiable Analysis Receipt.
+  version: 6.0.0-preview
+  description: Explainable pre-sign analysis for X Layer with an integrity-verifiable Analysis Receipt and optional Ed25519 deployment-key attestation.
 paths:
   /api/analyze:
     post:
@@ -27,6 +27,17 @@ paths:
           description: Request body too large
         '429':
           description: Rate limited
+  /api/attestation-key:
+    get:
+      summary: Resolve this deployment's safe public attestation key
+      description: Returns only derived public SPKI material and availability metadata. Private key material is never returned.
+      responses:
+        '200':
+          description: Public deployment attestation-key state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttestationKeyResponse'
 components:
   schemas:
     AnalyzeRequest:
@@ -56,7 +67,7 @@ components:
           description: Optional untrusted user intent. The raw value is not included in the Analysis Receipt.
     AnalyzeResponse:
       type: object
-      description: Existing V4.1 analysis fields plus the backward-compatible analysisReceipt field.
+      description: Existing V5 analysis fields plus optional deployment-key attestation fields.
       required: [finalScore, deterministicScore, level, analysisConfidence, analysisVerdict, executionStatus, analysisReceipt]
       properties:
         finalScore: { type: integer, minimum: 0, maximum: 100 }
@@ -67,6 +78,11 @@ components:
         analysisVerdict: { type: string, enum: [ASSESSED, UNDETERMINED] }
         executionStatus: { type: string, enum: [SUCCEEDED, REVERTED, UNAVAILABLE] }
         analysisReceipt: { $ref: '#/components/schemas/AnalysisReceipt' }
+        analysisAttestation:
+          oneOf:
+            - { $ref: '#/components/schemas/AnalysisAttestation' }
+            - { type: 'null' }
+        attestationAvailability: { type: string, enum: [AVAILABLE, UNAVAILABLE, INVALID_CONFIG] }
       additionalProperties: true
     RiskLevel:
       type: string
@@ -164,3 +180,47 @@ components:
             canonicalizationVersion: { type: string, const: xguard-c14n-v1 }
             hashAlgorithm: { type: string, const: SHA-256 }
             fingerprint: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
+    ReceiptBinding:
+      type: object
+      additionalProperties: false
+      required: [receiptType, schemaVersion, analysisId, canonicalizationVersion, hashAlgorithm, fingerprint]
+      properties:
+        receiptType: { type: string, const: xguard.analysis-receipt }
+        schemaVersion: { type: string, const: 1.0.0 }
+        analysisId: { type: string, format: uuid }
+        canonicalizationVersion: { type: string, const: xguard-c14n-v1 }
+        hashAlgorithm: { type: string, const: SHA-256 }
+        fingerprint: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
+    AnalysisAttestation:
+      type: object
+      additionalProperties: false
+      required: [attestationType, attestationVersion, algorithm, keyId, signedAt, receiptBinding, publicKeyFingerprint, signature]
+      properties:
+        attestationType: { type: string, const: xguard.analysis-attestation }
+        attestationVersion: { type: string, const: 1.0.0 }
+        algorithm: { type: string, const: Ed25519 }
+        keyId: { type: string, pattern: '^[a-z0-9._-]{1,64}$' }
+        signedAt: { type: string, format: date-time }
+        receiptBinding: { $ref: '#/components/schemas/ReceiptBinding' }
+        publicKeyFingerprint: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
+        signature: { type: string, pattern: '^[A-Za-z0-9_-]{86}$' }
+    AvailableAttestationKey:
+      type: object
+      additionalProperties: false
+      required: [status, keyId, algorithm, publicKeySpkiBase64, publicKeyFingerprint]
+      properties:
+        status: { type: string, const: AVAILABLE }
+        keyId: { type: string, pattern: '^[a-z0-9._-]{1,64}$' }
+        algorithm: { type: string, const: Ed25519 }
+        publicKeySpkiBase64: { type: string, description: Base64-encoded public SPKI DER bytes only. }
+        publicKeyFingerprint: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
+    UnavailableAttestationKey:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { type: string, enum: [UNAVAILABLE, INVALID_CONFIG] }
+    AttestationKeyResponse:
+      oneOf:
+        - { $ref: '#/components/schemas/AvailableAttestationKey' }
+        - { $ref: '#/components/schemas/UnavailableAttestationKey' }

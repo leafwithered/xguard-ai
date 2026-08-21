@@ -24,6 +24,7 @@
     "simulation:test": "hardhat test test/network.ts test/okx-simulation.ts test/simulation-pipeline.ts",
     "presentation:test": "hardhat test test/presentation.ts",
     "receipt:test": "hardhat test test/analysis-receipt.ts",
+    "attestation:test": "hardhat test test/analysis-attestation.ts",
     "contract:deploy": "hardhat run scripts/deploy.ts --network xlayerTestnet"
   },
   "dependencies": {

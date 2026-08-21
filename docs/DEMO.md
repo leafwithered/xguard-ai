@@ -1,16 +1,16 @@
-# XGuard AI — V5 Judge Demo
+# XGuard AI — V6 Judge Demo
 
-**V5 Preview:** assigned after Preview deployment
+**V6 Preview:** assigned after Preview deployment
 
 **Stable Production:** https://xguard-ai-six.vercel.app
 
-The V5 path requires no wallet connection and creates no transaction. Judge Mode only loads inputs or navigates to evidence; every analysis, export, file selection, and verification is explicit.
+The V6 path requires no wallet connection and creates no transaction. Judge Mode only loads inputs or navigates to evidence; every analysis, export, file selection, and verification is explicit. The XGuard deployment-key signature is not a user wallet signature.
 
 ## Script
 
 ### 0:00–0:10 — Product promise
 
-Open the V4 Preview and say:
+Open the V6 Preview and say:
 
 > Know what a transaction does before you sign. XGuard combines deterministic decoding, X Layer RPC, Intent vs Reality, optional OKX simulation, and evidence-grounded AI without treating any provider as a safety oracle.
 
@@ -69,13 +69,29 @@ Show Analysis ID, schema `1.0.0`, four provenance sources, and the `sha256:` fin
 
 Say: “The API now returns a portable, versioned evidence receipt. The same canonicalizer generates and verifies its fingerprint.”
 
-### 1:24–1:36 — Tamper boundary
+### 1:24–1:38 — Integrity boundary
 
 Import the original exported JSON and show `INTEGRITY VERIFIED`. In a local copy, change one assessment value without updating the fingerprint, then import it and show `INTEGRITY CHECK FAILED`.
 
 Say: “Integrity detects content changes. It does not prove safety or XGuard authorship.”
 
-### 1:36–1:45 — Existing X Layer receipt
+### 1:38–1:55 — Signed Analysis Attestation
+
+Show algorithm `Ed25519`, key ID, public-key fingerprint, signed receipt fingerprint, and signing time. Select **Export Attested Package**, then **Verify Current Package**. Show both:
+
+- `RECEIPT INTEGRITY — INTEGRITY VERIFIED`
+- `XGUARD ATTESTATION — ATTESTATION VERIFIED`
+
+Say: “V5 proves that content matches its fingerprint. V6 proves that this exact fingerprint was signed by the trusted key configured for this XGuard deployment.”
+
+For the decisive security demonstration, modify a security-relevant receipt field in a package, recompute a valid V5 fingerprint, retain the original attestation, and verify again. Show:
+
+- `INTEGRITY VERIFIED`
+- `ATTESTATION CHECK FAILED`
+
+Say: “Recomputing an internally valid fingerprint is not enough to forge XGuard deployment-key authenticity. This still does not prove transaction safety, provider truth, finality, or on-chain anchoring.”
+
+### 1:55–2:05 — Existing X Layer receipt
 
 Select **View Receipt** and show the existing confirmed Testnet transaction.
 
@@ -123,7 +139,11 @@ The preset copies only public `from`, `to`, value, and calldata from this confir
 - Editing any input or network invalidates the previous analysis
 - Exported JSON contains schema, provenance, and fingerprint but no original free-text context or provider authentication metadata
 - Original receipt verifies; an undigested change fails
-- Verification never says that a transaction is safe or that XGuard signed the receipt
+- Original attested package shows integrity and attestation verified
+- Tampered receipt with a recomputed V5 fingerprint keeps integrity valid but fails attestation
+- Uploaded package keys are never trusted; verification resolves the deployment key endpoint
+- Missing attestation configuration does not change risk, confidence, verdict, execution, or receipt output
+- Verification never says that a transaction is safe, provider evidence is true, or the receipt is anchored on-chain
 - No connection, signature, broadcast, deployment, or new chain transaction
 
-The existing public MP4 remains the historical stable Production capture. Do not regenerate it until V4 is explicitly approved for Production so the public path continues to represent deployed behavior.
+The existing public MP4 remains the historical stable Production capture. It is not evidence of the V6 Preview attestation path.

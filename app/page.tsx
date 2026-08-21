@@ -16,6 +16,7 @@ import { currentAnalysisResult, invalidateStaleAnalysis } from "../lib/analysis-
 import { initialRecordState, isRecordPending, reduceRecordState } from "../lib/transaction-state";
 import { buildRiskScorePresentation, isLiveOkxProviderEvidence } from "../lib/presentation";
 import { ANALYSIS_RECEIPT_INTEGRITY_NOTICE, ANALYSIS_RECEIPT_MAX_FILE_BYTES, isAnalysisReceipt, verifyAnalysisReceipt, type AnalysisReceipt, type AnalysisReceiptVerificationStatus } from "../lib/analysis-receipt";
+import { ANALYSIS_ATTESTATION_AUTHENTICITY_NOTICE, ATTESTED_ANALYSIS_MAX_FILE_BYTES, createAttestedAnalysisPackage, isAnalysisAttestation, isTrustedAttestationKey, verifyAttestedAnalysisPackage, type AnalysisAttestation, type AttestationKeyResponse, type AttestationVerificationStatus, type AttestedPackageVerification, type TrustedKeyResolution } from "../lib/analysis-attestation";
 import type { WalletProvider } from "../types/ethereum";
 
 const registryAddress = process.env.NEXT_PUBLIC_RISK_REGISTRY_ADDRESS as Address | undefined;
@@ -37,6 +38,8 @@ type AnalysisResult = RiskResult & {
   simulationEvidence: SimulationEvidence;
   evidenceConsistency: { status: "CONSISTENT" | "INCONSISTENT" | "NOT_COMPARABLE"; reasons: string[] };
   analysisReceipt: AnalysisReceipt;
+  analysisAttestation: AnalysisAttestation | null;
+  attestationAvailability: "AVAILABLE" | "UNAVAILABLE" | "INVALID_CONFIG";
 };
 
 const shortAddress = (value: string) => value ? `${value.slice(0, 6)}…${value.slice(-4)}` : "";
@@ -52,6 +55,25 @@ const consistencyStatuses = new Set(["CONSISTENT", "INCONSISTENT", "NOT_COMPARAB
 function formatSimulationAmount(asset: SimulationEvidence["assetChanges"][number]) {
   if ((asset.assetType !== "NATIVE" && asset.assetType !== "ERC20") || !Number.isInteger(asset.decimals) || asset.decimals === null || asset.decimals < 0 || asset.decimals > 36) return null;
   try { return formatUnits(BigInt(asset.rawValue), asset.decimals); } catch { return null; }
+}
+
+async function resolveDeploymentAttestationKey(keyId: string): Promise<TrustedKeyResolution> {
+  try {
+    const response = await fetch("/api/attestation-key", { method: "GET", headers: { Accept: "application/json" } });
+    if (!response.ok) return { status: "UNAVAILABLE" };
+    const payload = await response.json() as AttestationKeyResponse;
+    if (!payload || payload.status !== "AVAILABLE") return { status: "UNAVAILABLE" };
+    const key = {
+      keyId: payload.keyId,
+      algorithm: payload.algorithm,
+      publicKeySpkiBase64: payload.publicKeySpkiBase64,
+      publicKeyFingerprint: payload.publicKeyFingerprint
+    };
+    if (!isTrustedAttestationKey(key)) return { status: "UNAVAILABLE" };
+    return key.keyId === keyId ? { status: "AVAILABLE", key } : { status: "UNKNOWN_KEY_ID" };
+  } catch {
+    return { status: "UNAVAILABLE" };
+  }
 }
 
 function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
@@ -84,7 +106,8 @@ function isCurrentAnalysisResult(value: unknown): value is AnalysisResult {
     && validTimings
     && validSimulation
     && validConsistency
-    && isAnalysisReceipt(candidate.analysisReceipt);
+    && isAnalysisReceipt(candidate.analysisReceipt)
+    && (candidate.analysisAttestation === null || candidate.analysisAttestation === undefined || isAnalysisAttestation(candidate.analysisAttestation));
 }
 
 export default function Home() {
@@ -111,6 +134,9 @@ export default function Home() {
   const [judgeModeOpen, setJudgeModeOpen] = useState(false);
   const [receiptVerification, setReceiptVerification] = useState<AnalysisReceiptVerificationStatus | null>(null);
   const [receiptDownloadUrl, setReceiptDownloadUrl] = useState<string | null>(null);
+  const [attestedPackageVerification, setAttestedPackageVerification] = useState<AttestedPackageVerification | null>(null);
+  const [currentAttestationStatus, setCurrentAttestationStatus] = useState<AttestationVerificationStatus | null>(null);
+  const [attestedPackageDownloadUrl, setAttestedPackageDownloadUrl] = useState<string | null>(null);
   const walletNetworkName = chainId === null ? "Wallet not connected" : chainId === 1952 ? "Wallet on X Layer Testnet" : `Wallet network · ${chainId}`;
   const analysisNetworkConfig = getAnalysisNetworkConfig(analysisNetwork);
   const networkName = analysisNetworkConfig.name;
@@ -129,6 +155,26 @@ export default function Home() {
     setReceiptDownloadUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [activeResult?.analysisReceipt]);
+
+  useEffect(() => {
+    if (!activeResult?.analysisAttestation) {
+      setAttestedPackageDownloadUrl(null);
+      setAttestedPackageVerification(null);
+      setCurrentAttestationStatus(null);
+      return;
+    }
+    const attestedPackage = createAttestedAnalysisPackage(activeResult.analysisReceipt, activeResult.analysisAttestation);
+    const url = URL.createObjectURL(new Blob([`${JSON.stringify(attestedPackage, null, 2)}\n`], { type: "application/json" }));
+    setAttestedPackageDownloadUrl(url);
+    let cancelled = false;
+    void verifyAttestedAnalysisPackage(attestedPackage, resolveDeploymentAttestationKey).then((verification) => {
+      if (!cancelled) {
+        setCurrentAttestationStatus(verification.attestation);
+        setAttestedPackageVerification(verification);
+      }
+    });
+    return () => { cancelled = true; URL.revokeObjectURL(url); };
+  }, [activeResult?.analysisReceipt, activeResult?.analysisAttestation]);
 
   useEffect(() => {
     window.localStorage.removeItem("xguard-last-result");
@@ -158,6 +204,8 @@ export default function Home() {
     setLastInput(freshness.snapshot.lastInput);
     setReviewed(freshness.snapshot.reviewed);
     setReceiptVerification(null);
+    setAttestedPackageVerification(null);
+    setCurrentAttestationStatus(null);
     dispatchRecord({ type: "RESET" });
     window.sessionStorage.removeItem("xguard-session-result");
     setMessage(freshness.notice);
@@ -252,13 +300,15 @@ export default function Home() {
     setReviewed(false);
     setMessage("");
     setReceiptVerification(null);
+    setAttestedPackageVerification(null);
+    setCurrentAttestationStatus(null);
     dispatchRecord({ type: "RESET" });
     window.sessionStorage.removeItem("xguard-session-result");
     if (clearFields) { setTo(""); setValue("0"); setData("0x"); setContext(""); }
   }
 
   async function analyze() {
-    setMessage(""); setReceiptVerification(null); setReviewed(false); dispatchRecord({ type: "RESET" });
+    setMessage(""); setReceiptVerification(null); setAttestedPackageVerification(null); setCurrentAttestationStatus(null); setReviewed(false); dispatchRecord({ type: "RESET" });
     const input: RiskInput = { from, to, value, data, context, analysisNetwork };
     if (!isAddress(to)) { setMessage("Enter a valid recipient contract address."); return; }
     setAnalyzing(true);
@@ -330,6 +380,10 @@ export default function Home() {
     document.querySelector(".analysis-receipt-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  function scrollToAttestation() {
+    document.querySelector(".analysis-attestation-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   async function copyReceiptFingerprint() {
     if (!activeResult?.analysisReceipt) return;
     try {
@@ -358,6 +412,27 @@ export default function Home() {
     }
   }
 
+  async function verifyCurrentAttestedPackage() {
+    if (!activeResult?.analysisAttestation) return;
+    const attestedPackage = createAttestedAnalysisPackage(activeResult.analysisReceipt, activeResult.analysisAttestation);
+    const verification = await verifyAttestedAnalysisPackage(attestedPackage, resolveDeploymentAttestationKey);
+    setCurrentAttestationStatus(verification.attestation);
+    setAttestedPackageVerification(verification);
+  }
+
+  async function verifyAttestedPackageFile(file: File | undefined) {
+    if (!file) return;
+    if (file.size > ATTESTED_ANALYSIS_MAX_FILE_BYTES) {
+      setAttestedPackageVerification(await verifyAttestedAnalysisPackage(null, resolveDeploymentAttestationKey));
+      return;
+    }
+    try {
+      setAttestedPackageVerification(await verifyAttestedAnalysisPackage(JSON.parse(await file.text()), resolveDeploymentAttestationKey));
+    } catch {
+      setAttestedPackageVerification(await verifyAttestedAnalysisPackage(null, resolveDeploymentAttestationKey));
+    }
+  }
+
   const modeLabel = activeResult?.mode === "HYBRID" ? "Hybrid Analysis" : activeResult?.mode === "AI" ? "AI Analysis" : "Local Safety Engine";
   const recordLabel = recordState.phase === "awaiting-signature" ? "Awaiting wallet signature" : recordState.phase === "submitted" ? "Submitted" : recordState.phase === "confirming" ? "Confirming on X Layer" : recordState.phase === "confirmed" ? "Confirmed on X Layer" : recordState.phase === "reverted" ? "Transaction reverted" : recordState.phase === "error" ? "Confirmation error" : "Ready after review";
   const decoded = activeResult?.decodedAction;
@@ -365,6 +440,7 @@ export default function Home() {
   const simulation = activeResult?.simulationEvidence;
   const scorePresentation = activeResult ? buildRiskScorePresentation(activeResult) : null;
   const liveOkxEvidence = isLiveOkxProviderEvidence(simulation);
+  const attestationStatus = activeResult?.analysisAttestation ? (currentAttestationStatus ?? "AVAILABLE") : "ATTESTATION UNAVAILABLE";
 
   return <main className="shell">
     <header className="topbar">
@@ -376,7 +452,7 @@ export default function Home() {
       <div><div className="eyebrow">Evidence-grounded pre-sign intelligence</div><h1>Know what a transaction does before you sign.</h1><p className="lead">XGuard combines deterministic decoding, X Layer RPC facts, optional OKX Mainnet simulation, Intent vs Reality, and evidence-grounded AI—without treating any provider as a safety oracle.</p><div className="hero-actions"><button className="primary" onClick={() => document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth" })}>Analyze Transaction</button><button className="judge-button" aria-expanded={judgeModeOpen} aria-controls="judge-demo" onClick={() => setJudgeModeOpen((current) => !current)}>⚡ Try Judge Demo</button></div></div>
       <div className="hero-card"><h2>What happens if I sign this?</h2><div className="signal"><span>Analysis Network</span><strong>{networkName}</strong></div><div className="signal"><span>Wallet</span><strong>{walletNetworkName}</strong></div><div className="signal"><span>Analysis</span><strong>{modeLabel}</strong></div><div className="signal"><span>Safety floor</span><strong>Deterministic</strong></div><div className="signal"><span>Signing</span><strong>Always user-confirmed</strong></div></div>
     </section>
-    <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Verifiable Receipts</span></section>
+    <section className="capability-strip"><span>Deterministic Decoder</span><span>X Layer RPC</span><span>OKX Simulation Evidence</span><span>Intent vs Reality</span><span>Verifiable Receipts</span><span>Signed Attestations</span></section>
     {judgeModeOpen && <section className="judge-mode" id="judge-demo">
       <div className="panel-heading"><div><span className="eyebrow">60-Second Judge Path</span><h2>See why XGuard is more than an AI wrapper.</h2><p>Each action is explicit. Nothing connects, signs, records, or broadcasts automatically.</p></div><button className="text-button" onClick={() => setJudgeModeOpen(false)}>Close</button></div>
       <div className="judge-steps">
@@ -386,9 +462,10 @@ export default function Home() {
         <article><b>04</b><span>Live OKX Mainnet Simulation</span><strong>Expected: PROVIDER EVIDENCE</strong><p>Loads a public historical approval fixture. Analysis remains explicit and read-only.</p><button className="secondary" onClick={() => { applyPreset(publicMainnetSimulationFixture.input); document.querySelector(".transaction-panel")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Load</button></article>
         <article><b>05</b><span>Analysis Receipt</span><strong>Versioned + exportable</strong><p>Inspect the current analysis ID, provenance and SHA-256 fingerprint.</p><button className="secondary" onClick={scrollToReceipt} disabled={!activeResult}>View</button></article>
         <article><b>06</b><span>Verify Receipt</span><strong>Local integrity check</strong><p>Verify the current receipt or import JSON without provider or AI calls.</p><button className="secondary" onClick={scrollToReceipt} disabled={!activeResult}>Verify</button></article>
-        <article><b>07</b><span>Existing X Layer Receipt</span><strong>On-chain: Confirmed</strong><p>Real user-signed RiskRegistry evidence on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View</button></article>
+        <article><b>07</b><span>Signed Analysis Attestation</span><strong>Deployment-key authenticity</strong><p>Verify that the current receipt fingerprint was signed by this deployment&apos;s Ed25519 key.</p><button className="secondary" onClick={scrollToAttestation} disabled={!activeResult?.analysisAttestation}>Verify</button></article>
+        <article><b>08</b><span>Existing X Layer Receipt</span><strong>On-chain: Confirmed</strong><p>Real user-signed RiskRegistry evidence on Chain 1952.</p><button className="secondary" onClick={openVerifiedEvidence}>View</button></article>
       </div>
-      <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ User-controlled signing</span><span>✓ Verified on-chain receipt</span></div>
+      <div className="judge-checklist"><span>✓ Human-readable calldata</span><span>✓ Deterministic safety floor</span><span>✓ AI enrichment</span><span>✓ X Layer intelligence</span><span>✓ Receipt integrity</span><span>✓ Deployment-key authenticity</span><span>✓ User-controlled wallet signing</span></div>
     </section>}
     <section className="workspace">
       <div className="panel transaction-panel">
@@ -492,6 +569,13 @@ export default function Home() {
             <div className="receipt-actions"><a className="secondary link-button" href={receiptDownloadUrl ?? undefined} download={`xguard-analysis-${activeResult.analysisReceipt.analysisId}.json`} aria-disabled={!receiptDownloadUrl}>Export JSON</a><button className="secondary" onClick={copyReceiptFingerprint}>Copy Fingerprint</button><button className="secondary" onClick={verifyCurrentReceipt}>Verify Current</button><label className="secondary file-button">Verify Receipt File<input type="file" accept="application/json,.json" onChange={(event) => { void verifyReceiptFile(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label></div>
             {receiptVerification && <div className={`verification-result ${receiptVerification === "INTEGRITY VERIFIED" ? "verification-pass" : "verification-fail"}`} role="status">{receiptVerification}</div>}
             <p>{ANALYSIS_RECEIPT_INTEGRITY_NOTICE}</p><small>Local imports are limited to {ANALYSIS_RECEIPT_MAX_FILE_BYTES / 1024} KiB. Verification makes no network, AI, OKX, signing or broadcast request.</small>
+          </section>
+          <section className="analysis-attestation-card" id="analysis-attestation">
+            <div className="card-title"><div><span className="eyebrow">Deployment-key authenticity</span><h3>Signed Analysis Attestation</h3></div><span className={`attestation-badge ${attestationStatus === "ATTESTATION VERIFIED" ? "attestation-verified" : ""}`}>{attestationStatus}</span></div>
+            {activeResult.analysisAttestation ? <div className="receipt-grid"><span>Algorithm</span><strong>{activeResult.analysisAttestation.algorithm}</strong><span>Key ID</span><strong>{activeResult.analysisAttestation.keyId}</strong><span>Public Key Fingerprint</span><code>{activeResult.analysisAttestation.publicKeyFingerprint}</code><span>Signed Receipt Fingerprint</span><code>{activeResult.analysisAttestation.receiptBinding.fingerprint}</code><span>Signed At</span><strong>{activeResult.analysisAttestation.signedAt}</strong></div> : <p>Attestation signing is unavailable for this deployment. The analysis and V5 receipt remain valid and available.</p>}
+            <div className="receipt-actions"><a className="secondary link-button" href={attestedPackageDownloadUrl ?? undefined} download={activeResult.analysisAttestation ? `xguard-attested-analysis-${activeResult.analysisReceipt.analysisId}.json` : undefined} aria-disabled={!attestedPackageDownloadUrl}>Export Attested Package</a><button className="secondary" onClick={verifyCurrentAttestedPackage} disabled={!activeResult.analysisAttestation}>Verify Current Package</button><label className="secondary file-button">Verify Attested Package<input type="file" accept="application/json,.json" onChange={(event) => { void verifyAttestedPackageFile(event.target.files?.[0]); event.currentTarget.value = ""; }} /></label></div>
+            {attestedPackageVerification && <div className="attestation-results" role="status"><div className={attestedPackageVerification.receiptIntegrity === "INTEGRITY VERIFIED" ? "verification-pass" : "verification-fail"}><span>RECEIPT INTEGRITY</span><strong>{attestedPackageVerification.receiptIntegrity}</strong></div><div className={attestedPackageVerification.attestation === "ATTESTATION VERIFIED" ? "verification-pass" : "verification-fail"}><span>XGUARD ATTESTATION</span><strong>{attestedPackageVerification.attestation}</strong></div></div>}
+            <p>{ANALYSIS_ATTESTATION_AUTHENTICITY_NOTICE}</p><small>Packages are limited to {ATTESTED_ANALYSIS_MAX_FILE_BYTES / 1024} KiB. Verification resolves only this deployment&apos;s trusted public key and never trusts an uploaded key.</small>
           </section>
           {activeResult.criticalSignals.length > 0 && <section className="signal-section"><h3>Critical Signals</h3><ul className="risk-list critical">{activeResult.criticalSignals.map((item) => <li key={item.id}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}
           {activeResult.advisorySignals.length > 0 && <section className="signal-section"><h3>Advisory Signals</h3><ul className="risk-list">{activeResult.advisorySignals.map((item) => <li key={`${item.id}-${item.title}`}><div><b className={`source-badge source-${item.source.toLowerCase()}`}>{item.source}</b><strong>{item.title}</strong></div><span>{item.detail}</span></li>)}</ul></section>}

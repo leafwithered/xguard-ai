@@ -40,6 +40,8 @@ curl -X POST https://xguard-ai-six.vercel.app/api/analyze \
 - `evidenceConsistency`: whether bounded RPC and simulation execution evidence agree.
 - `mode`: `HYBRID`, `AI`, or `LOCAL`.
 - `analysisReceipt`: schema-versioned normalized evidence with assessment, provenance, and a reproducible SHA-256 fingerprint.
+- `analysisAttestation`: optional Ed25519 deployment-key signature over the exact V5 receipt fingerprint and attestation metadata; `null` when signing is unavailable.
+- `attestationAvailability`: `AVAILABLE`, `UNAVAILABLE`, or `INVALID_CONFIG`; it never changes analysis semantics.
 
 ## Analysis Receipt
 
@@ -59,6 +61,41 @@ The downloadable JSON is pretty-printed for humans; verification canonicalizes t
 
 Integrity verification confirms that this receipt’s content matches its fingerprint. It does not prove the transaction is safe or that the receipt was signed by XGuard.
 
+## Signed Analysis Attestation
+
+When server signing configuration is valid, the same response contains `analysisAttestation` schema `1.0.0`. It binds the V5 receipt type, schema, analysis ID, canonicalization, hash algorithm, exact fingerprint, key ID, signing time, and public-key fingerprint. The signature is unpadded Base64URL Ed25519 over canonical attestation metadata excluding only `signature`.
+
+```text
+analysisReceipt
+→ verify V5 SHA-256 integrity
+→ resolve keyId from GET /api/attestation-key
+→ verify SPKI SHA-256 fingerprint
+→ verify canonical Ed25519 signed payload
+```
+
+The UI preserves standalone **Export Analysis Receipt** and adds a separate **Attested Analysis Package**:
+
+```json
+{
+  "packageType": "xguard.attested-analysis",
+  "packageVersion": "1.0.0",
+  "receipt": {},
+  "attestation": {}
+}
+```
+
+Package verification must reject an uploaded public key as a trust root. The trusted key is safe public material returned by this deployment:
+
+```text
+GET /api/attestation-key
+```
+
+An available response contains `status`, `keyId`, `algorithm`, `publicKeySpkiBase64`, and `publicKeyFingerprint`. An unavailable deployment returns only a safe availability state. No private key, PEM, credential, or parsing diagnostic is returned.
+
+Receipt integrity and attestation authenticity are independent results. Modifying a receipt and recomputing a valid V5 fingerprint can produce `INTEGRITY VERIFIED`, but retaining the original attestation produces `ATTESTATION CHECK FAILED`.
+
+Attestation verification confirms that this receipt fingerprint was signed by the Ed25519 key configured for this XGuard deployment. It does not prove the transaction is safe, that provider data is true, that the transaction reached blockchain finality, or that the receipt has been anchored on-chain. See [Signed Analysis Attestation Specification](ATTESTATION_SPEC.md).
+
 ## Boundaries
 
 - This is a competition prototype, not a supported SDK or availability-guaranteed service.
@@ -66,5 +103,6 @@ Integrity verification confirms that this receipt’s content matches its finger
 - It never connects a wallet, signs, or broadcasts.
 - Mainnet simulation is read-only and requires a public sender address in the request.
 - Provider credentials stay on the server. Clients must never send `AI_API_KEY`, OKX credentials, private keys, or seed phrases.
+- The attestation private key remains server-only. Clients receive only derived public SPKI material and its SHA-256 fingerprint.
 - A successful provider response, empty risk list, or LOW score is not proof of safety.
-- Receipt verification is local content integrity only. It does not authenticate XGuard or any evidence provider.
+- Receipt verification is content integrity only. Attestation verification proves only deployment-key authenticity of the receipt fingerprint and does not authenticate any evidence provider.

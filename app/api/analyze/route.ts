@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { runAnalysisPipeline } from "../../../lib/analyze-pipeline";
 import { validateRiskInput, type RiskInput } from "../../../lib/risk";
 import { consumeAnalyzeRateLimit } from "../../../lib/api-rate-limit";
+import { attachAnalysisAttestation, runtimeAttestationSigningConfig } from "../../../lib/server/analysis-attestation";
 
 export async function POST(request: Request) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -20,5 +21,6 @@ export async function POST(request: Request) {
   }
   const errors = validateRiskInput(input);
   if (errors.length) return NextResponse.json({ error: errors.join(". "), code: "INVALID_INPUT" }, { status: 400 });
-  return NextResponse.json(await runAnalysisPipeline(input));
+  const result = await runAnalysisPipeline(input);
+  return NextResponse.json(await attachAnalysisAttestation(result, runtimeAttestationSigningConfig()));
 }

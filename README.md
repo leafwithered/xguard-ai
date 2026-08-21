@@ -32,7 +32,7 @@ Judge Mode only loads examples, navigates, and explains. It never auto-analyzes,
 
 ## Stable Production Baseline
 
-The Final Judge Upgrade is live from `main` commit `409aa73c211a6b350af757d130c3f41ac8cfe962` on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
+The Final Judge Upgrade core application baseline is commit `409aa73c211a6b350af757d130c3f41ac8cfe962` and is live on the canonical Vercel Production URL. Production Hybrid Analysis is verified through the provider-neutral adapter; the upstream provider is selected only through server-side environment variables and is not asserted by the public client. The V1 RiskRegistry evidence and every public URL remain unchanged.
 
 - Safe Transfer: `8 LOW`, Hybrid Analysis
 - Unlimited Approval: `72 HIGH`, decoded ERC20 `approve`, spender and `Amount: Unlimited` visible

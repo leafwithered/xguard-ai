@@ -3,9 +3,9 @@
 ## Stable Production
 
 - Final Judge Upgrade: merged to `main`
-- Main commit: `409aa73c211a6b350af757d130c3f41ac8cfe962`
+- Core application baseline: `409aa73c211a6b350af757d130c3f41ac8cfe962`
 - Production: https://xguard-ai-six.vercel.app
-- Production deployment: `dpl_KkyED1sN18hK4QXjzLZnuNYoeamC` (`Ready`)
+- Historical pre-polish Production deployment: `dpl_KkyED1sN18hK4QXjzLZnuNYoeamC` (`Ready` at verification time)
 - Main CI: passed — https://github.com/leafwithered/xguard-ai/actions/runs/32436406395
 - Production smoke: Safe Transfer `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
 - Provider: Production Hybrid Analysis is verified through the server-configured, provider-neutral OpenAI-compatible adapter; public artifacts do not assert the upstream provider identity
@@ -13,9 +13,14 @@
 - New contract deployment for Final Judge Upgrade: none
 - New on-chain transaction for Final Judge Upgrade: none
 
-## Required user action
+## Submission status
 
-1. Review the final submission fields in `docs/SUBMISSION.md` and click the official hackathon form’s final **Submit** button before the deadline. Contact email remains private and is provided only in the official form.
+- Already submitted by the project owner.
+- No release action remains solely because a Git commit SHA, Preview URL, or transient Vercel deployment ID changes.
+
+## Possible follow-up
+
+- Edit or resubmit only if a canonical link in the original submission is incorrect or the organizer explicitly requests an update. Contact email remains private and is provided only in the official form.
 
 ## Media status
 

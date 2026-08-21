@@ -28,16 +28,17 @@
 - [x] A real user-signed `recordAssessment` transaction is confirmed with a successful receipt and emitted event.
 - [x] Project has an independent X account and its public profile URL is verified.
 - [x] Project X post is publicly accessible and its thread includes `@XLayerOfficial`.
-- [x] Final Judge Upgrade is merged to `main` at `409aa73c211a6b350af757d130c3f41ac8cfe962`, deployed to the canonical Production URL, and smoke-tested with Safe, Unlimited Approval, and Suspicious Airdrop presets.
+- [x] Final Judge Upgrade core application baseline `409aa73c211a6b350af757d130c3f41ac8cfe962` is deployed to the canonical Production URL and smoke-tested with Safe, Unlimited Approval, and Suspicious Airdrop presets.
 - [x] Provider-backed Hybrid Analysis is verified in Production through the provider-neutral adapter; provider configuration and secrets are not exposed to the browser or repository.
-- [ ] Submission form is completed before `2026-08-21 23:59 UTC`.
+- [x] Official submission was completed by the project owner.
 
 ## Current readiness
 
 - Local MVP, Final Judge Upgrade presets, configurable AI adapter, deterministic Local Risk Engine floor, wallet/network UI, contract tests, and browser QA are complete.
 - `RiskRegistry` is verified on X Layer Testnet; the real address, transaction hash, and explorer link are recorded above.
 - A real user-signed `recordAssessment` interaction is confirmed on Chain ID `1952`; its receipt and `RiskAssessmentRecorded` event are publicly verifiable above.
-- Website, GitHub, Production Hybrid Analysis, X account/post, contact details, public chain evidence, current hero screenshot, and Final Judge Upgrade demo video are ready. The only required submission action is the user's final review and official form submission.
+- Website, GitHub, Production Hybrid Analysis, X account/post, contact details, public chain evidence, current hero screenshot, and Final Judge Upgrade demo video are ready. The project owner has already completed the official submission.
+- Resubmission is not required solely because Git commit SHAs, Preview URLs, or transient Vercel deployment IDs change while the canonical public URLs remain stable. Edit or resubmit only if a canonical submitted link is incorrect or the organizer explicitly requests an update.
 
 ## Final submission fields
 

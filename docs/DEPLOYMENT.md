@@ -23,8 +23,9 @@
 - Website URL: `https://xguard-ai-six.vercel.app`
 - Deployment provider: `Vercel`
 - Source repository: `https://github.com/leafwithered/xguard-ai`
-- Final Judge Upgrade: live from `main` commit `409aa73c211a6b350af757d130c3f41ac8cfe962`
-- Production deployment: `dpl_KkyED1sN18hK4QXjzLZnuNYoeamC` (`Ready`)
+- Final Judge Upgrade core application baseline: commit `409aa73c211a6b350af757d130c3f41ac8cfe962`
+- Canonical Production URL is the durable deployment reference; Vercel deployment IDs are transient
+- Historical pre-polish Production deployment: `dpl_KkyED1sN18hK4QXjzLZnuNYoeamC` (`Ready` at verification time)
 - Production Hybrid Analysis smoke test: passed through the server-configured OpenAI-compatible provider adapter
 - Final smoke matrix: Safe `8 LOW`, Unlimited Approval `72 HIGH`, Suspicious Airdrop `100 HIGH`
 - Provider identity: intentionally not asserted by public artifacts; `AI_BASE_URL` and `AI_MODEL` remain server-side deployment configuration
